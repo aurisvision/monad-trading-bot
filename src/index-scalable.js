@@ -223,12 +223,12 @@ class Area51BotScalable {
             await this.handleSellInterface(ctx);
         });
 
-        // Buy amount handlers
-        this.bot.action(/^buy_(\d+\.?\d*)$/, async (ctx) => {
+        // Buy amount handlers - updated for new flow
+        this.bot.action(/^buy_amount_(\d+\.?\d*)$/, async (ctx) => {
             await this.handleBuyAmount(ctx);
         });
 
-        this.bot.action('buy_custom', async (ctx) => {
+        this.bot.action('buy_amount_custom', async (ctx) => {
             await this.handleCustomBuy(ctx);
         });
 
@@ -1294,12 +1294,7 @@ Please send your private key or mnemonic phrase.
             }
             
             await this.database.setUserState(ctx.from.id, 'importing_wallet');
-            
-            // Store the import message ID for later deletion
-            const importMessageId = ctx.callbackQuery?.message?.message_id;
-            if (importMessageId) {
-                await this.database.setUserState(ctx.from.id, 'import_message_id', { messageId: importMessageId });
-            }
+            console.log(`🔍 DEBUG: Set user state to 'importing_wallet' for user ${ctx.from.id}`);
             
         } catch (error) {
             this.monitoring.logError('Import wallet failed', error, { userId: ctx.from.id });
@@ -1576,13 +1571,9 @@ Please enter the recipient address:`;
         
         const buyText = `💰 *Buy Tokens*
 
-Select amount of MON to spend:`;
+Please enter the token contract address you want to buy:`;
 
         const keyboard = Markup.inlineKeyboard([
-            [Markup.button.callback('0.1 MON', 'buy_0.1'), Markup.button.callback('0.5 MON', 'buy_0.5')],
-            [Markup.button.callback('1 MON', 'buy_1'), Markup.button.callback('5 MON', 'buy_5')],
-            [Markup.button.callback('10 MON', 'buy_10'), Markup.button.callback('25 MON', 'buy_25')],
-            [Markup.button.callback('📝 Custom Amount', 'buy_custom')],
             [Markup.button.callback('🔙 Back to Main', 'back_to_main')]
         ]);
 
@@ -1590,6 +1581,9 @@ Select amount of MON to spend:`;
             parse_mode: 'Markdown',
             reply_markup: keyboard.reply_markup
         });
+
+        // Set user state to expect token address input
+        await this.database.setUserState(ctx.from.id, 'awaiting_token_address', {});
     }
 
     async handleSellInterface(ctx) {
@@ -1619,11 +1613,12 @@ Select percentage to sell:`;
         try {
             // Get user state to find the selected token
             const userState = await this.database.getUserState(ctx.from.id);
-            const tokenAddress = userState?.data?.tokenAddress;
             
-            if (!tokenAddress) {
+            if ((userState?.state !== 'awaiting_buy_amount' && userState?.state !== 'buy_token') || !userState?.data?.tokenAddress) {
                 return ctx.reply('❌ Token selection expired. Please try again.');
             }
+            
+            const tokenAddress = userState.data.tokenAddress;
             
             // Get token info for confirmation
             const tokenInfo = await this.monorailAPI.getTokenInfo(tokenAddress);
@@ -1747,8 +1742,8 @@ Select amount of MON to spend:
         `;
         
         const keyboard = Markup.inlineKeyboard([
-            amounts.map(amount => Markup.button.callback(`${amount} MON`, `buy_${amount}`)),
-            [Markup.button.callback('📝 Custom Amount', 'buy_custom')],
+            amounts.map(amount => Markup.button.callback(`${amount} MON`, `buy_amount_${amount}`)),
+            [Markup.button.callback('📝 Custom Amount', 'buy_amount_custom')],
             [Markup.button.callback('🔙 Back', 'token_categories')]
         ]);
         
@@ -2122,7 +2117,12 @@ _This message will be deleted in 15 seconds._`, {
         const userId = ctx.from.id;
         const userState = await this.database.getUserState(userId);
         
-        if (!userState) {
+        console.log(`🔍 DEBUG: Text message from user ${userId}`);
+        console.log(`🔍 DEBUG: User state:`, userState);
+        console.log(`🔍 DEBUG: Message text:`, ctx.message.text);
+        
+        if (!userState || userState.state === null) {
+            console.log(`🔍 DEBUG: No valid user state, rejecting message`);
             await ctx.reply('Please use the menu buttons to interact with the bot.');
             return;
         }
@@ -2135,8 +2135,67 @@ _This message will be deleted in 15 seconds._`, {
             case 'transfer_address':
                 await ctx.reply('Transfer address handler coming soon!');
                 break;
+            case 'awaiting_token_address':
+                await this.processTokenAddress(ctx, ctx.message.text);
+                break;
             default:
-                await ctx.reply('Please use the menu buttons to interact with the bot.');
+                // Check if message looks like a token address for direct buy
+                const messageText = ctx.message.text.trim();
+                if (/^0x[a-fA-F0-9]{40}$/.test(messageText)) {
+                    console.log(`🔍 DEBUG: Detected token address: ${messageText}`);
+                    await this.processTokenAddress(ctx, messageText);
+                } else {
+                    await ctx.reply('Please use the menu buttons to interact with the bot.');
+                }
+        }
+    }
+
+    async processTokenAddress(ctx, tokenAddress) {
+        try {
+            const userId = ctx.from.id;
+            
+            // Validate token address format
+            if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress.trim())) {
+                await ctx.reply('❌ Invalid token address format. Please enter a valid contract address (0x...)');
+                return;
+            }
+
+            const cleanAddress = tokenAddress.trim();
+            
+            // Verify token exists by getting token info
+            const tokenInfo = await this.monorailAPI.getTokenInfo(cleanAddress);
+            if (!tokenInfo.success) {
+                await ctx.reply('❌ Token not found or invalid. Please check the contract address and try again.');
+                return;
+            }
+
+            // Store token address in user state and ask for amount
+            await this.database.setUserState(userId, 'awaiting_buy_amount', {
+                tokenAddress: cleanAddress,
+                tokenName: tokenInfo.token.name,
+                tokenSymbol: tokenInfo.token.symbol
+            });
+
+            const buyAmountText = `💰 *Buy ${tokenInfo.token.name} (${tokenInfo.token.symbol})*
+
+Select amount of MON to spend:`;
+
+            const keyboard = Markup.inlineKeyboard([
+                [Markup.button.callback('0.1 MON', 'buy_amount_0.1'), Markup.button.callback('0.5 MON', 'buy_amount_0.5')],
+                [Markup.button.callback('1 MON', 'buy_amount_1'), Markup.button.callback('5 MON', 'buy_amount_5')],
+                [Markup.button.callback('10 MON', 'buy_amount_10'), Markup.button.callback('25 MON', 'buy_amount_25')],
+                [Markup.button.callback('📝 Custom Amount', 'buy_amount_custom')],
+                [Markup.button.callback('🔙 Back to Main', 'back_to_main')]
+            ]);
+
+            await ctx.reply(buyAmountText, {
+                parse_mode: 'Markdown',
+                reply_markup: keyboard.reply_markup
+            });
+
+        } catch (error) {
+            this.monitoring.logError('Process token address failed', error, { userId: ctx.from.id });
+            await ctx.reply('❌ Error processing token address. Please try again.');
         }
     }
 
