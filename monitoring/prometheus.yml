@@ -1,0 +1,44 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "alert_rules.yml"
+
+scrape_configs:
+  # Area51 Bot metrics
+  - job_name: 'area51-bot'
+    static_configs:
+      - targets: ['area51_bot:3001']
+    scrape_interval: 10s
+    metrics_path: /metrics
+    
+  # Node.js application metrics
+  - job_name: 'area51-app'
+    static_configs:
+      - targets: ['area51_bot:3000']
+    scrape_interval: 15s
+    
+  # PostgreSQL metrics (if pg_exporter is used)
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+    scrape_interval: 30s
+    
+  # Redis metrics (if redis_exporter is used)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    scrape_interval: 30s
+    
+  # Nginx metrics
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx:80']
+    scrape_interval: 30s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
