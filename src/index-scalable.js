@@ -279,6 +279,11 @@ class Area51BotScalable {
             await this.handleConfirmSell(ctx);
         });
 
+        // Handle confirm portfolio sell - allow lowercase and numbers in token symbols
+        this.bot.action(/^confirm_portfolio_sell_([A-Za-z0-9]+)_(\d+)$/, async (ctx) => {
+            await this.handleConfirmPortfolioSell(ctx);
+        });
+
         this.bot.action('cancel_trade', async (ctx) => {
             await this.handleCancelTrade(ctx);
         });
@@ -1818,11 +1823,11 @@ Proceed with sale?`;
             
         if (result.success) {
             // Clear cache to force fresh data after successful transaction
+            await this.portfolioService.clearUserPortfolioCache(userId);
             if (this.redis) {
                 try {
                     await Promise.all([
                         this.redis.del(`balance:${userId}`),
-                        this.redis.del(`portfolio:${userId}`),
                         this.redis.del(`user:${userId}`) // Clear user cache to refresh main menu balance
                     ]);
                     this.monitoring.logInfo('Cache cleared after successful buy transaction', { userId, txHash: result.txHash });
@@ -1831,13 +1836,9 @@ Proceed with sale?`;
                 }
             }
                 
-            await ctx.editMessageText(`✅ *Purchase Successful!*
-
-*Amount:* ${amount} MON
-*Token:* ${tokenAddress.slice(0, 8)}...
-*Transaction:* \`${result.txHash}\`
-
-Your tokens will appear in your portfolio shortly.`, {
+            const explorerUrl = `https://testnet.monadexplorer.com/tx/${result.txHash}`;
+            
+            await ctx.editMessageText(`[✅ Purchase Successful!](${explorerUrl})`, {
                 parse_mode: 'Markdown'
             });
         } else {
@@ -2522,19 +2523,35 @@ Welcome back to Area51! 🛸`;
             const userState = await this.database.getUserState(userId);
             const tokenInfo = userState?.selling_token;
             
-            if (!tokenInfo || tokenInfo.symbol !== tokenSymbol) {
-                await ctx.reply('⚠️ Token information not found. Please try again.');
+            console.log(`🔍 DEBUG: User state:`, userState);
+            console.log(`🔍 DEBUG: Token info:`, tokenInfo);
+            console.log(`🔍 DEBUG: Looking for symbol:`, tokenSymbol);
+            console.log(`🔍 DEBUG: Button callback data:`, ctx.callbackQuery?.data);
+            
+            // Fix: Access the data property correctly
+            const actualTokenInfo = userState?.data || tokenInfo;
+            
+            if (!actualTokenInfo || actualTokenInfo.symbol !== tokenSymbol) {
+                console.log(`❌ DEBUG: Token info mismatch - stored: ${actualTokenInfo?.symbol}, requested: ${tokenSymbol}`);
+                await ctx.reply(`⚠️ Token information not found. Stored: ${actualTokenInfo?.symbol || 'none'}, Requested: ${tokenSymbol}. Please try again.`);
                 return;
             }
+            
+            // Use the correct token info
+            const tokenInfoToUse = actualTokenInfo;
 
-            const balance = parseFloat(tokenInfo.balance);
+            const balance = parseFloat(tokenInfoToUse.balance);
             const sellAmount = (balance * percentage) / 100;
+            
+            // Calculate estimated MON output
+            const monValue = parseFloat(tokenInfoToUse.mon_value || '0');
+            const estimatedMON = (monValue * percentage) / 100;
             
             const confirmText = `💸 **Confirm Sale**
 
-🪙 **Token:** ${tokenInfo.name} (${tokenSymbol})
+🪙 **Token:** ${tokenInfoToUse.name} (${tokenSymbol})
 📊 **Selling:** ${sellAmount.toFixed(6)} ${tokenSymbol} (${percentage}%)
-💰 **Remaining:** ${(balance - sellAmount).toFixed(6)} ${tokenSymbol}
+💰 **Expected MON:** ~${estimatedMON.toFixed(6)} MON
 
 ⚠️ **This action cannot be undone!**
 
@@ -2586,6 +2603,107 @@ Example: 33.5 for 33.5%`;
         } catch (error) {
             this.monitoring.logError('Custom sell percentage failed', error, { userId, tokenSymbol });
             await ctx.reply('⚠️ Failed to load custom percentage input. Please try again.');
+        }
+    }
+
+    async handleConfirmPortfolioSell(ctx) {
+        try {
+            console.log(`🔍 DEBUG: handleConfirmPortfolioSell called with data:`, ctx.callbackQuery?.data);
+            console.log(`🔍 DEBUG: Match groups:`, ctx.match);
+            
+            await ctx.answerCbQuery('🔄 Processing sale...');
+            const userId = ctx.from.id;
+            const tokenSymbol = ctx.match[1];
+            const percentage = parseInt(ctx.match[2]);
+            
+            const user = await this.database.getUserByTelegramId(userId);
+            if (!user) {
+                await ctx.reply('❌ Please start the bot first with /start');
+                return;
+            }
+
+            // Get stored token info - fix the data access issue
+            const userState = await this.database.getUserState(userId);
+            console.log(`🔍 DEBUG: Full user state:`, userState);
+            
+            // The token info is stored in userState.data, not userState.selling_token
+            const tokenInfo = userState?.data;
+            console.log(`🔍 DEBUG: Retrieved token info:`, tokenInfo);
+            
+            if (!tokenInfo || tokenInfo.symbol !== tokenSymbol) {
+                console.log(`❌ DEBUG: Token mismatch - stored: ${tokenInfo?.symbol}, requested: ${tokenSymbol}`);
+                await ctx.reply('⚠️ Token information not found. Please try again.');
+                return;
+            }
+
+            const balance = parseFloat(tokenInfo.balance);
+            const sellAmount = (balance * percentage) / 100;
+
+            // Show processing message
+            const processingText = `🔄 **Processing Sale...**
+
+🪙 **Token:** ${tokenInfo.name} (${tokenSymbol})
+📊 **Selling:** ${sellAmount.toFixed(6)} ${tokenSymbol} (${percentage}%)
+
+⏳ Please wait while we process your transaction...`;
+
+            await ctx.editMessageText(processingText, {
+                parse_mode: 'Markdown'
+            });
+
+            // Execute the sell transaction - use token address, not symbol
+            const result = await this.tradingEngine.sellToken(
+                user.wallet_address,
+                tokenInfo.address,
+                sellAmount.toString()
+            );
+
+            if (result.success) {
+                await ctx.editMessageText(`[✅ Sale Completed!](${result.explorerUrl || '#'})`, {
+                    parse_mode: 'Markdown'
+                });
+
+                // Clear user state and portfolio cache after successful sell
+                await this.database.clearUserState(userId);
+                await this.portfolioService.clearUserPortfolioCache(userId);
+
+            } else {
+                const errorText = `❌ **Sale Failed**
+
+🪙 **Token:** ${tokenInfo.name} (${tokenSymbol})
+📊 **Amount:** ${sellAmount.toFixed(6)} ${tokenSymbol}
+
+**Error:** ${result.error || 'Unknown error occurred'}
+
+Please try again or contact support if the issue persists.`;
+
+                await ctx.editMessageText(errorText, {
+                    parse_mode: 'Markdown'
+                });
+            }
+
+        } catch (error) {
+            this.monitoring.logError('Confirm portfolio sell failed', error, { 
+                userId: ctx.from.id, 
+                tokenSymbol: ctx.match[1], 
+                percentage: ctx.match[2] 
+            });
+            
+            const errorText = `❌ **Transaction Error**
+
+An unexpected error occurred while processing your sale. Please try again.
+
+If the problem persists, please contact support.`;
+
+            const keyboard = Markup.inlineKeyboard([
+                [Markup.button.callback('📊 Portfolio', 'portfolio')],
+                [Markup.button.callback('🔙 Main Menu', 'main')]
+            ]);
+
+            await ctx.editMessageText(errorText, {
+                parse_mode: 'Markdown',
+                reply_markup: keyboard.reply_markup
+            });
         }
     }
 
@@ -2764,21 +2882,26 @@ Example: 33.5 for 33.5%`;
                 return;
             }
 
-            // Get token info from portfolio
-            const tokens = await this.portfolioService.getUserPortfolio(userId, user.wallet_address);
+            // Get token info from portfolio with force refresh to ensure latest data
+            const tokens = await this.portfolioService.getUserPortfolio(userId, user.wallet_address, true);
             const token = tokens.find(t => t.symbol === tokenSymbol);
             
+            console.log(`🔍 DEBUG: Looking for token ${tokenSymbol} in portfolio`);
+            console.log(`🔍 DEBUG: Available tokens:`, tokens.map(t => ({ symbol: t.symbol, balance: t.balance })));
+            
             if (!token) {
-                await ctx.reply(`❌ Token ${tokenSymbol} not found in your portfolio.`);
+                console.log(`❌ DEBUG: Token ${tokenSymbol} not found in portfolio of ${tokens.length} tokens`);
+                await ctx.reply(`❌ Token ${tokenSymbol} not found in your portfolio. Available tokens: ${tokens.map(t => t.symbol).join(', ')}`);
                 return;
             }
 
-            // Store token info for sell process
+            // Store token info for sell process - include address for trading
             await this.database.setUserState(userId, 'selling_token', {
                 symbol: token.symbol,
                 name: token.name,
                 balance: token.balance,
-                mon_value: token.mon_value
+                mon_value: token.mon_value,
+                address: token.address
             });
 
             const balance = parseFloat(token.balance || '0');

@@ -16,6 +16,19 @@ class PortfolioService {
     }
 
     /**
+     * Clear user portfolio cache
+     */
+    async clearUserPortfolioCache(telegramId) {
+        try {
+            const key = this.getPortfolioKey(telegramId);
+            await this.redis.del(key);
+            console.log(`🗑️ Portfolio cache cleared for user ${telegramId}`);
+        } catch (error) {
+            console.error('Error clearing portfolio cache:', error);
+        }
+    }
+
+    /**
      * Fetch portfolio from Monorail API and filter data
      */
     async fetchPortfolioFromAPI(walletAddress) {
@@ -44,6 +57,8 @@ class PortfolioService {
                     name: token.name,
                     balance: token.balance,
                     mon_value: token.mon_value || '0',
+                    usd_price: token.usd_per_token || token.priceUSD || null,
+                    address: token.address,
                     last_updated: Date.now()
                 }));
 
@@ -72,7 +87,8 @@ class PortfolioService {
                     name: token.name,
                     balance: token.balance,
                     mon_value: token.mon_value,
-                    last_updated: token.last_updated
+                    usd_price: token.usd_price,
+                    address: token.address
                 }));
             }
 
@@ -161,22 +177,29 @@ class PortfolioService {
 
         if (pageTokens.length === 0) {
             return {
-                text: `📊 *Your Portfolio*\n\n_No tokens found in your portfolio._`,
+                text: `📊 Portfolio\n\n_No tokens found in your portfolio._`,
                 hasTokens: false,
                 totalPages: 0,
                 currentPage: page
             };
         }
 
-        let message = `📊 *Your Portfolio*\n\n`;
+        let message = `📊 Portfolio\n\n`;
 
         pageTokens.forEach(token => {
             const balance = parseFloat(token.balance || '0').toFixed(6);
             const monValue = parseFloat(token.mon_value || '0').toFixed(4);
+            const usdPrice = token.usd_price || null;
             
-            message += `💰 *${token.symbol}* (${token.name})\n`;
-            message += `🔹 Balance: \`${balance}\`\n`;
-            message += `🔹 Value in MON: \`${monValue}\`\n\n`;
+            message += `🟣 ${token.symbol} (${token.name})\n`;
+            message += `• Balance: ${balance} ${token.symbol}\n`;
+            message += `• Value in MON: ${monValue}\n`;
+            
+            if (usdPrice !== null && usdPrice > 0) {
+                message += `• Price: ${this.formatPrice(usdPrice)}\n\n`;
+            } else {
+                message += `• Price: $0.00000\n\n`;
+            }
         });
 
         // Add pagination info if multiple pages
@@ -185,10 +208,14 @@ class PortfolioService {
         }
 
         // Add last updated timestamp
-        if (pageTokens.length > 0 && pageTokens[0].last_updated) {
-            const lastUpdated = new Date(pageTokens[0].last_updated);
-            message += `⏱ Last updated: ${lastUpdated.toLocaleTimeString()}`;
-        }
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('ar-EG', { 
+            hour12: true,
+            hour: 'numeric',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        message += `⏱️ Last updated: ${timeString}`;
 
         return {
             text: message,
@@ -197,6 +224,27 @@ class PortfolioService {
             currentPage: page,
             tokens: pageTokens
         };
+    }
+
+    /**
+     * Format price for display
+     */
+    formatPrice(price) {
+        if (!price || price <= 0) {
+            return '$0.00000';
+        }
+        
+        const numPrice = parseFloat(price);
+        
+        if (numPrice >= 1) {
+            return `$${numPrice.toFixed(2)}`;
+        } else if (numPrice >= 0.01) {
+            return `$${numPrice.toFixed(4)}`;
+        } else if (numPrice >= 0.0001) {
+            return `$${numPrice.toFixed(6)}`;
+        } else {
+            return '$0.00000';
+        }
     }
 
     /**

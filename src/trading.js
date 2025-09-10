@@ -178,6 +178,8 @@ Current balance: ${monBalance} MON`;
             return {
                 success: true,
                 txHash: swapResult.txHash,
+                explorerUrl: swapResult.txHash ? `https://testnet.monadexplorer.com/tx/${swapResult.txHash}` : null,
+                monReceived: swapResult.outputAmount || '0',
                 tokenAddress: tokenAddress,
                 tokenAmount: tokenAmount,
                 gasUsed: swapResult.receipt ? swapResult.receipt.gasUsed.toString() : null,
@@ -188,6 +190,29 @@ Current balance: ${monBalance} MON`;
 
         } catch (error) {
             console.error('Error executing sell:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    // Sell token method for portfolio sell flow
+    async sellToken(walletAddress, tokenAddress, tokenAmount, slippage = 1) {
+        try {
+            console.log(`sellToken called: wallet=${walletAddress}, token=${tokenAddress}, amount=${tokenAmount}`);
+            
+            // Find user by wallet address
+            const user = await this.db.getUserByWalletAddress(walletAddress);
+            if (!user) {
+                throw new Error('User not found for wallet address');
+            }
+            
+            // Use existing executeSell method
+            return await this.executeSell(user.telegram_id, tokenAddress, tokenAmount, slippage);
+            
+        } catch (error) {
+            console.error('Error in sellToken:', error);
             return {
                 success: false,
                 error: error.message

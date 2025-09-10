@@ -12,7 +12,7 @@ class MonorailAPI {
     constructor(redis = null) {
         this.baseURL = 'https://testnet-api.monorail.xyz/v1';
         this.dataUrl = 'https://testnet-api.monorail.xyz/v1';
-        this.quoteURL = 'https://testnet-pathfinder.monorail.xyz/v4';
+        this.quoteUrl = 'https://testnet-pathfinder.monorail.xyz/v4';
         this.appId = '2837175649443187';
         this.redis = redis;
         
