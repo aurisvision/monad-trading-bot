@@ -365,6 +365,14 @@ Explore and trade tokens in the Monad ecosystem. Browse by category, check your 
             await ctx.reply('⚙️ Notification settings coming soon!');
         });
 
+        this.bot.action('toggle_turbo_mode', async (ctx) => {
+            await this.handleToggleTurboMode(ctx);
+        });
+
+        this.bot.action('confirm_turbo_enable', async (ctx) => {
+            await this.handleConfirmTurboEnable(ctx);
+        });
+
         // Help handler
         this.bot.action('help', async (ctx) => {
             await this.showHelp(ctx);
@@ -1474,17 +1482,23 @@ Explore and trade tokens in the Monad ecosystem:`;
         try {
             await ctx.answerCbQuery();
             
+            // Get user settings to display current Turbo Mode status
+            const userSettings = await this.database.getUserSettings(ctx.from.id);
+            const turboStatus = userSettings.turbo_mode ? '🟢 ON' : '🔴 OFF';
+            
             const settingsText = `⚙️ *Settings*
 
 Configure your trading preferences:
 
 • Slippage tolerance
-• Gas settings
+• Gas settings  
+• Turbo Mode: ${turboStatus}
 • Notification preferences`;
 
             const keyboard = Markup.inlineKeyboard([
                 [Markup.button.callback('📊 Slippage Settings', 'slippage_settings')],
                 [Markup.button.callback('⚡ Gas Settings', 'gas_settings')],
+                [Markup.button.callback('🚀 Toggle Turbo Mode', 'toggle_turbo_mode')],
                 [Markup.button.callback('🔔 Notifications', 'notification_settings')],
                 [Markup.button.callback('🔙 Back to Main', 'back_to_main')]
             ]);
@@ -1501,6 +1515,75 @@ Configure your trading preferences:
         } catch (error) {
             this.monitoring.logError('Settings failed', error, { userId: ctx.from.id });
             await ctx.reply('❌ Error loading settings.');
+        }
+    }
+
+    async handleToggleTurboMode(ctx) {
+        try {
+            await ctx.answerCbQuery();
+            
+            const userId = ctx.from.id;
+            const currentSettings = await this.database.getUserSettings(userId);
+            const newTurboMode = !currentSettings.turbo_mode;
+            
+            // Update turbo mode in database
+            await this.database.updateUserSettings(userId, { turbo_mode: newTurboMode });
+            
+            // Show warning message when enabling Turbo Mode
+            if (newTurboMode) {
+                const warningText = `⚠️ *Turbo Mode Enabled*
+
+*WARNING:* Turbo Mode prioritizes speed over safety:
+• No balance validations
+• No approval checks  
+• 20% slippage tolerance
+• Immediate execution
+
+Are you sure you want to continue?`;
+
+                const keyboard = Markup.inlineKeyboard([
+                    [Markup.button.callback('✅ Yes, Enable Turbo', 'confirm_turbo_enable')],
+                    [Markup.button.callback('❌ Cancel', 'settings')],
+                ]);
+
+                await ctx.editMessageText(warningText, {
+                    parse_mode: 'Markdown',
+                    reply_markup: keyboard.reply_markup
+                });
+            } else {
+                // Turbo mode disabled - show success and return to settings
+                await ctx.editMessageText('🔴 Turbo Mode disabled. Trading will use normal safety checks.', {
+                    reply_markup: Markup.inlineKeyboard([
+                        [Markup.button.callback('🔙 Back to Settings', 'settings')]
+                    ]).reply_markup
+                });
+            }
+            
+        } catch (error) {
+            this.monitoring.logError('Toggle turbo mode failed', error, { userId: ctx.from.id });
+            await ctx.reply('❌ Error toggling turbo mode.');
+        }
+    }
+
+    async handleConfirmTurboEnable(ctx) {
+        try {
+            await ctx.answerCbQuery();
+            
+            const userId = ctx.from.id;
+            
+            // Confirm turbo mode is enabled in database
+            await this.database.updateUserSettings(userId, { turbo_mode: true });
+            
+            await ctx.editMessageText('🟢 *Turbo Mode Enabled!*\n\nTrading will now prioritize maximum speed over safety checks.', {
+                parse_mode: 'Markdown',
+                reply_markup: Markup.inlineKeyboard([
+                    [Markup.button.callback('🔙 Back to Settings', 'settings')]
+                ]).reply_markup
+            });
+            
+        } catch (error) {
+            this.monitoring.logError('Confirm turbo enable failed', error, { userId: ctx.from.id });
+            await ctx.reply('❌ Error enabling turbo mode.');
         }
     }
 
@@ -1795,6 +1878,40 @@ Proceed with sale?`;
                 return;
             }
 
+            // Check if user has Turbo Mode enabled
+            const userSettings = await this.database.getUserSettings(userId);
+            const isTurboMode = userSettings.turbo_mode;
+
+            if (isTurboMode) {
+                // Turbo Mode: Skip all safety checks and execute immediately
+                const result = await this.tradingEngine.executeBuyTurbo(userId, tokenAddress, parseFloat(amount));
+                
+                if (result.success) {
+                    // Clear cache after successful turbo transaction
+                    await this.portfolioService.clearUserPortfolioCache(userId);
+                    if (this.redis) {
+                        try {
+                            await Promise.all([
+                                this.redis.del(`balance:${userId}`),
+                                this.redis.del(`user:${userId}`)
+                            ]);
+                        } catch (redisError) {
+                            this.monitoring.logError('Cache clear failed after turbo buy', redisError, { userId });
+                        }
+                    }
+                    
+                    await ctx.editMessageText(
+                        `🚀 *Turbo Purchase Complete!*\n\n` +
+                        `[✅ View Transaction](https://testnet.monadexplorer.com/tx/${result.txHash})`,
+                        { parse_mode: 'Markdown' }
+                    );
+                } else {
+                    await ctx.editMessageText(`❌ Turbo purchase failed: ${result.error}`);
+                }
+                return;
+            }
+
+            // Normal Mode: Full safety checks
             const wallet = await this.walletManager.getWalletWithProvider(user.encrypted_private_key);
             const balance = await this.walletManager.getBalance(wallet.address);
             const requiredAmount = parseFloat(amount);
@@ -1813,7 +1930,7 @@ Proceed with sale?`;
                 return;
             }
 
-            // Execute buy transaction with higher slippage
+            // Execute buy transaction with normal slippage
             const result = await this.tradingEngine.executeBuy(userId, tokenAddress, parseFloat(amount), 5);
             
         if (result.success) {
@@ -2696,13 +2813,21 @@ Example: 33.5 for 33.5%`;
             }
 
             const balance = parseFloat(tokenInfo.balance);
-            const sellAmount = (balance * percentage) / 100;
+            let sellAmount = (balance * percentage) / 100;
+            
+            // Apply 99.99% buffer to prevent floating-point precision errors
+            // This ensures we never try to sell more than we actually have
+            if (percentage === 100) {
+                sellAmount = balance * 0.9999; // 99.99% of balance for 100% sells
+                console.log(`🔧 Applied 99.99% buffer: ${balance} -> ${sellAmount}`);
+            }
 
-            // Show processing message
-            const processingText = `🔄 **Processing Sale...**
+            // Show processing message - escape special characters
+            const sanitizedTokenName = tokenInfo.name.replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&');
+            const processingText = `🔄 Processing Sale...
 
-🪙 **Token:** ${tokenInfo.name} (${tokenSymbol})
-📊 **Selling:** ${sellAmount.toFixed(6)} ${tokenSymbol} (${percentage}%)
+🪙 Token: ${sanitizedTokenName} (${tokenSymbol})
+📊 Selling: ${sellAmount.toFixed(6)} ${tokenSymbol} (${percentage}%)
 
 ⏳ Please wait while we process your transaction...`;
 
@@ -2725,20 +2850,37 @@ Example: 33.5 for 33.5%`;
                 // Clear user state and portfolio cache after successful sell
                 await this.database.clearUserState(userId);
                 await this.portfolioService.clearUserPortfolioCache(userId);
+                
+                // Also clear the general user cache to force fresh data
+                if (this.redis) {
+                    await this.redis.del(`user:${userId}`);
+                    await this.redis.del(`balance:${userId}`);
+                    console.log(`🗑️ Invalidated user cache for user ${userId}`);
+                }
 
             } else {
-                const errorText = `❌ **Sale Failed**
+                // Force refresh portfolio data after failed transaction to get accurate balances
+                await this.portfolioService.clearUserPortfolioCache(userId);
+                if (this.redis) {
+                    await this.redis.del(`balance:${userId}`);
+                    console.log(`🔄 Forced portfolio refresh after failed transaction`);
+                }
+                
+                // Escape special characters in error message to prevent Telegram parsing errors
+                const sanitizedError = (result.error || 'Unknown error occurred')
+                    .replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&');
+                const sanitizedTokenName = tokenInfo.name.replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&');
+                
+                const errorText = `❌ Sale Failed
 
-🪙 **Token:** ${tokenInfo.name} (${tokenSymbol})
-📊 **Amount:** ${sellAmount.toFixed(6)} ${tokenSymbol}
+🪙 Token: ${sanitizedTokenName} (${tokenSymbol})
+📊 Amount: ${sellAmount.toFixed(6)} ${tokenSymbol}
 
-**Error:** ${result.error || 'Unknown error occurred'}
+Error: ${sanitizedError}
 
 Please try again or contact support if the issue persists.`;
 
-                await ctx.editMessageText(errorText, {
-                    parse_mode: 'Markdown'
-                });
+                await ctx.editMessageText(errorText);
             }
 
         } catch (error) {

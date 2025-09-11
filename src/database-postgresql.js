@@ -117,6 +117,7 @@ class DatabasePostgreSQL {
                 custom_buy_amounts TEXT DEFAULT '0.1,0.5,1,5',
                 custom_sell_percentages TEXT DEFAULT '25,50,75,100',
                 gas_priority VARCHAR(20) DEFAULT 'normal',
+                turbo_mode BOOLEAN DEFAULT false,
                 preferences JSONB DEFAULT '{}',
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP

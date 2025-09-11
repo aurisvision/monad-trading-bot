@@ -227,6 +227,7 @@ class MonorailAPI {
             }
 
             console.log(`🔍 Fetching fresh wallet balance for: ${walletAddress}`);
+            console.log(`🔍 Force refresh: ${forceRefresh}`);
             console.log(`📡 API URL: ${this.dataUrl}/wallet/${walletAddress}/balances`);
             
             const response = await axios.get(`${this.dataUrl}/wallet/${walletAddress}/balances`, {
@@ -551,7 +552,8 @@ class MonorailAPI {
 
         try {
             const provider = new ethers.JsonRpcProvider(process.env.MONAD_RPC_URL);
-            const gasPrice = await provider.getGasPrice();
+            const feeData = await provider.getFeeData();
+            const gasPrice = feeData.gasPrice;
             
             // Cache the gas price for 10 minutes
             this.cache.set(cacheKey, { 
@@ -571,6 +573,58 @@ class MonorailAPI {
         }
     }
 
+    // Get optimized gas pricing for Monad testnet
+    async getMonadGasPricing(turboMode = false) {
+        try {
+            // Monad testnet has static base fee of 50 gwei
+            const baseFeePerGas = ethers.parseUnits('50', 'gwei');
+            
+            let maxPriorityFeePerGas;
+            let maxFeePerGas;
+            
+            if (turboMode) {
+                // Turbo Mode: Balanced speed and cost efficiency
+                maxPriorityFeePerGas = ethers.parseUnits('10', 'gwei'); // 10 gwei priority for speed
+                maxFeePerGas = ethers.parseUnits('60', 'gwei'); // 60 gwei total for cost efficiency
+                
+                console.log('🚀 Turbo Mode Gas Pricing (Cost Optimized):');
+                console.log(`  Base Fee: ${ethers.formatUnits(baseFeePerGas, 'gwei')} gwei`);
+                console.log(`  Priority Fee: ${ethers.formatUnits(maxPriorityFeePerGas, 'gwei')} gwei`);
+                console.log(`  Max Fee: ${ethers.formatUnits(maxFeePerGas, 'gwei')} gwei`);
+            } else {
+                // Normal Mode: Very conservative pricing
+                maxPriorityFeePerGas = ethers.parseUnits('5', 'gwei'); // 5 gwei priority
+                maxFeePerGas = ethers.parseUnits('55', 'gwei'); // 55 gwei total
+                
+                console.log('⚡ Standard Gas Pricing (Ultra Low Cost):');
+                console.log(`  Base Fee: ${ethers.formatUnits(baseFeePerGas, 'gwei')} gwei`);
+                console.log(`  Priority Fee: ${ethers.formatUnits(maxPriorityFeePerGas, 'gwei')} gwei`);
+                console.log(`  Max Fee: ${ethers.formatUnits(maxFeePerGas, 'gwei')} gwei`);
+            }
+            
+            return {
+                maxFeePerGas,
+                maxPriorityFeePerGas,
+                gasPrice: maxFeePerGas // Fallback for legacy gas pricing
+            };
+            
+        } catch (error) {
+            console.error('Error getting Monad gas pricing:', error);
+            // Fallback to simple gas pricing
+            const fallbackGasPrice = turboMode ? 
+                ethers.parseUnits('60', 'gwei') : 
+                ethers.parseUnits('55', 'gwei');
+                
+            return {
+                gasPrice: fallbackGasPrice,
+                maxFeePerGas: fallbackGasPrice,
+                maxPriorityFeePerGas: turboMode ? 
+                    ethers.parseUnits('10', 'gwei') : 
+                    ethers.parseUnits('5', 'gwei')
+            };
+        }
+    }
+
     // Get gas price recommendations
     async getGasPriceRecommendations() {
         try {
@@ -580,9 +634,9 @@ class MonorailAPI {
                 success: true,
                 current: currentGasPrice,
                 slow: currentGasPrice,
-                standard: currentGasPrice * BigInt(110) / BigInt(100), // 10% higher
-                fast: currentGasPrice * BigInt(125) / BigInt(100), // 25% higher
-                rapid: currentGasPrice * BigInt(150) / BigInt(100)  // 50% higher
+                standard: currentGasPrice.mul(BigInt(110)).div(BigInt(100)), // 10% higher
+                fast: currentGasPrice.mul(BigInt(125)).div(BigInt(100)), // 25% higher
+                rapid: currentGasPrice.mul(BigInt(150)).div(BigInt(100))  // 50% higher
             };
 
         } catch (error) {
@@ -597,35 +651,11 @@ class MonorailAPI {
     // Speed-optimized sell with pre-computed gas and parallel execution
     async sellTokenOptimized(wallet, tokenAddress, tokenAmount, slippage = 1, options = {}) {
         try {
-            console.log(`=== SPEED-OPTIMIZED SELL ===`);
+            console.log(`=== SELL TOKEN ===`);
             console.log(`Token: ${tokenAddress}, Amount: ${tokenAmount}, Slippage: ${slippage}%`);
 
-            const { gasPrice, gasLimit, approvalStatus } = options;
-            
-            // Smart transaction sequencing based on approval status
-            if (!approvalStatus) {
-                // Need approval - use nonce sequencing for speed
-                const nonce = await wallet.provider.getTransactionCount(wallet.address);
-                
-                // Parallel execution: Approval (nonce) + Swap (nonce+1)
-                const [approvalResult, swapResult] = await Promise.all([
-                    this.executeApprovalOptimized(wallet, tokenAddress, { gasPrice, gasLimit, nonce }),
-                    this.executeSwapOptimized(wallet, tokenAddress, this.tokens.MON, tokenAmount, slippage, { 
-                        gasPrice, 
-                        gasLimit, 
-                        nonce: nonce + 1 
-                    })
-                ]);
-
-                if (!approvalResult.success) {
-                    throw new Error(`Approval failed: ${approvalResult.error}`);
-                }
-
-                return swapResult;
-            } else {
-                // Already approved - direct swap
-                return await this.executeSwapOptimized(wallet, tokenAddress, this.tokens.MON, tokenAmount, slippage, options);
-            }
+            // Use standard executeSwap with turbo mode detection
+            return await this.executeSwap(wallet, tokenAddress, this.tokens.MON, tokenAmount, slippage, options);
 
         } catch (error) {
             console.error('Speed-optimized sell failed:', error.message);
@@ -749,19 +779,28 @@ class MonorailAPI {
             // Get current gas price from blockchain for accurate pricing
             const currentGasPrice = await this.getCurrentGasPrice();
             
-            // Apply dynamic gas price and limit
+            // Use Monorail's exact gas estimate without buffer
             if (options.gasLimit) {
                 transaction.gasLimit = options.gasLimit;
                 console.log(`Using custom gas limit: ${options.gasLimit}`);
+            } else if (quote.gasEstimate) {
+                // Use API's exact gas estimate
+                transaction.gasLimit = parseInt(quote.gasEstimate);
+                console.log(`Using Monorail gas estimate: ${transaction.gasLimit}`);
             } else {
-                // Increase default gas limit to prevent out-of-gas failures
-                transaction.gasLimit = Math.max(transaction.gasLimit || 250000, 500000);
-                console.log(`Using increased gas limit: ${transaction.gasLimit}`);
+                // Fallback to reasonable default
+                transaction.gasLimit = 300000;
+                console.log(`Using fallback gas limit: ${transaction.gasLimit}`);
             }
             
-            // Use current blockchain gas price
-            transaction.gasPrice = options.gasPrice || currentGasPrice;
-            console.log(`Using gas price: ${ethers.formatUnits(transaction.gasPrice, 'gwei')} gwei`);
+            // Apply simple gas pricing
+            if (options.turboMode) {
+                transaction.gasPrice = ethers.parseUnits('100', 'gwei');
+                console.log(`🚀 TURBO MODE: Using 100 gwei gas price`);
+            } else {
+                transaction.gasPrice = ethers.parseUnits('50', 'gwei');
+                console.log(`⚡ NORMAL MODE: Using 50 gwei gas price`);
+            }
             
             // Additional validation before sending
             if (!transaction.to || !transaction.data) {
@@ -892,11 +931,13 @@ class MonorailAPI {
             console.log(`Required amount: ${amount}`);
             console.log(`Wallet address: ${wallet.address}`);
             
-            // ERC20 ABI for approve function
             const erc20Abi = [
+                "function decimals() view returns (uint8)",
                 "function allowance(address owner, address spender) view returns (uint256)",
                 "function approve(address spender, uint256 amount) returns (bool)",
-                "function balanceOf(address owner) view returns (uint256)"
+                "function balanceOf(address owner) view returns (uint256)",
+                "function symbol() view returns (string)",
+                "function name() view returns (string)"
             ];
             
             const tokenContract = new ethers.Contract(tokenAddress, erc20Abi, wallet);
@@ -904,21 +945,41 @@ class MonorailAPI {
             
             // Check token balance first
             const tokenBalance = await tokenContract.balanceOf(wallet.address);
-            const requiredAmount = ethers.parseUnits(amount.toString(), 18);
             
-            console.log(`Token balance: ${ethers.formatUnits(tokenBalance, 18)}`);
+            // Get token decimals to handle different token standards
+            let decimals = 18;
+            try {
+                const decimalsResult = await tokenContract.decimals();
+                decimals = Number(decimalsResult); // Convert BigInt to number
+                console.log(`🔍 Token decimals: ${decimals}`);
+            } catch (error) {
+                console.log(`⚠️ Could not get decimals, using default 18`);
+            }
+            
+            // Fix floating-point precision issues before parsing
+            const cleanAmount = parseFloat(amount).toFixed(decimals);
+            const requiredAmount = ethers.parseUnits(cleanAmount, decimals);
+            
+            console.log(`🔧 Original amount: ${amount}`);
+            console.log(`🔧 Cleaned amount: ${cleanAmount}`);
+            
+            console.log(`Token balance: ${ethers.formatUnits(tokenBalance, decimals)}`);
             console.log(`Required amount: ${amount}`);
+            console.log(`Token address: ${tokenAddress}`);
+            console.log(`Decimals used: ${decimals}`);
             
-            // Check if user has enough balance
-            if (tokenBalance < requiredAmount) {
-                throw new Error(`Insufficient token balance. Have: ${ethers.formatUnits(tokenBalance, 18)}, Need: ${amount}`);
+            // Check if user has enough balance with tolerance for floating-point precision
+            // Allow for tiny precision differences (1 wei tolerance)
+            const tolerance = BigInt(1);
+            if (tokenBalance + tolerance < requiredAmount) {
+                throw new Error(`Insufficient token balance. Have: ${ethers.formatUnits(tokenBalance, decimals)}, Need: ${amount}`);
             }
             
             // Check current allowance
             const currentAllowance = await tokenContract.allowance(wallet.address, spenderAddress);
             
-            console.log(`Current allowance: ${ethers.formatUnits(currentAllowance, 18)}`);
-            console.log(`Required allowance: ${ethers.formatUnits(requiredAmount, 18)}`);
+            console.log(`Current allowance: ${ethers.formatUnits(currentAllowance, decimals)}`);
+            console.log(`Required allowance: ${ethers.formatUnits(requiredAmount, decimals)}`);
             
             if (currentAllowance < requiredAmount) {
                 console.log(`Approving token ${tokenAddress} for maximum amount`);
@@ -1124,6 +1185,42 @@ class MonorailAPI {
                 success: false,
                 error: 'Failed to get token metadata'
             };
+        }
+    }
+
+    // Turbo swap execution - bypasses all safety checks for maximum speed
+    async executeSwapTurbo(wallet, tokenAddress, monAmount, slippage, senderAddress) {
+        try {
+            console.log(`🚀 TURBO SWAP: ${monAmount} MON -> ${tokenAddress} with ${slippage}% slippage`);
+            
+            
+            // Use existing buyToken method with turbo settings for maximum speed
+            const result = await this.buyToken(
+                wallet,
+                tokenAddress,
+                monAmount,
+                slippage,
+                { 
+                    turboMode: true    // Flag for turbo execution path
+                }
+            );
+
+            if (!result.success) {
+                throw new Error(`Turbo buy failed: ${result.error}`);
+            }
+
+            console.log(`🚀 Turbo transaction broadcast: ${result.txHash}`);
+
+            // Return immediately without waiting for confirmation
+            return {
+                success: true,
+                txHash: result.txHash,
+                mode: 'turbo'
+            };
+
+        } catch (error) {
+            console.error('❌ Turbo swap failed:', error);
+            return { success: false, error: error.message };
         }
     }
 }

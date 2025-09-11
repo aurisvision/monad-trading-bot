@@ -73,13 +73,13 @@ class TradingEngine {
             let finalSlippage = Math.max(slippage, 5); // Minimum 5% slippage
             console.log(`Using slippage: ${finalSlippage}% (requested: ${slippage}%)`);
             
-            // Execute swap with higher gas limit and increased slippage
+            // Execute swap with dynamic gas estimation from Monorail
             const swapResult = await this.monorailAPI.buyToken(
                 wallet,
                 tokenAddress,
                 monAmount,
-                finalSlippage,
-                { gasLimit: 800000 } // Further increased gas limit
+                finalSlippage
+                // No custom gasLimit - let Monorail API determine it
             );
 
             if (!swapResult.success) {
@@ -149,6 +149,50 @@ Current balance: ${monBalance} MON`;
         }
     }
 
+    // Execute turbo buy order - bypasses all safety checks for maximum speed
+    async executeBuyTurbo(telegramId, tokenAddress, monAmount) {
+        try {
+            console.log(`🚀 TURBO BUY: ${monAmount} MON for token ${tokenAddress}`);
+            
+            // Minimal validation - only user lookup
+            const user = await this.db.getUserByTelegramId(telegramId);
+            if (!user) {
+                throw new Error('User not found');
+            }
+
+            const wallet = await this.walletManager.getWalletWithProvider(user.encrypted_private_key);
+
+            // Execute turbo swap with 20% slippage and no safety checks
+            const swapResult = await this.monorailAPI.executeSwapTurbo(
+                wallet,
+                tokenAddress,
+                monAmount,
+                20, // 20% slippage for maximum speed
+                wallet.address
+            );
+
+            if (!swapResult.success) {
+                throw new Error(`Turbo swap failed: ${swapResult.error}`);
+            }
+
+            console.log(`🚀 Turbo buy transaction successful: ${swapResult.txHash}`);
+            return {
+                success: true,
+                txHash: swapResult.txHash,
+                amount: monAmount,
+                tokenAddress: tokenAddress,
+                mode: 'turbo'
+            };
+
+        } catch (error) {
+            console.error('❌ Turbo buy transaction failed:', error.message);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
     // Execute sell order
     async executeSell(telegramId, tokenAddress, tokenAmount, slippage = 1) {
         try {
@@ -157,23 +201,19 @@ Current balance: ${monBalance} MON`;
             // Fast pre-flight validation (prevents gas loss)
             const { wallet, approvalStatus } = await this.fastPreflightCheck(telegramId, tokenAddress, tokenAmount);
             
-            // Optimized gas strategy for cost efficiency
-            const gasPrice = ethers.parseUnits('50', 'gwei'); // 50 gwei for network inclusion
-            const gasLimit = 300000; // Optimized gas limit for aggregator
-            
-            // Execute with optimized transaction sequencing
+            // Execute with dynamic gas estimation from Monorail
             const swapResult = await this.monorailAPI.sellTokenOptimized(
-                wallet, 
+                wallet,
                 tokenAddress, 
                 tokenAmount, 
                 slippage,
-                { gasPrice, gasLimit, approvalStatus }
+                { approvalStatus }
+                // No custom gasPrice or gasLimit - let Monorail API determine them
             );
             
             if (!swapResult.success) {
                 throw new Error(`Swap failed: ${swapResult.error}`);
             }
-
 
             return {
                 success: true,
@@ -182,9 +222,9 @@ Current balance: ${monBalance} MON`;
                 monReceived: swapResult.outputAmount || '0',
                 tokenAddress: tokenAddress,
                 tokenAmount: tokenAmount,
-                gasUsed: swapResult.receipt ? swapResult.receipt.gasUsed.toString() : null,
-                effectiveGasPrice: swapResult.receipt ? swapResult.receipt.effectiveGasPrice.toString() : null,
-                transactionFee: swapResult.receipt ? 
+                gasUsed: swapResult.receipt?.gasUsed ? swapResult.receipt.gasUsed.toString() : null,
+                effectiveGasPrice: swapResult.receipt?.effectiveGasPrice ? swapResult.receipt.effectiveGasPrice.toString() : null,
+                transactionFee: (swapResult.receipt?.gasUsed && swapResult.receipt?.effectiveGasPrice) ? 
                     (parseFloat(ethers.formatEther(swapResult.receipt.gasUsed * swapResult.receipt.effectiveGasPrice))).toFixed(6) : null
             };
 
@@ -298,8 +338,10 @@ Current balance: ${monBalance} MON`;
             this.monorailAPI.checkTokenApproval(wallet.address, tokenAddress)
         ]);
 
-        // Fast-fail validation
-        if (parseFloat(tokenBalance) < amount) {
+        // Fast-fail validation with precision tolerance
+        const balanceNum = parseFloat(tokenBalance);
+        const tolerance = 0.000001; // Small tolerance for floating point precision
+        if (balanceNum < (amount - tolerance)) {
             throw new Error(`Insufficient token balance. Have: ${tokenBalance}, Need: ${amount}`);
         }
 
