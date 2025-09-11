@@ -468,8 +468,8 @@ class DatabasePostgreSQL {
     // User settings with JSON support
     async createUserSettings(telegramId) {
         const query = `
-            INSERT INTO user_settings (telegram_id) 
-            VALUES ($1) 
+            INSERT INTO user_settings (telegram_id, turbo_mode) 
+            VALUES ($1, false) 
             ON CONFLICT (telegram_id) DO NOTHING
             RETURNING *`;
         return await this.getOne(query, [telegramId]);

@@ -6,8 +6,10 @@
   "scripts": {
     "start": "node src/index-scalable.js",
     "start:scalable": "node src/index-scalable.js",
+    "start:modular": "node src/index-modular-simple.js",
     "start:cluster": "node src/cluster.js",
     "dev": "nodemon src/index-scalable.js",
+    "dev:modular": "nodemon src/index-modular.js",
     "migrate": "node scripts/migrate-to-postgresql.js",
     "test-migration": "node scripts/test-migration.js",
     "backup": "node backup/database-backup.js",

@@ -91,9 +91,7 @@ class MonorailAPI {
                 quoteUrl.searchParams.set('max_slippage', slippage.toString());
             }
 
-            // Log for debugging sell quotes
-            console.log('📡 Quote URL:', quoteUrl.toString());
-            console.log('🔑 Using App ID:', this.appId);
+            // Getting quote from Monorail API
 
             const response = await axios.get(quoteUrl.toString(), {
                 httpsAgent,
@@ -104,24 +102,7 @@ class MonorailAPI {
                 }
             });
 
-            console.log('✅ Quote response status:', response.status);
-            
-            // Debug transaction data specifically
-            if (response.data && response.data.transaction) {
-                console.log('✅ Transaction data received:');
-                console.log('- to:', response.data.transaction.to);
-                console.log('- data exists:', !!response.data.transaction.data);
-                console.log('- data length:', response.data.transaction.data ? response.data.transaction.data.length : 0);
-                console.log('- value:', response.data.transaction.value);
-                
-                if (!response.data.transaction.data || response.data.transaction.data === '0x') {
-                    console.error('❌ Transaction data is empty!');
-                    console.log('Full response:', JSON.stringify(response.data, null, 2));
-                }
-            } else {
-                console.error('❌ No transaction data in response');
-                console.log('Full response:', JSON.stringify(response.data, null, 2));
-            }
+            // Quote response received successfully
 
             if (response.data && response.data.output_formatted) {
                 // Validate transaction data exists when sender is provided
@@ -141,7 +122,7 @@ class MonorailAPI {
                     
                     // Try to construct a basic swap transaction if we have the necessary info
                     if (response.data.transaction.to) {
-                        console.log('⚠️ Attempting to use transaction without data field - this may fail');
+                        // Using transaction without data field
                     } else {
                         return {
                             success: false,
@@ -185,6 +166,7 @@ class MonorailAPI {
             });
 
             if (response.data) {
+                // API returns token data directly, not nested
                 return {
                     success: true,
                     token: {
@@ -193,7 +175,10 @@ class MonorailAPI {
                         name: response.data.name,
                         decimals: response.data.decimals,
                         totalSupply: response.data.total_supply,
-                        price: response.data.price,
+                        // Include price data from API response
+                        usd_per_token: response.data.usd_per_token,
+                        mon_per_token: response.data.mon_per_token,
+                        pconf: response.data.pconf,
                         marketCap: response.data.market_cap,
                         volume24h: response.data.volume_24h
                     }
@@ -218,7 +203,7 @@ class MonorailAPI {
                 try {
                     const cachedBalance = await this.redis.get(`balance:${walletAddress}`);
                     if (cachedBalance) {
-                        console.log(`💰 Balance loaded from cache for ${walletAddress}`);
+                        // Balance loaded from cache
                         return JSON.parse(cachedBalance);
                     }
                 } catch (redisError) {
@@ -226,9 +211,7 @@ class MonorailAPI {
                 }
             }
 
-            console.log(`🔍 Fetching fresh wallet balance for: ${walletAddress}`);
-            console.log(`🔍 Force refresh: ${forceRefresh}`);
-            console.log(`📡 API URL: ${this.dataUrl}/wallet/${walletAddress}/balances`);
+            // Fetching fresh wallet balance from API
             
             const response = await axios.get(`${this.dataUrl}/wallet/${walletAddress}/balances`, {
                 httpsAgent,
@@ -242,11 +225,10 @@ class MonorailAPI {
                 }
             });
 
-            console.log(`📊 API Response Status: ${response.status}`);
-            console.log(`📊 API Response Data:`, response.data);
+            // API response received
 
             if (response.data && Array.isArray(response.data)) {
-                console.log(`✅ Found ${response.data.length} tokens in wallet`);
+                // Tokens found in wallet
                 const balanceData = response.data.map(token => ({
                     address: token.address,
                     symbol: token.symbol,
@@ -266,7 +248,7 @@ class MonorailAPI {
                 if (this.redis) {
                     try {
                         await this.redis.setEx(`balance:${walletAddress}`, 60, JSON.stringify(balanceData));
-                        console.log(`💰 Balance cached for ${walletAddress} (TTL: 1 minute)`);
+                        // Balance cached successfully
                     } catch (redisError) {
                         console.error('Redis cache write failed:', redisError);
                     }
@@ -274,7 +256,7 @@ class MonorailAPI {
 
                 return balanceData;
             } else {
-                console.log(`⚠️ API returned non-array data:`, response.data);
+                // API returned unexpected data format
                 return [];
             }
         } catch (error) {
@@ -282,8 +264,7 @@ class MonorailAPI {
             console.error('API URL:', `${this.dataUrl}/wallet/${walletAddress}/balances`);
             console.error('Full error:', error.response?.data || error);
             
-            // Return mock data for testing if API fails
-            console.log('🔧 Using mock data due to API failure');
+            // Using fallback data due to API failure
             return [
                 {
                     address: '0x1234567890123456789012345678901234567890',
@@ -313,7 +294,7 @@ class MonorailAPI {
     async getMONBalance(walletAddress, forceRefresh = false) {
         const cacheKey = `mon_balance:${walletAddress}`;
         
-        // Check cache first unless force refresh
+        // Always force refresh if forceRefresh is true, otherwise check cache
         if (!forceRefresh && this.redis) {
             try {
                 const cached = await this.redis.get(cacheKey);
@@ -351,6 +332,7 @@ class MonorailAPI {
                 }
 
                 const result = {
+                    success: true,
                     balance: monToken ? monToken.balance : '0',
                     balanceFormatted: balanceFormatted,
                     priceUSD: monToken ? monToken.usd_per_token || monToken.priceUSD : '0'
@@ -367,7 +349,7 @@ class MonorailAPI {
             throw new Error('Invalid response format');
         } catch (error) {
             console.error('Get MON balance failed:', error.message);
-            return { balance: '0', balanceFormatted: '0', priceUSD: '0' };
+            return { success: false, balance: '0', balanceFormatted: '0', priceUSD: '0' };
         }
     }
 
@@ -546,7 +528,7 @@ class MonorailAPI {
         
         // Check cache first (10 minutes TTL)
         if (cached && Date.now() - cached.timestamp < 600000) { // 10 minutes
-            console.log('Using cached gas price:', ethers.formatUnits(cached.data, 'gwei'), 'gwei');
+            // Using cached gas price
             return cached.data;
         }
 
@@ -561,14 +543,14 @@ class MonorailAPI {
                 timestamp: Date.now() 
             });
             
-            console.log('Fetched fresh gas price from blockchain:', ethers.formatUnits(gasPrice, 'gwei'), 'gwei');
+            // Fresh gas price fetched from blockchain
             return gasPrice;
 
         } catch (error) {
             console.error('Error getting current gas price:', error);
             // Return fallback gas price if blockchain call fails
             const fallbackGasPrice = ethers.parseUnits('50', 'gwei');
-            console.log('Using fallback gas price:', ethers.formatUnits(fallbackGasPrice, 'gwei'), 'gwei');
+            // Using fallback gas price
             return fallbackGasPrice;
         }
     }
@@ -587,19 +569,13 @@ class MonorailAPI {
                 maxPriorityFeePerGas = ethers.parseUnits('10', 'gwei'); // 10 gwei priority for speed
                 maxFeePerGas = ethers.parseUnits('60', 'gwei'); // 60 gwei total for cost efficiency
                 
-                console.log('🚀 Turbo Mode Gas Pricing (Cost Optimized):');
-                console.log(`  Base Fee: ${ethers.formatUnits(baseFeePerGas, 'gwei')} gwei`);
-                console.log(`  Priority Fee: ${ethers.formatUnits(maxPriorityFeePerGas, 'gwei')} gwei`);
-                console.log(`  Max Fee: ${ethers.formatUnits(maxFeePerGas, 'gwei')} gwei`);
+                // Turbo mode gas pricing configured
             } else {
                 // Normal Mode: Very conservative pricing
                 maxPriorityFeePerGas = ethers.parseUnits('5', 'gwei'); // 5 gwei priority
                 maxFeePerGas = ethers.parseUnits('55', 'gwei'); // 55 gwei total
                 
-                console.log('⚡ Standard Gas Pricing (Ultra Low Cost):');
-                console.log(`  Base Fee: ${ethers.formatUnits(baseFeePerGas, 'gwei')} gwei`);
-                console.log(`  Priority Fee: ${ethers.formatUnits(maxPriorityFeePerGas, 'gwei')} gwei`);
-                console.log(`  Max Fee: ${ethers.formatUnits(maxFeePerGas, 'gwei')} gwei`);
+                // Standard gas pricing configured
             }
             
             return {
@@ -651,8 +627,7 @@ class MonorailAPI {
     // Speed-optimized sell with pre-computed gas and parallel execution
     async sellTokenOptimized(wallet, tokenAddress, tokenAmount, slippage = 1, options = {}) {
         try {
-            console.log(`=== SELL TOKEN ===`);
-            console.log(`Token: ${tokenAddress}, Amount: ${tokenAmount}, Slippage: ${slippage}%`);
+            // Executing optimized token sell
 
             // Use standard executeSwap with turbo mode detection
             return await this.executeSwap(wallet, tokenAddress, this.tokens.MON, tokenAmount, slippage, options);
@@ -683,7 +658,7 @@ class MonorailAPI {
             };
 
             const txResponse = await wallet.sendTransaction(approvalTx);
-            console.log(`Approval broadcast: ${txResponse.hash}`);
+            // Token approval transaction broadcast
 
             return {
                 success: true,
@@ -722,7 +697,7 @@ class MonorailAPI {
             };
 
             const txResponse = await wallet.sendTransaction(swapTx);
-            console.log(`Swap broadcast: ${txResponse.hash}`);
+            // Swap transaction broadcast
 
             return {
                 success: true,
@@ -746,13 +721,11 @@ class MonorailAPI {
     // Execute swap transaction
     async executeSwap(wallet, fromToken, toToken, amount, slippage = 1, options = {}) {
         try {
-            console.log('=== EXECUTING SWAP ===');
-            console.log(`From: ${fromToken} To: ${toToken} Amount: ${amount} Slippage: ${slippage}%`);
-            console.log(`Wallet address: ${wallet.address}`);
+            // Executing token swap
             
             // For selling tokens (not MON), ensure approval first
             if (fromToken !== this.tokens.MON) {
-                console.log('Ensuring token approval for sell transaction...');
+                // Ensuring token approval for sell transaction
                 await this.ensureTokenApproval(wallet, fromToken, amount);
             }
             
@@ -764,9 +737,7 @@ class MonorailAPI {
                 throw new Error(`Failed to get quote: ${quote.error}`);
             }
             
-            console.log('Quote received successfully');
-            console.log('Quote output amount:', quote.outputAmount);
-            console.log('Quote price impact:', quote.priceImpact);
+            // Quote received successfully
             
             if (!quote.transaction) {
                 console.error('No transaction data in quote:', quote);
@@ -782,24 +753,24 @@ class MonorailAPI {
             // Use Monorail's exact gas estimate without buffer
             if (options.gasLimit) {
                 transaction.gasLimit = options.gasLimit;
-                console.log(`Using custom gas limit: ${options.gasLimit}`);
+                // Using custom gas limit
             } else if (quote.gasEstimate) {
                 // Use API's exact gas estimate
                 transaction.gasLimit = parseInt(quote.gasEstimate);
-                console.log(`Using Monorail gas estimate: ${transaction.gasLimit}`);
+                // Using Monorail gas estimate
             } else {
                 // Fallback to reasonable default
                 transaction.gasLimit = 300000;
-                console.log(`Using fallback gas limit: ${transaction.gasLimit}`);
+                // Using fallback gas limit
             }
             
             // Apply simple gas pricing
             if (options.turboMode) {
                 transaction.gasPrice = ethers.parseUnits('100', 'gwei');
-                console.log(`🚀 TURBO MODE: Using 100 gwei gas price`);
+                // Turbo mode: 100 gwei gas price
             } else {
                 transaction.gasPrice = ethers.parseUnits('50', 'gwei');
-                console.log(`⚡ NORMAL MODE: Using 50 gwei gas price`);
+                // Normal mode: 50 gwei gas price
             }
             
             // Additional validation before sending
@@ -809,14 +780,11 @@ class MonorailAPI {
             }
             
             // Send transaction
-            console.log('Sending transaction to blockchain...');
+            // Sending transaction to blockchain
             const txResponse = await wallet.sendTransaction(transaction);
-            console.log('Transaction sent successfully, hash:', txResponse.hash);
             
             // Wait for transaction confirmation
-            console.log('Waiting for transaction confirmation...');
             const receipt = await txResponse.wait();
-            console.log('Transaction confirmed with status:', receipt.status);
             
             if (receipt.status !== 1) {
                 console.error('Transaction failed with status:', receipt.status);
@@ -824,7 +792,7 @@ class MonorailAPI {
                 throw new Error('Transaction failed on blockchain');
             }
             
-            console.log('=== SWAP SUCCESSFUL ===');
+            // Swap completed successfully
             return {
                 success: true,
                 txHash: txResponse.hash,
@@ -868,7 +836,7 @@ class MonorailAPI {
     // Prepare transaction object for ethers.js
     prepareTransaction(monorailTx, gasEstimate) {
         try {
-            console.log('Preparing transaction from:', JSON.stringify(monorailTx, null, 2));
+            // Preparing transaction from Monorail API data
             
             const transaction = {
                 to: monorailTx.to,
@@ -908,7 +876,7 @@ class MonorailAPI {
                 transaction.value = '0x' + parseInt(transaction.value).toString(16);
             }
 
-            console.log('Prepared transaction:', JSON.stringify(transaction, null, 2));
+            // Transaction prepared successfully
             return transaction;
         } catch (error) {
             console.error('Error preparing transaction:', error);
@@ -927,9 +895,7 @@ class MonorailAPI {
         try {
             const ethers = require('ethers');
             
-            console.log(`Checking token approval for ${tokenAddress}`);
-            console.log(`Required amount: ${amount}`);
-            console.log(`Wallet address: ${wallet.address}`);
+            // Checking token approval requirements
             
             const erc20Abi = [
                 "function decimals() view returns (uint8)",
@@ -951,22 +917,16 @@ class MonorailAPI {
             try {
                 const decimalsResult = await tokenContract.decimals();
                 decimals = Number(decimalsResult); // Convert BigInt to number
-                console.log(`🔍 Token decimals: ${decimals}`);
+                // Token decimals retrieved
             } catch (error) {
-                console.log(`⚠️ Could not get decimals, using default 18`);
+                // Could not get decimals, using default 18
             }
             
             // Fix floating-point precision issues before parsing
             const cleanAmount = parseFloat(amount).toFixed(decimals);
             const requiredAmount = ethers.parseUnits(cleanAmount, decimals);
             
-            console.log(`🔧 Original amount: ${amount}`);
-            console.log(`🔧 Cleaned amount: ${cleanAmount}`);
-            
-            console.log(`Token balance: ${ethers.formatUnits(tokenBalance, decimals)}`);
-            console.log(`Required amount: ${amount}`);
-            console.log(`Token address: ${tokenAddress}`);
-            console.log(`Decimals used: ${decimals}`);
+            // Amount processing and validation
             
             // Check if user has enough balance with tolerance for floating-point precision
             // Allow for tiny precision differences (1 wei tolerance)
@@ -978,27 +938,25 @@ class MonorailAPI {
             // Check current allowance
             const currentAllowance = await tokenContract.allowance(wallet.address, spenderAddress);
             
-            console.log(`Current allowance: ${ethers.formatUnits(currentAllowance, decimals)}`);
-            console.log(`Required allowance: ${ethers.formatUnits(requiredAmount, decimals)}`);
+            // Checking current token allowance
             
             if (currentAllowance < requiredAmount) {
-                console.log(`Approving token ${tokenAddress} for maximum amount`);
+                // Approving token for maximum amount
                 
                 // Approve maximum amount to avoid future approvals
                 const maxAmount = ethers.MaxUint256;
                 const approveTx = await tokenContract.approve(spenderAddress, maxAmount);
-                console.log(`Approval transaction sent: ${approveTx.hash}`);
+                // Approval transaction sent
                 
                 // Wait for approval confirmation
                 const approvalReceipt = await approveTx.wait();
-                console.log(`Approval receipt status: ${approvalReceipt.status}`);
                 
                 if (approvalReceipt.status !== 1) {
                     throw new Error('Token approval failed');
                 }
-                console.log('Token approval successful');
+                // Token approval successful
             } else {
-                console.log('Token already approved with sufficient allowance');
+                // Token already approved with sufficient allowance
             }
         } catch (error) {
             console.error('Error ensuring token approval:', error);
@@ -1191,7 +1149,7 @@ class MonorailAPI {
     // Turbo swap execution - bypasses all safety checks for maximum speed
     async executeSwapTurbo(wallet, tokenAddress, monAmount, slippage, senderAddress) {
         try {
-            console.log(`🚀 TURBO SWAP: ${monAmount} MON -> ${tokenAddress} with ${slippage}% slippage`);
+            // Executing turbo swap for maximum speed
             
             
             // Use existing buyToken method with turbo settings for maximum speed
@@ -1209,7 +1167,7 @@ class MonorailAPI {
                 throw new Error(`Turbo buy failed: ${result.error}`);
             }
 
-            console.log(`🚀 Turbo transaction broadcast: ${result.txHash}`);
+            // Turbo transaction broadcast successfully
 
             // Return immediately without waiting for confirmation
             return {

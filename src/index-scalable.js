@@ -5,7 +5,7 @@ const { Telegraf, Markup } = require('telegraf');
 const Database = require('./database-postgresql');
 const WalletManager = require('./wallet');
 const TradingEngine = require('./trading');
-const PortfolioManager = require('./portfolio');
+// const PortfolioManager = require('./portfolio'); // Removed - using portfolioService instead
 const MonorailAPI = require('./monorail');
 const MonitoringSystem = require('./monitoring');
 const HealthCheckServer = require('./healthCheck');
@@ -76,7 +76,7 @@ class Area51BotScalable {
         this.monorailAPI = new MonorailAPI(this.redis);
         this.walletManager = new WalletManager(this.database, this.monitoring);
         this.tradingEngine = new TradingEngine(this.monorailAPI, this.walletManager, this.database);
-        this.portfolioManager = new PortfolioManager(this.monorailAPI, this.database, this.redis);
+        // this.portfolioManager = new PortfolioManager(this.monorailAPI, this.database, this.redis); // Removed - using portfolioService instead
         this.portfolioService = new (require('./portfolioService'))(this.monorailAPI, this.redis, this.monitoring);
         
         // Initialize security and rate limiting with proper fallback
@@ -154,13 +154,13 @@ class Area51BotScalable {
 
         // Main navigation handlers
         this.bot.action('back_to_main', async (ctx) => {
-            console.log('🔍 DEBUG: back_to_main called for user:', ctx.from.id);
+            // Back to main navigation
             await ctx.answerCbQuery();
             await this.handleBackToMainWithDebug(ctx);
         });
 
         this.bot.action('main', async (ctx) => {
-            console.log('🔍 DEBUG: main called for user:', ctx.from.id);
+            // Main menu navigation
             await ctx.answerCbQuery();
             await this.handleBackToMainWithDebug(ctx);
         });
@@ -219,9 +219,6 @@ class Area51BotScalable {
             await this.handleBuyInterface(ctx);
         });
 
-        this.bot.action('sell', async (ctx) => {
-            await this.handleSellInterface(ctx);
-        });
 
         // Buy amount handlers - updated for new flow
         this.bot.action(/^buy_amount_(\d+\.?\d*)$/, async (ctx) => {
@@ -232,41 +229,30 @@ class Area51BotScalable {
             await this.handleCustomBuy(ctx);
         });
 
-        // Sell percentage handlers
-        this.bot.action(/^sell_(\d+)$/, async (ctx) => {
-            await this.handleSellPercentage(ctx);
-        });
-
-        this.bot.action('sell_custom', async (ctx) => {
-            await this.handleCustomSell(ctx);
-        });
 
         // Token selection handlers
         this.bot.action(/^buy_token_(.+)$/, async (ctx) => {
             await this.handleBuyTokenFromCategory(ctx);
         });
 
-        this.bot.action(/^sell_token_(.+)$/, async (ctx) => {
-            await this.handleSelectTokenToSell(ctx);
-        });
 
         // Handle sell from portfolio (new format)
-        this.bot.action(/^sell:([A-Z]+)$/, async (ctx) => {
+        this.bot.action(/^sell:([A-Za-z0-9]+)$/, async (ctx) => {
             await this.handleSellFromNewPortfolio(ctx);
         });
 
         // Handle sell from portfolio (legacy format)
-        this.bot.action(/^sell_([A-Z]+)$/, async (ctx) => {
+        this.bot.action(/^sell_([A-Za-z0-9]+)$/, async (ctx) => {
             await this.handleSellFromPortfolio(ctx);
         });
 
         // Handle sell percentage selection
-        this.bot.action(/^sell_percentage_([A-Z]+)_(\d+)$/, async (ctx) => {
+        this.bot.action(/^sell_percentage_([A-Za-z0-9]+)_(\d+)$/, async (ctx) => {
             await this.handleSellPercentageSelection(ctx);
         });
 
         // Handle custom sell percentage
-        this.bot.action(/^sell_custom_([A-Z]+)$/, async (ctx) => {
+        this.bot.action(/^sell_custom_([A-Za-z0-9]+)$/, async (ctx) => {
             await this.handleCustomSellPercentage(ctx);
         });
 
@@ -275,9 +261,6 @@ class Area51BotScalable {
             await this.handleConfirmBuy(ctx);
         });
 
-        this.bot.action(/^confirm_sell_(.+)$/, async (ctx) => {
-            await this.handleConfirmSell(ctx);
-        });
 
         // Handle confirm portfolio sell - allow lowercase and numbers in token symbols
         this.bot.action(/^confirm_portfolio_sell_([A-Za-z0-9]+)_(\d+)$/, async (ctx) => {
@@ -290,50 +273,12 @@ class Area51BotScalable {
 
         // Categories handlers
         this.bot.action('token_categories', async (ctx) => {
-            await ctx.answerCbQuery();
-            const categoriesText = `
-🔥 *Monad Testnet Token Explorer*
-
-Explore and trade tokens in the Monad ecosystem. Browse by category, check your holdings, or discover new opportunities on testnet.
-
-*Choose a category to explore:*
-            `;
-            
-            const keyboard = Markup.inlineKeyboard([
-                [Markup.button.callback('✅ Verified Tokens', 'category_verified'), Markup.button.callback('💵 Stablecoins', 'category_stable')],
-                [Markup.button.callback('🌐 Bridged Assets', 'category_bridged'), Markup.button.callback('🐸 Meme Coins', 'category_meme')],
-                [Markup.button.callback('🥩 Liquid Staking', 'category_lst')],
-                [Markup.button.callback('🔙 Back to Main', 'back_to_main')]
-            ]);
-            
-            try {
-                await ctx.editMessageText(categoriesText, {
-                    parse_mode: 'Markdown',
-                    reply_markup: keyboard.reply_markup
-                });
-            } catch (error) {
-                // If editing fails, send new message
-                await ctx.replyWithMarkdown(categoriesText, keyboard);
-            }
+            await this.showTokenCategories(ctx);
         });
 
         // Handle token category actions with pagination
         this.bot.action(/^category_(.+?)(?:_page_(\d+))?$/, async (ctx) => {
-            await ctx.answerCbQuery();
-            const fullMatch = ctx.match[0];
-            
-            // Extract category and page more carefully
-            let category, page = 1;
-            
-            if (fullMatch.includes('_page_')) {
-                const parts = fullMatch.replace('category_', '').split('_page_');
-                category = parts[0];
-                page = parseInt(parts[1]) || 1;
-            } else {
-                category = ctx.match[1];
-            }
-            
-            await this.showTokensByCategory(ctx, category, page);
+            await this.handleTokenCategory(ctx);
         });
 
         // Transfer handlers
@@ -540,9 +485,9 @@ _The main area for real nads!_
 • MON: ${monBalance.toFixed(6)} ~$${monValueUSD.toFixed(2)}
 • Portfolio Value: ${portfolioValueMON.toFixed(6)} MON ~$${portfolioValueUSD.toFixed(2)}
 
-🟣 Current MON Price: $${monPriceUSD.toFixed(4)}
+🟣 *Current MON Price:* $${monPriceUSD.toFixed(4)}
 
-▫️What you can do:
+▫️*What you can do:*
 • Buy and sell tokens instantly
 • Track your portfolio with real-time P&L
 • Browse trending token categories
@@ -551,7 +496,7 @@ _The main area for real nads!_
 💡 Click on the Refresh button to update your current balance.`;
 
             const keyboard = Markup.inlineKeyboard([
-                [Markup.button.callback('💰 Buy', 'buy'), Markup.button.callback('💸 Sell', 'sell')],
+                [Markup.button.callback('💰 Buy', 'buy')],
                 [Markup.button.callback('👛 Wallet', 'wallet'), Markup.button.callback('📊 Portfolio', 'portfolio')],
                 [Markup.button.callback('📈 Categories', 'token_categories'), Markup.button.callback('⚙️ Settings', 'settings')],
                 [Markup.button.callback('📤 Transfer', 'transfer'), Markup.button.callback('🔄 Refresh', 'refresh')],
@@ -560,7 +505,7 @@ _The main area for real nads!_
 
             await ctx.editMessageText(welcomeText, {
                 parse_mode: 'Markdown',
-                reply_markup: keyboard
+                reply_markup: keyboard.reply_markup
             });
         } catch (error) {
             this.monitoring.logError('Welcome display failed', error, { userId });
@@ -673,7 +618,7 @@ _The main area for real nads!_
 💡 Click on the Refresh button to update your current balance.`;
 
             const keyboard = Markup.inlineKeyboard([
-                [Markup.button.callback('💰 Buy', 'buy'), Markup.button.callback('💸 Sell', 'sell')],
+                [Markup.button.callback('💰 Buy', 'buy')],
                 [Markup.button.callback('👛 Wallet', 'wallet'), Markup.button.callback('📊 Portfolio', 'portfolio')],
                 [Markup.button.callback('📈 Categories', 'token_categories'), Markup.button.callback('⚙️ Settings', 'settings')],
                 [Markup.button.callback('📤 Transfer', 'transfer'), Markup.button.callback('🔄 Refresh', 'refresh')],
@@ -684,7 +629,7 @@ _The main area for real nads!_
                 if (ctx.callbackQuery) {
                     await ctx.editMessageText(welcomeText, {
                         parse_mode: 'Markdown',
-                        reply_markup: keyboard
+                        reply_markup: keyboard.reply_markup
                     });
                 } else {
                     await ctx.replyWithMarkdown(welcomeText, keyboard);
@@ -701,48 +646,85 @@ _The main area for real nads!_
     async handleBackToMainWithDebug(ctx) {
         const userId = ctx.from.id;
         
-        console.log('🔍 DEBUG: handleBackToMainWithDebug called for user:', userId);
-        console.log('🔍 DEBUG: ctx.callbackQuery exists:', !!ctx.callbackQuery);
-        console.log('🔍 DEBUG: ctx.message exists:', !!ctx.message);
+        // Handle back to main menu navigation with caching
         
         try {
+            // Check for cached main menu data first (15 seconds TTL)
+            const cacheKey = `main_menu:${userId}`;
+            let cachedData = null;
+            
+            if (this.redis) {
+                try {
+                    const cached = await this.redis.get(cacheKey);
+                    if (cached) {
+                        cachedData = JSON.parse(cached);
+                    }
+                } catch (redisError) {
+                    // Redis error, continue without cache
+                }
+            }
+            
             // Get fresh user data
             const user = await this.database.getUserByTelegramId(userId);
             if (!user) {
-                console.log('🔍 DEBUG: No user found');
+                // User not found in database
                 await ctx.reply('❌ Please start the bot first with /start');
                 return;
             }
 
-            console.log('🔍 DEBUG: User found:', user.wallet_address);
-
-            // Get fresh data
-            const [monBalanceData, portfolioValueData, monPriceData] = await Promise.all([
-                this.monorailAPI.getMONBalance(user.wallet_address),
-                this.monorailAPI.getPortfolioValue(user.wallet_address),
-                this.monorailAPI.getMONPriceUSD()
-            ]);
-
-            // Extract values
             let monBalance = 0;
             let monPriceUSD = 3.25;
             let portfolioValueUSD = 0;
+            let lastUpdate = new Date();
+            
+            if (cachedData) {
+                // Use cached data for faster response
+                monBalance = cachedData.monBalance;
+                monPriceUSD = cachedData.monPriceUSD;
+                portfolioValueUSD = cachedData.portfolioValueUSD;
+                lastUpdate = new Date(cachedData.lastUpdate);
+            } else {
+                // Get fresh data only if not cached - force refresh to get latest balance
+                const [monBalanceData, portfolioValueData, monPriceData] = await Promise.all([
+                    this.monorailAPI.getMONBalance(user.wallet_address, true), // Force refresh MON balance
+                    this.monorailAPI.getPortfolioValue(user.wallet_address, true), // Force refresh portfolio
+                    this.monorailAPI.getMONPriceUSD(true) // Force refresh price
+                ]);
+                
+                // Extract values
+                if (monBalanceData && monBalanceData.balance) {
+                    const balanceWei = monBalanceData.balance;
+                    monBalance = parseFloat(balanceWei) / Math.pow(10, 18);
+                    if (monBalanceData.balanceFormatted) {
+                        monBalance = parseFloat(monBalanceData.balanceFormatted);
+                    }
+                }
 
-            if (monBalanceData && monBalanceData.balance) {
-                const balanceWei = monBalanceData.balance;
-                monBalance = parseFloat(balanceWei) / Math.pow(10, 18);
-                if (monBalanceData.balanceFormatted) {
-                    monBalance = parseFloat(monBalanceData.balanceFormatted);
+                if (monPriceData) {
+                    monPriceUSD = parseFloat(monPriceData.price || monPriceData.priceUSD || '3.25');
+                }
+
+                if (portfolioValueData && portfolioValueData.value) {
+                    portfolioValueUSD = parseFloat(portfolioValueData.value);
+                }
+                
+                // Cache the data for 15 seconds
+                const dataToCache = {
+                    monBalance,
+                    monPriceUSD,
+                    portfolioValueUSD,
+                    lastUpdate: lastUpdate.toISOString()
+                };
+                
+                if (this.redis) {
+                    try {
+                        await this.redis.setEx(cacheKey, 15, JSON.stringify(dataToCache));
+                    } catch (redisError) {
+                        // Redis error, continue without caching
+                    }
                 }
             }
 
-            if (monPriceData) {
-                monPriceUSD = parseFloat(monPriceData.price || monPriceData.priceUSD || '3.25');
-            }
-
-            if (portfolioValueData && portfolioValueData.value) {
-                portfolioValueUSD = parseFloat(portfolioValueData.value);
-            }
 
             const portfolioValueMON = portfolioValueUSD / monPriceUSD;
             const monValueUSD = monBalance * monPriceUSD;
@@ -757,9 +739,9 @@ _The main area for real nads!_
 • MON: ${monBalance.toFixed(6)} ~$${monValueUSD.toFixed(2)}
 • Portfolio Value: ${portfolioValueMON.toFixed(6)} MON ~$${portfolioValueUSD.toFixed(2)}
 
-🟣 Current MON Price: $${monPriceUSD.toFixed(4)}
+🟣 *Current MON Price:* $${monPriceUSD.toFixed(4)}
 
-▫️What you can do:
+▫️*What you can do:*
 • Buy and sell tokens instantly
 • Track your portfolio with real-time P&L
 • Browse trending token categories
@@ -768,46 +750,37 @@ _The main area for real nads!_
 💡 Click on the Refresh button to update your current balance.`;
 
             const keyboard = Markup.inlineKeyboard([
-                [Markup.button.callback('💰 Buy', 'buy'), Markup.button.callback('💸 Sell', 'sell')],
+                [Markup.button.callback('💰 Buy', 'buy')],
                 [Markup.button.callback('👛 Wallet', 'wallet'), Markup.button.callback('📊 Portfolio', 'portfolio')],
                 [Markup.button.callback('📈 Categories', 'token_categories'), Markup.button.callback('⚙️ Settings', 'settings')],
                 [Markup.button.callback('📤 Transfer', 'transfer'), Markup.button.callback('🔄 Refresh', 'refresh')],
                 [Markup.button.callback('❓ Help', 'help')]
             ]);
 
-            console.log('🔍 DEBUG: Keyboard created with buttons:', keyboard.reply_markup.inline_keyboard.length);
-            console.log('🔍 DEBUG: Full keyboard structure:', JSON.stringify(keyboard.reply_markup, null, 2));
+            // Main menu keyboard created
 
-            // CRITICAL FIX: Always delete and send new message for back navigation
+            // OPTIMIZED: Try edit first, then fallback to delete+send
             try {
-                console.log('🔍 DEBUG: Deleting current message...');
-                await ctx.deleteMessage();
-                console.log('🔍 DEBUG: Message deleted, sending new one...');
-                
-                const sentMessage = await ctx.replyWithMarkdown(welcomeText, keyboard);
-                console.log('🔍 DEBUG: New message sent with ID:', sentMessage.message_id);
-                console.log('🔍 DEBUG: Message has reply_markup:', !!sentMessage.reply_markup);
-                
-            } catch (deleteError) {
-                console.log('🔍 DEBUG: Delete failed, trying edit...', deleteError.message);
-                
+                await ctx.editMessageText(welcomeText, {
+                    parse_mode: 'Markdown',
+                    reply_markup: keyboard.reply_markup
+                });
+                // Message edited successfully - fastest option
+            } catch (editError) {
+                // Edit failed, try delete and send new message
                 try {
-                    await ctx.editMessageText(welcomeText, {
-                        parse_mode: 'Markdown',
-                        reply_markup: keyboard.reply_markup
-                    });
-                    console.log('🔍 DEBUG: Message edited successfully');
-                } catch (editError) {
-                    console.log('🔍 DEBUG: Edit failed, sending new...', editError.message);
+                    await ctx.deleteMessage();
                     const sentMessage = await ctx.replyWithMarkdown(welcomeText, keyboard);
-                    console.log('🔍 DEBUG: Fallback message sent with ID:', sentMessage.message_id);
+                } catch (deleteError) {
+                    // Both failed, send new message as last resort
+                    const sentMessage = await ctx.replyWithMarkdown(welcomeText, keyboard);
                 }
             }
 
-            console.log('🔍 DEBUG: Back to main completed successfully');
+            // Back to main completed successfully
             
         } catch (error) {
-            console.log('🔍 DEBUG: Back to main failed:', error);
+            this.monitoring.logError('Back to main failed', error, { userId });
             await ctx.reply('❌ Error loading main menu. Please try /start');
         }
     }
@@ -815,8 +788,7 @@ _The main area for real nads!_
     async handleRefreshWithWelcome(ctx) {
         const userId = ctx.from.id;
         
-        console.log('🔍 DEBUG: handleRefreshWithWelcome called for user:', userId);
-        console.log('🔍 DEBUG: ctx.callbackQuery exists:', !!ctx.callbackQuery);
+        // Handle refresh with welcome message
         
         try {
             await ctx.answerCbQuery('🔄 Refreshing...');
@@ -828,7 +800,7 @@ _The main area for real nads!_
                 return;
             }
 
-            console.log('🔍 DEBUG: User found:', user.wallet_address);
+            // User authenticated successfully
 
             // Force refresh of all cached data
             const [monBalanceData, portfolioValueData, monPriceData] = await Promise.all([
@@ -877,9 +849,9 @@ _The main area for real nads!_
 • MON: ${monBalance.toFixed(6)} ~$${monValueUSD.toFixed(2)}
 • Portfolio Value: ${portfolioValueMON.toFixed(6)} MON ~$${portfolioValueUSD.toFixed(2)}
 
-🟣 Current MON Price: $${monPriceUSD.toFixed(4)}
+🟣 *Current MON Price:* $${monPriceUSD.toFixed(4)}
 
-▫️What you can do:
+▫️*What you can do:*
 • Buy and sell tokens instantly
 • Track your portfolio with real-time P&L
 • Browse trending token categories
@@ -888,48 +860,38 @@ _The main area for real nads!_
 💡 Click on the Refresh button to update your current balance.`;
 
             const keyboard = Markup.inlineKeyboard([
-                [Markup.button.callback('💰 Buy', 'buy'), Markup.button.callback('💸 Sell', 'sell')],
+                [Markup.button.callback('💰 Buy', 'buy')],
                 [Markup.button.callback('👛 Wallet', 'wallet'), Markup.button.callback('📊 Portfolio', 'portfolio')],
                 [Markup.button.callback('📈 Categories', 'token_categories'), Markup.button.callback('⚙️ Settings', 'settings')],
                 [Markup.button.callback('📤 Transfer', 'transfer'), Markup.button.callback('🔄 Refresh', 'refresh')],
                 [Markup.button.callback('❓ Help', 'help')]
             ]);
 
-            console.log('🔍 DEBUG: Keyboard created:', JSON.stringify(keyboard, null, 2));
-            console.log('🔍 DEBUG: Keyboard reply_markup:', JSON.stringify(keyboard.reply_markup, null, 2));
-            console.log('🔍 DEBUG: Inline keyboard buttons count:', keyboard.reply_markup?.inline_keyboard?.length || 0);
+            // Main menu keyboard created with all buttons
 
-            // CRITICAL: Delete the current message first, then send new one with buttons
+            // OPTIMIZED: Try edit first, then fallback to delete+send
             try {
-                console.log('🔍 DEBUG: Attempting to delete current message...');
-                await ctx.deleteMessage();
-                console.log('🔍 DEBUG: Message deleted successfully');
-                
-                console.log('🔍 DEBUG: Sending new message with keyboard...');
-                const sentMessage = await ctx.replyWithMarkdown(welcomeText, keyboard);
-                console.log('🔍 DEBUG: New message sent successfully with ID:', sentMessage.message_id);
-                
-            } catch (deleteError) {
-                console.log('🔍 DEBUG: Delete failed, trying editMessageText...', deleteError.message);
-                
+                await ctx.editMessageText(welcomeText, {
+                    parse_mode: 'Markdown',
+                    reply_markup: keyboard.reply_markup
+                });
+                // Message edited successfully - fastest option
+            } catch (editError) {
+                // Edit failed, try delete and send new message
                 try {
-                    await ctx.editMessageText(welcomeText, {
-                        parse_mode: 'Markdown',
-                        reply_markup: keyboard.reply_markup
-                    });
-                    console.log('🔍 DEBUG: Message edited successfully');
-                } catch (editError) {
-                    console.log('🔍 DEBUG: Edit failed, sending new message...', editError.message);
+                    await ctx.deleteMessage();
                     const sentMessage = await ctx.replyWithMarkdown(welcomeText, keyboard);
-                    console.log('🔍 DEBUG: Fallback message sent with ID:', sentMessage.message_id);
+                } catch (deleteError) {
+                    // Both failed, send new message as last resort
+                    const sentMessage = await ctx.replyWithMarkdown(welcomeText, keyboard);
                 }
             }
 
             await ctx.answerCbQuery('✅ Data refreshed successfully!');
-            console.log('🔍 DEBUG: Refresh completed successfully');
+            // Refresh completed successfully
             
         } catch (error) {
-            console.log('🔍 DEBUG: Refresh failed with error:', error);
+            this.monitoring.logError('Refresh failed', error, { userId });
             this.monitoring.logError('Refresh failed', error, { userId });
             await ctx.answerCbQuery('❌ Refresh failed. Please try again.');
         }
@@ -985,7 +947,7 @@ _The main area for real nads!_
 💡 Click on the Refresh button to update your current balance.`;
 
             const keyboard = Markup.inlineKeyboard([
-                [Markup.button.callback('💰 Buy', 'buy'), Markup.button.callback('💸 Sell', 'sell')],
+                [Markup.button.callback('💰 Buy', 'buy')],
                 [Markup.button.callback('👛 Wallet', 'wallet'), Markup.button.callback('📊 Portfolio', 'portfolio')],
                 [Markup.button.callback('📈 Categories', 'token_categories'), Markup.button.callback('⚙️ Settings', 'settings')],
                 [Markup.button.callback('📤 Transfer', 'transfer'), Markup.button.callback('🔄 Refresh', 'refresh')],
@@ -995,7 +957,7 @@ _The main area for real nads!_
             // Update the message with fresh data
             await ctx.editMessageText(welcomeText, {
                 parse_mode: 'Markdown',
-                reply_markup: keyboard
+                reply_markup: keyboard.reply_markup
             });
 
             await ctx.answerCbQuery('✅ Data refreshed successfully!');
@@ -1025,144 +987,6 @@ _The main area for real nads!_
         } catch (error) {
             this.monitoring.logError('Portfolio display failed', error, { userId });
             await ctx.reply('❌ Error loading portfolio. Please try again.');
-        }
-    }
-
-    // Essential handler methods from index.js
-    async handleGenerateWallet(ctx) {
-        try {
-            await ctx.answerCbQuery();
-            const userId = ctx.from.id;
-            
-            const user = await this.database.getUserByTelegramId(userId);
-            if (!user) {
-                await ctx.reply('⚠️ Please create a wallet first using /start');
-                return;
-            }
-
-            // Get portfolio data directly from API (real data)
-            let portfolioTokens = [];
-            try {
-                portfolioTokens = await this.monorailAPI.getWalletBalance(user.wallet_address, false); // Use cache
-                console.log(`📊 Portfolio loaded (${portfolioTokens.length} tokens)`);
-            } catch (error) {
-                this.monitoring.logError('Portfolio fetch failed', error, { userId });
-                portfolioTokens = [];
-            }
-
-            let portfolioText = `📊 **Your Portfolio**\n\n`;
-            
-            if (!portfolioTokens || portfolioTokens.length === 0) {
-                portfolioText += `💼 **Portfolio Summary**\n`;
-                portfolioText += `No tokens found in your portfolio.\n\n`;
-                portfolioText += `Start trading to build your portfolio! 🚀`;
-            } else {
-                // Filter tokens: exclude MON and only show tokens with mon_value >= 0.01
-                const significantTokens = portfolioTokens.filter(token => {
-                    const monValue = parseFloat(token.mon_value || '0');
-                    const isNotMON = token.address.toLowerCase() !== '0x0000000000000000000000000000000000000000';
-                    return monValue >= 0.01 && isNotMON;
-                });
-                
-                // Sort by mon_value descending
-                significantTokens.sort((a, b) => {
-                    const aValue = parseFloat(a.mon_value || '0');
-                    const bValue = parseFloat(b.mon_value || '0');
-                    return bValue - aValue;
-                });
-                
-                // Get MON token for price info
-                const monToken = portfolioTokens.find(token => 
-                    token.address.toLowerCase() === '0x0000000000000000000000000000000000000000'
-                );
-                const monPriceUSD = monToken ? parseFloat(monToken.usd_per_token || '3.25') : 3.25;
-                
-                // Calculate total portfolio value in MON (excluding MON balance itself)
-                let totalMonValue = 0;
-                for (const token of significantTokens) {
-                    totalMonValue += parseFloat(token.mon_value || '0');
-                }
-                
-                const totalUsdValue = totalMonValue * monPriceUSD;
-                
-                portfolioText += `💼 ***Portfolio Summary***\n`;
-                portfolioText += `_Total Value:_ **${totalMonValue.toFixed(6)} MON** (~$${totalUsdValue.toFixed(2)})\n`;
-                portfolioText += `_MON Price:_ **$${monPriceUSD.toFixed(4)}**\n\n`;
-                
-                if (significantTokens.length > 0) {
-                    const topTokens = significantTokens.slice(0, 3);
-                    const hasMoreTokens = significantTokens.length > 3;
-                    
-                    portfolioText += `🏆 ***Top Holdings:***\n`;
-                    
-                    for (const token of topTokens) {
-                        const balance = parseFloat(token.balance || '0');
-                        const usdPerToken = parseFloat(token.usd_per_token || '0');
-                        const monPerToken = parseFloat(token.mon_per_token || '0');
-                        const monValue = parseFloat(token.mon_value || '0');
-                        const usdValue = balance * usdPerToken;
-                        
-                        portfolioText += `\n**${token.name}** _(${token.symbol})_\n`;
-                        portfolioText += `• Balance: **${balance.toFixed(6)}**\n`;
-                        portfolioText += `• Price: **${monPerToken.toFixed(6)} MON** (~$${usdPerToken.toFixed(2)})\n`;
-                        portfolioText += `• Value: **${monValue.toFixed(6)} MON** (~$${usdValue.toFixed(2)})\n`;
-                    }
-                    
-                    if (hasMoreTokens) {
-                        portfolioText += `\n_+${significantTokens.length - 3} more tokens..._\n`;
-                    }
-                } else {
-                    portfolioText += `📈 ***Holdings:***\n`;
-                    portfolioText += `_No tokens with significant value (≥0.01 MON) found._\n\n`;
-                    portfolioText += `Start trading to build your portfolio! 🚀`;
-                }
-            }
-
-            // Create keyboard with action buttons
-            let keyboardButtons = [];
-            
-            if (portfolioTokens && portfolioTokens.length > 0) {
-                // Filter significant tokens (excluding MON)
-                const significantTokens = portfolioTokens.filter(token => {
-                    const monValue = parseFloat(token.mon_value || '0');
-                    const isNotMON = token.address.toLowerCase() !== '0x0000000000000000000000000000000000000000';
-                    return monValue >= 0.01 && isNotMON;
-                });
-                
-                if (significantTokens.length > 3) {
-                    keyboardButtons.push([Markup.button.callback('📋 Show More Tokens', 'portfolio_more')]);
-                }
-            }
-            
-            keyboardButtons.push([
-                Markup.button.callback('🔄 Refresh', 'refresh'),
-                Markup.button.callback('💰 Buy', 'buy')
-            ]);
-            keyboardButtons.push([Markup.button.callback('🔙 Main Menu', 'main')]);
-            
-            const keyboard = Markup.inlineKeyboard(keyboardButtons);
-
-            try {
-                await ctx.editMessageText(portfolioText, {
-                    parse_mode: 'Markdown',
-                    reply_markup: keyboard.reply_markup
-                });
-            } catch (error) {
-                await ctx.replyWithMarkdown(portfolioText, keyboard);
-            }
-
-        } catch (error) {
-            this.monitoring.logError('Portfolio display failed', error, { userId });
-            try {
-                await ctx.reply('⚠️ Unable to load portfolio. Please try again.');
-            } catch (replyError) {
-                // If reply fails, try to edit the message instead
-                try {
-                    await ctx.editMessageText('⚠️ Unable to load portfolio. Please try again.');
-                } catch (editError) {
-                    console.error('Failed to send error message:', editError);
-                }
-            }
         }
     }
 
@@ -1302,7 +1126,7 @@ Please send your private key or mnemonic phrase.
             }
             
             await this.database.setUserState(ctx.from.id, 'importing_wallet');
-            console.log(`🔍 DEBUG: Set user state to 'importing_wallet' for user ${ctx.from.id}`);
+            // User state set to importing wallet
             
         } catch (error) {
             this.monitoring.logError('Import wallet failed', error, { userId: ctx.from.id });
@@ -1669,25 +1493,6 @@ Please enter the token contract address you want to buy:`;
         await this.database.setUserState(ctx.from.id, 'awaiting_token_address', {});
     }
 
-    async handleSellInterface(ctx) {
-        await ctx.answerCbQuery();
-        
-        const sellText = `💸 *Sell Tokens*
-
-Select percentage to sell:`;
-
-        const keyboard = Markup.inlineKeyboard([
-            [Markup.button.callback('25%', 'sell_25'), Markup.button.callback('50%', 'sell_50')],
-            [Markup.button.callback('75%', 'sell_75'), Markup.button.callback('100%', 'sell_100')],
-            [Markup.button.callback('📝 Custom %', 'sell_custom')],
-            [Markup.button.callback('🔙 Back to Main', 'back_to_main')]
-        ]);
-
-        await ctx.editMessageText(sellText, {
-            parse_mode: 'Markdown',
-            reply_markup: keyboard.reply_markup
-        });
-    }
 
     async handleBuyAmount(ctx) {
         await ctx.answerCbQuery();
@@ -1709,13 +1514,12 @@ Select percentage to sell:`;
                 return ctx.reply('❌ Token not found. Please try again.');
             }
             
-            const confirmText = `💰 *Confirm Purchase*
+            const confirmText = `• Token: ${tokenInfo.token.name} (${tokenInfo.token.symbol})
+• Amount: ${amount} MON
 
-*Token:* ${tokenInfo.token.name} (${tokenInfo.token.symbol})
-*Amount:* ${amount} MON
-*Address:* \`${tokenAddress}\`
+💼 Your Balance: Loading...
 
-Proceed with purchase?`;
+*Proceed with the purchase?*`;
 
             const keyboard = Markup.inlineKeyboard([
                 [Markup.button.callback('✅ Confirm', `confirm_buy_${tokenAddress}_${amount}`)],
@@ -1736,61 +1540,115 @@ Proceed with purchase?`;
     async handleCustomBuy(ctx) {
         await ctx.answerCbQuery();
         
-        await ctx.reply('💰 Enter the amount of MON you want to spend:');
-        await this.database.setUserState(ctx.from.id, 'custom_buy');
+        // Get current user state to preserve token data
+        const userId = ctx.from.id;
+        const currentState = await this.database.getUserState(userId);
+        
+        // If we have token data from awaiting_buy_amount state, preserve it
+        if (currentState && currentState.state === 'awaiting_buy_amount' && currentState.data) {
+            await ctx.reply('🟣 *Enter the amount of MON you want to spend:*', { parse_mode: 'Markdown' });
+            // Keep the same state but user can now input custom amount
+            // Don't change the state, just let processCustomBuyAmount handle it
+        } else {
+            await ctx.reply('🟣 *Enter the amount of MON you want to spend:*', { parse_mode: 'Markdown' });
+            await this.database.setUserState(userId, 'custom_buy');
+        }
     }
 
-    async handleSellPercentage(ctx) {
-        await ctx.answerCbQuery();
-        const percentage = ctx.match[1];
-        
-        await this.database.setUserState(ctx.from.id, 'sell_percentage', { percentage });
-        
-        // Show user's tokens for selling
+    async processCustomBuyAmount(ctx, amountText) {
         try {
             const userId = ctx.from.id;
+            const userState = await this.database.getUserState(userId);
+            
+            // Handle case where user state exists but no token data
+            if (!userState) {
+                await ctx.reply('❌ Session expired. Please start again.');
+                await this.database.clearUserState(userId);
+                return;
+            }
+            
+            // If no token data in state, this might be a standalone custom buy
+            if (!userState.data) {
+                await ctx.reply('❌ Please select a token first before entering a custom amount.');
+                await this.database.clearUserState(userId);
+                return;
+            }
+
+            // Parse and validate amount
+            const amount = parseFloat(amountText.trim());
+            
+            if (isNaN(amount) || amount <= 0) {
+                await ctx.reply('❌ Please enter a valid positive number for the MON amount.');
+                return;
+            }
+
+            // Check if amount is reasonable (not too small or too large)
+            if (amount < 0.001) {
+                await ctx.reply('❌ Minimum amount is 0.001 MON. Please enter a larger amount.');
+                return;
+            }
+
+            if (amount > 10000) {
+                await ctx.reply('❌ Maximum amount is 10,000 MON. Please enter a smaller amount.');
+                return;
+            }
+
+            // Get user's MON balance to validate
             const user = await this.database.getUserByTelegramId(userId);
-            
             if (!user) {
-                return ctx.reply('❌ No wallet found. Please create one first.');
+                await ctx.reply('❌ User not found. Please start again.');
+                return;
             }
 
-            const portfolio = await this.portfolioManager.getPortfolio(user.wallet_address);
-            
-            if (!portfolio.tokens || portfolio.tokens.length === 0) {
-                return ctx.reply('📭 No tokens found in your portfolio.');
-            }
-
-            let tokensText = `💸 *Select Token to Sell (${percentage}%)*\n\n`;
-            const buttons = [];
-
-            portfolio.tokens.forEach((token, index) => {
-                if (index < 10) { // Limit to 10 tokens
-                    tokensText += `${index + 1}. ${token.symbol} - ${token.balance} tokens\n`;
-                    buttons.push([Markup.button.callback(`${token.symbol}`, `sell_token_${token.address}`)]);
-                }
+            const balanceData = await this.monorailAPI.getMONBalance(user.wallet_address, true); // Force refresh
+            console.log('Balance check for custom amount:', {
+                userId,
+                walletAddress: user.wallet_address,
+                requestedAmount: amount,
+                balanceData
             });
+            
+            const monBalance = balanceData.success ? parseFloat(balanceData.balanceFormatted || '0') : 0;
 
-            buttons.push([Markup.button.callback('🔙 Back', 'sell')]);
+            if (amount > monBalance) {
+                await ctx.reply(`❌ Insufficient balance. You have ${monBalance.toFixed(6)} MON available.`);
+                return;
+            }
 
-            const keyboard = Markup.inlineKeyboard(buttons);
-            await ctx.editMessageText(tokensText, {
+            // Process the buy with custom amount
+            const tokenAddress = userState.data.tokenAddress;
+            const tokenName = userState.data.tokenName;
+            const tokenSymbol = userState.data.tokenSymbol;
+
+            // Show confirmation message
+            const confirmText = `• Token: ${tokenSymbol} (${tokenName})
+• Amount: ${amount} MON
+
+💼 Your Balance: ${monBalance.toFixed(6)} MON
+
+*Proceed with the purchase?*`;
+
+            const keyboard = Markup.inlineKeyboard([
+                [Markup.button.callback('✅ Confirm Purchase', `confirm_buy_${tokenAddress}_${amount}`)],
+                [Markup.button.callback('❌ Cancel', 'back_to_main')]
+            ]);
+
+            await ctx.reply(confirmText, {
                 parse_mode: 'Markdown',
                 reply_markup: keyboard.reply_markup
             });
 
+            // Clear the custom buy state
+            await this.database.clearUserState(userId);
+
         } catch (error) {
-            this.monitoring.logError('Sell percentage handler failed', error, { userId: ctx.from.id });
-            await ctx.reply('❌ Error loading portfolio. Please try again.');
+            this.monitoring.logError('Process custom buy amount failed', error, { userId: ctx.from.id });
+            await ctx.reply('❌ Error processing amount. Please try again.');
+            await this.database.clearUserState(ctx.from.id);
         }
     }
 
-    async handleCustomSell(ctx) {
-        await ctx.answerCbQuery();
-        
-        await ctx.reply('💸 Enter the percentage you want to sell (1-100):');
-        await this.database.setUserState(ctx.from.id, 'custom_sell');
-    }
+
 
     async handleBuyTokenFromCategory(ctx) {
         await ctx.answerCbQuery();
@@ -1833,36 +1691,6 @@ Select amount of MON to spend:
         await ctx.replyWithMarkdown(buyText, keyboard);
     }
 
-    async handleSelectTokenToSell(ctx) {
-        await ctx.answerCbQuery();
-        const tokenAddress = ctx.match[1];
-        
-        try {
-            const userState = await this.database.getUserState(ctx.from.id);
-            const percentage = userState?.data?.percentage || '50';
-            
-            const confirmText = `💸 *Confirm Sale*
-
-*Token:* ${tokenAddress.slice(0, 8)}...
-*Percentage:* ${percentage}%
-
-Proceed with sale?`;
-
-            const keyboard = Markup.inlineKeyboard([
-                [Markup.button.callback('✅ Confirm', `confirm_sell_${tokenAddress}`)],
-                [Markup.button.callback('❌ Cancel', 'cancel_trade')]
-            ]);
-
-            await ctx.editMessageText(confirmText, {
-                parse_mode: 'Markdown',
-                reply_markup: keyboard.reply_markup
-            });
-
-        } catch (error) {
-            this.monitoring.logError('Select token to sell failed', error, { userId: ctx.from.id });
-            await ctx.reply('❌ Error processing sale. Please try again.');
-        }
-    }
 
     async handleConfirmBuy(ctx) {
         await ctx.answerCbQuery();
@@ -1940,7 +1768,10 @@ Proceed with sale?`;
                 try {
                     await Promise.all([
                         this.redis.del(`balance:${userId}`),
-                        this.redis.del(`user:${userId}`) // Clear user cache to refresh main menu balance
+                        this.redis.del(`portfolio:${userId}`),
+                        this.redis.del(`user:${userId}`), // Clear user cache to refresh main menu balance
+                        this.redis.del(`main_menu:${userId}`), // Clear main menu cache to refresh balance and portfolio data
+                        this.redis.del(`mon_balance:${user.wallet_address}`) // Clear MON balance cache by wallet address
                     ]);
                     this.monitoring.logInfo('Cache cleared after successful buy transaction', { userId, txHash: result.txHash });
                 } catch (redisError) {
@@ -1969,64 +1800,6 @@ Please try again or contact support.`, {
     }
 }
 
-async handleConfirmSell(ctx) {
-    await ctx.answerCbQuery();
-    const tokenAddress = ctx.match[1];
-        
-    await ctx.editMessageText('🔄 Processing sale...', { parse_mode: 'Markdown' });
-        
-    try {
-        const userId = ctx.from.id;
-        const user = await this.database.getUserByTelegramId(userId);
-        const userState = await this.database.getUserState(userId);
-        const percentage = userState?.data?.percentage || '50';
-            
-        if (!user) {
-            return ctx.editMessageText('❌ No wallet found.');
-        }
-
-        // Execute sell transaction
-        const result = await this.tradingEngine.executeSell(userId, tokenAddress, percentage);
-            
-        if (result.success) {
-            // Clear cache to force fresh data after successful transaction
-            if (this.redis) {
-                try {
-                    await Promise.all([
-                        this.redis.del(`balance:${userId}`),
-                        this.redis.del(`portfolio:${userId}`),
-                        this.redis.del(`user:${userId}`) // Clear user cache to refresh main menu balance
-                    ]);
-                    this.monitoring.logInfo('Cache cleared after successful sell transaction', { userId, txHash: result.txHash });
-                } catch (redisError) {
-                    this.monitoring.logError('Cache clear failed after sell transaction', redisError, { userId });
-                }
-            }
-                
-            await ctx.editMessageText(`✅ *Sale Successful!*
-
-*Percentage:* ${percentage}%
-*Token:* ${tokenAddress.slice(0, 8)}...
-*Transaction:* \`${result.txHash}\`
-
-MON received: ${result.monReceived || 'Calculating...'}`, {
-                parse_mode: 'Markdown'
-            });
-        } else {
-            await ctx.editMessageText(`❌ *Sale Failed*
-
-${result.error}
-
-Please try again or contact support.`, {
-                parse_mode: 'Markdown'
-            });
-        }
-
-    } catch (error) {
-        this.monitoring.logError('Confirm sell failed', error, { userId: ctx.from.id });
-        await ctx.editMessageText('❌ Transaction failed. Please try again.');
-    }
-}
 
 async handleCancelTrade(ctx) {
     await ctx.answerCbQuery();
@@ -2063,36 +1836,36 @@ async handleTokenCategory(ctx) {
             const endIndex = startIndex + tokensPerPage;
             const pageTokens = tokens.slice(startIndex, endIndex);
 
-            let categoryText = `🔥 *${category.charAt(0).toUpperCase() + category.slice(1)} Tokens*\n\n`;
-            
-            if (pageTokens.length === 0) {
-                categoryText += 'No tokens found in this category.\n\n💡 *Try these categories:*\n• Verified tokens\n• Trending tokens\n• Your wallet tokens';
-            } else {
-                pageTokens.forEach((token, index) => {
-                    const symbol = token.symbol || 'Unknown';
-                    const name = token.name || 'Unknown Token';
-                    const price = token.price ? `$${parseFloat(token.price).toFixed(6)}` : 'Price N/A';
-                    categoryText += `${startIndex + index + 1}. *${symbol}* - ${name}\n💰 ${price}\n\n`;
-                });
-            }
+            const categoryNames = {
+                verified: '✅ **Verified Tokens**',
+                stable: '💵 **Stablecoins**',
+                bridged: '🌐 **Bridged Assets**',
+                meme: '🐸 **Meme Coins**',
+                lst: '🥩 **Liquid Staking Tokens**'
+            };
 
-            categoryText += `📄 Page ${page} of ${Math.max(1, totalPages)}`;
+            let categoryText = `${categoryNames[category] || category.toUpperCase()}\n\n`;
+            categoryText += `📊 *Found ${totalTokens} tokens*\n`;
+            if (totalPages > 1) {
+                categoryText += `📄 *Page ${page} of ${totalPages}*\n`;
+            }
+            categoryText += `\n`;
 
             const buttons = [];
             
-            // Add token buttons in pairs
+            // Add token buttons in pairs - just symbol names
             for (let i = 0; i < pageTokens.length; i += 2) {
                 const row = [];
                 if (pageTokens[i] && pageTokens[i].address) {
                     row.push(Markup.button.callback(
-                        `💰 ${pageTokens[i].symbol || 'Token'}`, 
+                        `${pageTokens[i].symbol || 'Token'}`, 
                         `buy_token_${pageTokens[i].address}`
                     ));
                 }
                 
                 if (i + 1 < pageTokens.length && pageTokens[i + 1] && pageTokens[i + 1].address) {
                     row.push(Markup.button.callback(
-                        `💰 ${pageTokens[i + 1].symbol || 'Token'}`, 
+                        `${pageTokens[i + 1].symbol || 'Token'}`, 
                         `buy_token_${pageTokens[i + 1].address}`
                     ));
                 }
@@ -2105,17 +1878,19 @@ async handleTokenCategory(ctx) {
             if (totalPages > 1) {
                 const navButtons = [];
                 if (page > 1) {
-                    navButtons.push(Markup.button.callback('⬅️ Previous', `category_${category}_${page - 1}`));
+                    navButtons.push(Markup.button.callback('⬅️ Previous', `category_${category}_page_${page - 1}`));
                 }
                 if (page < totalPages) {
-                    navButtons.push(Markup.button.callback('➡️ Next', `category_${category}_${page + 1}`));
+                    navButtons.push(Markup.button.callback('Next ➡️', `category_${category}_page_${page + 1}`));
                 }
                 if (navButtons.length > 0) {
                     buttons.push(navButtons);
                 }
             }
 
-            buttons.push([Markup.button.callback('🔙 Back to Categories', 'token_categories')]);
+            // Navigation buttons
+            buttons.push([Markup.button.callback('🔄 Refresh', `category_${category}`)]);
+            buttons.push([Markup.button.callback('🔙 Categories', 'token_categories'), Markup.button.callback('🏠 Main Menu', 'main')]);
 
             const keyboard = Markup.inlineKeyboard(buttons);
             await ctx.editMessageText(categoryText, {
@@ -2140,7 +1915,8 @@ async handleTokenCategory(ctx) {
             const user = await this.database.getUserByTelegramId(userId);
             
             if (!user) {
-                return ctx.editMessageText('❌ No wallet found.');
+                await ctx.editMessageText('❌ No wallet found.');
+                return;
             }
 
             // Execute transfer
@@ -2234,12 +2010,18 @@ _This message will be deleted in 15 seconds._`, {
         const userId = ctx.from.id;
         const userState = await this.database.getUserState(userId);
         
-        console.log(`🔍 DEBUG: Text message from user ${userId}`);
-        console.log(`🔍 DEBUG: User state:`, userState);
-        console.log(`🔍 DEBUG: Message text:`, ctx.message.text);
+        // Processing text message from user
         
+        // Check if message looks like a token address first (before checking user state)
+        const messageText = ctx.message.text.trim();
+        if (/^0x[a-fA-F0-9]{40}$/.test(messageText)) {
+            // Token address detected for direct buy
+            await this.processTokenAddress(ctx, messageText);
+            return;
+        }
+
         if (!userState || userState.state === null) {
-            console.log(`🔍 DEBUG: No valid user state, rejecting message`);
+            // No valid user state found
             await ctx.reply('Please use the menu buttons to interact with the bot.');
             return;
         }
@@ -2255,15 +2037,15 @@ _This message will be deleted in 15 seconds._`, {
             case 'awaiting_token_address':
                 await this.processTokenAddress(ctx, ctx.message.text);
                 break;
+            case 'custom_buy':
+                await this.processCustomBuyAmount(ctx, ctx.message.text);
+                break;
+            case 'awaiting_buy_amount':
+                // Handle custom amount input for token purchases
+                await this.processCustomBuyAmount(ctx, ctx.message.text);
+                break;
             default:
-                // Check if message looks like a token address for direct buy
-                const messageText = ctx.message.text.trim();
-                if (/^0x[a-fA-F0-9]{40}$/.test(messageText)) {
-                    console.log(`🔍 DEBUG: Detected token address: ${messageText}`);
-                    await this.processTokenAddress(ctx, messageText);
-                } else {
-                    await ctx.reply('Please use the menu buttons to interact with the bot.');
-                }
+                await ctx.reply('Please use the menu buttons to interact with the bot.');
         }
     }
 
@@ -2286,26 +2068,78 @@ _This message will be deleted in 15 seconds._`, {
                 return;
             }
 
-            // Store token address in user state and ask for amount
+            // Get user's wallet for balance and price impact calculation
+            const user = await this.database.getUserByTelegramId(userId);
+            if (!user) {
+                await ctx.reply('❌ Please create a wallet first using /start');
+                return;
+            }
+
+            // Try to get MON balance from cache first
+            let monBalance = 0;
+            if (this.redis) {
+                try {
+                    const cachedBalance = await this.redis.get(`mon_balance:${user.wallet_address}`);
+                    if (cachedBalance) {
+                        const balanceData = JSON.parse(cachedBalance);
+                        monBalance = parseFloat(balanceData.balanceFormatted || '0');
+                    }
+                } catch (error) {
+                    console.log('Cache read failed, will fetch from API');
+                }
+            }
+            
+            // If no cached balance, fetch from API
+            if (monBalance === 0) {
+                const balanceData = await this.monorailAPI.getMONBalance(user.wallet_address);
+                monBalance = balanceData.success ? parseFloat(balanceData.balanceFormatted || '0') : 0;
+            }
+
+            // Use real token data from API instead of quote calculation
+            const usdPrice = parseFloat(tokenInfo.token.usd_per_token || '0');
+            const monPrice = parseFloat(tokenInfo.token.mon_per_token || '0');
+            const confidence = parseInt(tokenInfo.token.pconf || '0');
+            
+            // Format prices properly
+            const formattedUsdPrice = usdPrice > 0 ? `${usdPrice.toFixed(4)} USD` : 'N/A';
+            const formattedMonPrice = monPrice > 0 ? `${monPrice.toFixed(4)} MON` : 'N/A';
+            const confidenceText = confidence > 0 ? `${confidence}%` : 'N/A';
+            
+            // Store token address in user state
             await this.database.setUserState(userId, 'awaiting_buy_amount', {
                 tokenAddress: cleanAddress,
                 tokenName: tokenInfo.token.name,
                 tokenSymbol: tokenInfo.token.symbol
             });
 
-            const buyAmountText = `💰 *Buy ${tokenInfo.token.name} (${tokenInfo.token.symbol})*
+            // Format token address for display
+            const shortAddress = `${cleanAddress.slice(0, 6)}...${cleanAddress.slice(-4)}`;
+            
+            const tokenDisplayText = `🟣 *${tokenInfo.token.symbol} | ${tokenInfo.token.name}*
+\`${cleanAddress}\`
 
-Select amount of MON to spend:`;
+*📊 Token Information:*
+• Price: ${formattedUsdPrice}
+• Price in MON: ${formattedMonPrice}
+• Confidence: ${confidenceText}
+
+💼 *Your Wallet:*
+• MON Balance: ${monBalance.toFixed(6)} MON
+
+💡 Select amount of MON to spend:`;
 
             const keyboard = Markup.inlineKeyboard([
                 [Markup.button.callback('0.1 MON', 'buy_amount_0.1'), Markup.button.callback('0.5 MON', 'buy_amount_0.5')],
                 [Markup.button.callback('1 MON', 'buy_amount_1'), Markup.button.callback('5 MON', 'buy_amount_5')],
                 [Markup.button.callback('10 MON', 'buy_amount_10'), Markup.button.callback('25 MON', 'buy_amount_25')],
                 [Markup.button.callback('📝 Custom Amount', 'buy_amount_custom')],
+                [Markup.button.callback('🔍 View on Explorer', `explorer_${cleanAddress}`)],
+                [Markup.button.callback('🔄 Refresh Data', `refresh_token_${cleanAddress}`)],
                 [Markup.button.callback('🔙 Back to Main', 'back_to_main')]
             ]);
 
-            await ctx.reply(buyAmountText, {
+            // Send token information directly - no editing needed
+            await ctx.reply(tokenDisplayText, {
                 parse_mode: 'Markdown',
                 reply_markup: keyboard.reply_markup
             });
@@ -2526,16 +2360,12 @@ Welcome back to Area51! 🛸`;
             pairedButtons.push([Markup.button.callback('🔙 Categories', 'token_categories'), Markup.button.callback('🏠 Main Menu', 'main')]);
             
             const keyboard = Markup.inlineKeyboard(pairedButtons);
-            
-            try {
-                await ctx.editMessageText(message, {
-                    parse_mode: 'Markdown',
-                    reply_markup: keyboard.reply_markup
-                });
-            } catch (error) {
-                await ctx.replyWithMarkdown(message, keyboard);
-            }
-            
+
+            await ctx.editMessageText(message, {
+                parse_mode: 'Markdown',
+                reply_markup: keyboard.reply_markup
+            });
+
         } catch (error) {
             this.monitoring.logError('Show tokens by category failed', error, { userId: ctx.from.id, category });
             await ctx.reply('❌ An error occurred. Please try again.');
@@ -2682,7 +2512,7 @@ Welcome back to Area51! 🛸`;
             });
 
         } catch (error) {
-            this.monitoring.logError('Sell from portfolio failed', error, { userId, tokenSymbol });
+            this.monitoring.logError('Sell from portfolio failed', error, { userId: ctx.from.id, tokenSymbol });
             await ctx.reply('⚠️ Failed to load sell interface. Please try again.');
         }
     }
@@ -2695,20 +2525,24 @@ Welcome back to Area51! 🛸`;
         try {
             await ctx.answerCbQuery(`💸 Selling ${percentage}% of ${tokenSymbol}...`);
             
+            // Get user data first
+            const user = await this.database.getUserByTelegramId(userId);
+            if (!user) {
+                await ctx.reply('❌ Please start the bot first with /start');
+                return;
+            }
+            
             // Get stored token info
             const userState = await this.database.getUserState(userId);
             const tokenInfo = userState?.selling_token;
             
-            console.log(`🔍 DEBUG: User state:`, userState);
-            console.log(`🔍 DEBUG: Token info:`, tokenInfo);
-            console.log(`🔍 DEBUG: Looking for symbol:`, tokenSymbol);
-            console.log(`🔍 DEBUG: Button callback data:`, ctx.callbackQuery?.data);
+            // Processing sell percentage selection
             
             // Fix: Access the data property correctly
             const actualTokenInfo = userState?.data || tokenInfo;
             
             if (!actualTokenInfo || actualTokenInfo.symbol !== tokenSymbol) {
-                console.log(`❌ DEBUG: Token info mismatch - stored: ${actualTokenInfo?.symbol}, requested: ${tokenSymbol}`);
+                // Token info mismatch detected
                 await ctx.reply(`⚠️ Token information not found. Stored: ${actualTokenInfo?.symbol || 'none'}, Requested: ${tokenSymbol}. Please try again.`);
                 return;
             }
@@ -2717,36 +2551,109 @@ Welcome back to Area51! 🛸`;
             const tokenInfoToUse = actualTokenInfo;
 
             const balance = parseFloat(tokenInfoToUse.balance);
-            const sellAmount = (balance * percentage) / 100;
+            let sellAmount = (balance * percentage) / 100;
             
-            // Calculate estimated MON output
-            const monValue = parseFloat(tokenInfoToUse.mon_value || '0');
-            const estimatedMON = (monValue * percentage) / 100;
+            // Apply 99.99% buffer to prevent floating-point precision errors
+            // This ensures we never try to sell more than we actually have
+            if (percentage === 100) {
+                sellAmount = balance * 0.9999; // 99.99% of balance for 100% sells
+                console.log(`🔧 Applied 99.99% buffer: ${balance} -> ${sellAmount}`);
+            }
+
+            // Show processing message - escape special characters
+            const sanitizedTokenName = tokenInfoToUse.name.replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&');
+            const processingText = `_🔄 Selling: ${sellAmount.toFixed(6)} ${tokenSymbol} (${percentage}%)_
+
+*⏳ Please wait while we process your transaction...*`;
+
+            await ctx.editMessageText(processingText, {
+                parse_mode: 'Markdown'
+            });
+
+            // Execute the sell transaction - use token address, not symbol
+            const result = await this.tradingEngine.sellToken(
+                user.wallet_address,
+                tokenInfoToUse.address,
+                sellAmount.toString()
+            );
+
+            if (result.success) {
+                await ctx.editMessageText(`[✅ Sale Completed!](${result.explorerUrl || '#'})`, {
+                    parse_mode: 'Markdown'
+                });
+
+                // Clear user state and portfolio cache after successful sell
+                await this.database.clearUserState(userId);
+                await this.portfolioService.clearUserPortfolioCache(userId);
+                
+                // Clear all relevant caches to force fresh data including main menu
+                if (this.redis) {
+                    try {
+                        await Promise.all([
+                            this.redis.del(`user:${userId}`),
+                            this.redis.del(`balance:${userId}`),
+                            this.redis.del(`portfolio:${userId}`),
+                            this.redis.del(`main_menu:${userId}`), // Clear main menu cache to refresh balance and portfolio data
+                            this.redis.del(`mon_balance:${user.wallet_address}`) // Clear MON balance cache by wallet address
+                        ]);
+                        this.monitoring.logInfo('Cache cleared after successful sell transaction', { userId, txHash: result.txHash });
+                    } catch (redisError) {
+                        this.monitoring.logError('Cache clear failed after sell transaction', redisError, { userId });
+                    }
+                }
+
+            } else {
+                // Force refresh portfolio data after failed transaction to get accurate balances
+                await this.portfolioService.clearUserPortfolioCache(userId);
+                if (this.redis) {
+                    try {
+                        await Promise.all([
+                            this.redis.del(`balance:${userId}`),
+                            this.redis.del(`portfolio:${userId}`),
+                            this.redis.del(`main_menu:${userId}`), // Also clear main menu cache
+                            this.redis.del(`mon_balance:${user.wallet_address}`) // Clear MON balance cache by wallet address
+                        ]);
+                        this.monitoring.logInfo('Cache cleared after failed sell transaction', { userId });
+                    } catch (redisError) {
+                        this.monitoring.logError('Cache clear failed after failed sell transaction', redisError, { userId });
+                    }
+                }
+                
+                // Escape special characters in error message to prevent Telegram parsing errors
+                const sanitizedError = (result.error || 'Unknown error occurred')
+                    .replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&');
+                const sanitizedTokenName = tokenInfoToUse.name.replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&');
+                
+                const errorText = `❌ Sale Failed
+
+🪙 Token: ${sanitizedTokenName} (${tokenSymbol})
+📊 Amount: ${sellAmount.toFixed(6)} ${tokenSymbol}
+
+Error: ${sanitizedError}
+
+Please try again or contact support if the issue persists.`;
+
+                await ctx.editMessageText(errorText);
+            }
+
+        } catch (error) {
+            this.monitoring.logError('Sell percentage selection failed', error, { userId: ctx.from.id, tokenSymbol, percentage });
             
-            const confirmText = `💸 **Confirm Sale**
+            const errorText = `❌ **Transaction Error**
 
-🪙 **Token:** ${tokenInfoToUse.name} (${tokenSymbol})
-📊 **Selling:** ${sellAmount.toFixed(6)} ${tokenSymbol} (${percentage}%)
-💰 **Expected MON:** ~${estimatedMON.toFixed(6)} MON
+An unexpected error occurred while processing your sale. Please try again.
 
-⚠️ **This action cannot be undone!**
-
-Proceed with the sale?`;
+If the problem persists, please contact support.`;
 
             const keyboard = Markup.inlineKeyboard([
-                [Markup.button.callback('✅ Confirm Sale', `confirm_portfolio_sell_${tokenSymbol}_${percentage}`)],
-                [Markup.button.callback('❌ Cancel', 'portfolio')],
-                [Markup.button.callback('🔙 Back', `sell_${tokenSymbol}`)]
+                [Markup.button.callback('📊 Portfolio', 'portfolio')],
+                [Markup.button.callback('🔙 Main Menu', 'main')]
             ]);
 
-            await ctx.editMessageText(confirmText, {
+            await ctx.editMessageText(errorText, {
                 parse_mode: 'Markdown',
                 reply_markup: keyboard.reply_markup
             });
-
-        } catch (error) {
-            this.monitoring.logError('Sell percentage selection failed', error, { userId, tokenSymbol, percentage });
-            await ctx.reply('⚠️ Failed to process selection. Please try again.');
         }
     }
 
@@ -2777,15 +2684,14 @@ Example: 33.5 for 33.5%`;
             });
 
         } catch (error) {
-            this.monitoring.logError('Custom sell percentage failed', error, { userId, tokenSymbol });
+            this.monitoring.logError('Custom sell percentage failed', error, { userId: ctx.from.id, tokenSymbol });
             await ctx.reply('⚠️ Failed to load custom percentage input. Please try again.');
         }
     }
 
     async handleConfirmPortfolioSell(ctx) {
         try {
-            console.log(`🔍 DEBUG: handleConfirmPortfolioSell called with data:`, ctx.callbackQuery?.data);
-            console.log(`🔍 DEBUG: Match groups:`, ctx.match);
+            // Processing portfolio sell confirmation
             
             await ctx.answerCbQuery('🔄 Processing sale...');
             const userId = ctx.from.id;
@@ -2800,14 +2706,11 @@ Example: 33.5 for 33.5%`;
 
             // Get stored token info - fix the data access issue
             const userState = await this.database.getUserState(userId);
-            console.log(`🔍 DEBUG: Full user state:`, userState);
-            
-            // The token info is stored in userState.data, not userState.selling_token
+            // Get stored token info from user state
             const tokenInfo = userState?.data;
-            console.log(`🔍 DEBUG: Retrieved token info:`, tokenInfo);
             
             if (!tokenInfo || tokenInfo.symbol !== tokenSymbol) {
-                console.log(`❌ DEBUG: Token mismatch - stored: ${tokenInfo?.symbol}, requested: ${tokenSymbol}`);
+                // Token mismatch detected
                 await ctx.reply('⚠️ Token information not found. Please try again.');
                 return;
             }
@@ -2851,19 +2754,37 @@ Example: 33.5 for 33.5%`;
                 await this.database.clearUserState(userId);
                 await this.portfolioService.clearUserPortfolioCache(userId);
                 
-                // Also clear the general user cache to force fresh data
+                // Clear all relevant caches to force fresh data including main menu
                 if (this.redis) {
-                    await this.redis.del(`user:${userId}`);
-                    await this.redis.del(`balance:${userId}`);
-                    console.log(`🗑️ Invalidated user cache for user ${userId}`);
+                    try {
+                        await Promise.all([
+                            this.redis.del(`user:${userId}`),
+                            this.redis.del(`balance:${userId}`),
+                            this.redis.del(`portfolio:${userId}`),
+                            this.redis.del(`main_menu:${userId}`), // Clear main menu cache to refresh balance and portfolio data
+                            this.redis.del(`mon_balance:${user.wallet_address}`) // Clear MON balance cache by wallet address
+                        ]);
+                        this.monitoring.logInfo('Cache cleared after successful sell transaction', { userId, txHash: result.txHash });
+                    } catch (redisError) {
+                        this.monitoring.logError('Cache clear failed after sell transaction', redisError, { userId });
+                    }
                 }
 
             } else {
                 // Force refresh portfolio data after failed transaction to get accurate balances
                 await this.portfolioService.clearUserPortfolioCache(userId);
                 if (this.redis) {
-                    await this.redis.del(`balance:${userId}`);
-                    console.log(`🔄 Forced portfolio refresh after failed transaction`);
+                    try {
+                        await Promise.all([
+                            this.redis.del(`balance:${userId}`),
+                            this.redis.del(`portfolio:${userId}`),
+                            this.redis.del(`main_menu:${userId}`), // Also clear main menu cache
+                            this.redis.del(`mon_balance:${user.wallet_address}`) // Clear MON balance cache by wallet address
+                        ]);
+                        this.monitoring.logInfo('Cache cleared after failed sell transaction', { userId });
+                    } catch (redisError) {
+                        this.monitoring.logError('Cache clear failed after failed sell transaction', redisError, { userId });
+                    }
                 }
                 
                 // Escape special characters in error message to prevent Telegram parsing errors
@@ -3087,11 +3008,10 @@ If the problem persists, please contact support.`;
             const tokens = await this.portfolioService.getUserPortfolio(userId, user.wallet_address, true);
             const token = tokens.find(t => t.symbol === tokenSymbol);
             
-            console.log(`🔍 DEBUG: Looking for token ${tokenSymbol} in portfolio`);
-            console.log(`🔍 DEBUG: Available tokens:`, tokens.map(t => ({ symbol: t.symbol, balance: t.balance })));
+            // Looking for token in portfolio
             
             if (!token) {
-                console.log(`❌ DEBUG: Token ${tokenSymbol} not found in portfolio of ${tokens.length} tokens`);
+                // Token not found in portfolio
                 await ctx.reply(`❌ Token ${tokenSymbol} not found in your portfolio. Available tokens: ${tokens.map(t => t.symbol).join(', ')}`);
                 return;
             }

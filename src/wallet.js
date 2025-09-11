@@ -130,9 +130,18 @@ class WalletManager {
     async getWallet(encryptedPrivateKey) {
         try {
             const privateKey = this.decrypt(encryptedPrivateKey);
+            
+            // Check if decryption failed
+            if (privateKey === 'DECRYPTION_FAILED_PLEASE_REGENERATE_WALLET') {
+                throw new Error('Wallet decryption failed. Please regenerate your wallet.');
+            }
+            
             return new ethers.Wallet(privateKey);
         } catch (error) {
             console.error('Error getting wallet:', error);
+            if (error.message.includes('DECRYPTION_FAILED') || error.message.includes('bad decrypt')) {
+                throw new Error('Wallet decryption failed. Please regenerate your wallet.');
+            }
             throw new Error('Failed to decrypt wallet');
         }
     }

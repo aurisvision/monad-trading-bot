@@ -1,31 +1,47 @@
 # Changelog - Area51 Telegram Bot
 
-## [v2.1.0] - 2025-09-11 - Token Trading Fixes & Precision Handling
+## [v2.2.0] - 2025-09-11 - Modular Architecture & Critical Bug Fixes
+
+### 🏗️ Modular Architecture Refactoring (Main Feature)
+- **MODULAR DESIGN**: Split monolithic `index-scalable.js` (3,140 lines) into clean modules (422 lines main file)
+- **HANDLER SEPARATION**: Created dedicated handlers for navigation, trading, wallet, and portfolio operations
+- **CONSTANTS UNIFICATION**: Centralized all configuration variables in `constants.js`
+- **UTILS OPTIMIZATION**: Reorganized utility functions with proper exports and error handling
+- **87% CODE REDUCTION**: Dramatically improved maintainability and performance
 
 ### 🔧 Critical Bug Fixes
-- **DECIMALS**: Fixed dynamic token decimals detection (WBTC=8, USDC=6, ETH=18)
-- **PRECISION**: Resolved floating-point precision errors in token amount parsing
-- **BIGINT**: Fixed BigInt to Number conversion for token decimals
-- **PARSING**: Fixed Telegram message parsing errors with special characters
-- **CACHE**: Enhanced cache invalidation after successful/failed transactions
+- **TURBO MODE**: Fixed non-responsive toggle button with proper event handler registration
+- **DATABASE SCHEMA**: Added missing `turbo_mode` column to user_settings table
+- **PARSEAMOUNTS**: Resolved "parseCustomAmounts is not a function" error
+- **HANDLER CONFLICTS**: Fixed handler registration order to prevent callback conflicts
+- **CACHE INVALIDATION**: Proper cache clearing after turbo mode changes
 
-### 🚀 Performance Improvements
-- **GAS**: Updated gas price fetching for ethers v6 compatibility
-- **BUFFER**: Added 99.99% buffer for 100% token sells to prevent precision issues
-- **TOLERANCE**: Implemented 1 wei tolerance for balance checks
-- **ESCAPING**: Added automatic escaping for special characters in token names
+### 📁 File Structure Improvements
+- **NEW**: `src/handlers/` directory with modular handlers
+- **NEW**: `src/constants.js` for unified configuration
+- **NEW**: `src/utils/index.js` with proper module exports
+- **REMOVED**: Duplicate files (`portfolio.js`, `security.js`, `utils.js`)
+- **OPTIMIZED**: Clean separation of concerns across all modules
 
-### 🎯 Trading Engine Enhancements
-- **UNIVERSAL**: All token types now supported regardless of decimals
-- **LIQUIDITY**: Fixed issues with high-liquidity tokens failing due to precision
-- **MONORAIL**: Improved Monorail API integration with proper decimal handling
-- **VALIDATION**: Enhanced token balance validation with proper decimal formatting
+### ⚡ Gas System Optimization (Previous v2.1.0)
+- **TURBO MODE**: Optimized 100 gwei gas pricing for fast transactions (~1-2 min)
+- **NORMAL MODE**: Efficient 50 gwei gas pricing for cost-effective transactions (~3-5 min)
+- **DYNAMIC GAS**: Fixed ethers v6 compatibility with `getFeeData()` instead of `getGasPrice()`
+- **MONORAIL INTEGRATION**: Using Monorail's exact gas estimates (~264,520) instead of hardcoded limits
+- **PREDICTABLE COSTS**: Normal ~0.013 MON, Turbo ~0.026 MON per transaction
 
-### 📊 Error Handling
-- **LOGGING**: Added comprehensive debugging for token operations
-- **RECOVERY**: Automatic cache refresh after failed transactions
-- **FEEDBACK**: Improved error messages with sanitized content
-- **MONITORING**: Enhanced transaction monitoring and status reporting
+### 🔧 Amount Tolerance Fixes (Previous v2.1.0)
+- **PRECISION BUFFER**: Added 99.99% buffer for 100% token sells to prevent floating-point errors
+- **WEI TOLERANCE**: Implemented 1 wei tolerance for balance checks
+- **DECIMALS HANDLING**: Dynamic token decimals detection (WBTC=8, USDC=6, ETH=18)
+- **BIGINT CONVERSION**: Fixed BigInt to Number conversion for token decimals
+- **PARSEUNITS FIX**: Resolved floating-point precision errors in amount parsing
+
+### 🎯 Trading Engine Improvements
+- **UNIVERSAL SUPPORT**: All token types now work regardless of decimals or liquidity
+- **CACHE OPTIMIZATION**: Enhanced cache invalidation after successful/failed transactions
+- **ERROR HANDLING**: Improved Telegram message parsing with special character escaping
+- **MONORAIL API**: Better integration with proper decimal and gas handling
 
 ---
 

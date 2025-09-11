@@ -25,7 +25,18 @@ class TradingEngine {
                 throw new Error('User not found');
             }
 
-            const wallet = await this.walletManager.getWalletWithProvider(user.encrypted_private_key);
+            let wallet;
+            try {
+                wallet = await this.walletManager.getWalletWithProvider(user.encrypted_private_key);
+            } catch (walletError) {
+                if (walletError.message.includes('Wallet decryption failed')) {
+                    return {
+                        success: false,
+                        error: 'Wallet decryption failed. Please regenerate your wallet.'
+                    };
+                }
+                throw walletError;
+            }
 
             // Check MON balance with buffer for gas fees
             const monBalance = await this.walletManager.getBalance(wallet.address);
@@ -160,7 +171,18 @@ Current balance: ${monBalance} MON`;
                 throw new Error('User not found');
             }
 
-            const wallet = await this.walletManager.getWalletWithProvider(user.encrypted_private_key);
+            let wallet;
+            try {
+                wallet = await this.walletManager.getWalletWithProvider(user.encrypted_private_key);
+            } catch (walletError) {
+                if (walletError.message.includes('Wallet decryption failed')) {
+                    return {
+                        success: false,
+                        error: 'Wallet decryption failed. Please regenerate your wallet.'
+                    };
+                }
+                throw walletError;
+            }
 
             // Execute turbo swap with 20% slippage and no safety checks
             const swapResult = await this.monorailAPI.executeSwapTurbo(
