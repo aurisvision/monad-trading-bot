@@ -1,5 +1,34 @@
 # Changelog - Area51 Telegram Bot
 
+## [v2.1.0] - 2025-09-11 - Token Trading Fixes & Precision Handling
+
+### 🔧 Critical Bug Fixes
+- **DECIMALS**: Fixed dynamic token decimals detection (WBTC=8, USDC=6, ETH=18)
+- **PRECISION**: Resolved floating-point precision errors in token amount parsing
+- **BIGINT**: Fixed BigInt to Number conversion for token decimals
+- **PARSING**: Fixed Telegram message parsing errors with special characters
+- **CACHE**: Enhanced cache invalidation after successful/failed transactions
+
+### 🚀 Performance Improvements
+- **GAS**: Updated gas price fetching for ethers v6 compatibility
+- **BUFFER**: Added 99.99% buffer for 100% token sells to prevent precision issues
+- **TOLERANCE**: Implemented 1 wei tolerance for balance checks
+- **ESCAPING**: Added automatic escaping for special characters in token names
+
+### 🎯 Trading Engine Enhancements
+- **UNIVERSAL**: All token types now supported regardless of decimals
+- **LIQUIDITY**: Fixed issues with high-liquidity tokens failing due to precision
+- **MONORAIL**: Improved Monorail API integration with proper decimal handling
+- **VALIDATION**: Enhanced token balance validation with proper decimal formatting
+
+### 📊 Error Handling
+- **LOGGING**: Added comprehensive debugging for token operations
+- **RECOVERY**: Automatic cache refresh after failed transactions
+- **FEEDBACK**: Improved error messages with sanitized content
+- **MONITORING**: Enhanced transaction monitoring and status reporting
+
+---
+
 ## [v2.0.0] - 2025-01-09 - Major Cleanup & Optimization
 
 ### 🚀 Major Changes
