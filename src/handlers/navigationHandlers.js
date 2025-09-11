@@ -544,10 +544,11 @@ Configure your trading preferences:
         const userId = ctx.from.id;
         const userState = await this.database.getUserState(userId);
         
-        // Check if message looks like a token address first
+        // Check if message contains a token address (anywhere in the text)
         const messageText = ctx.message.text.trim();
-        if (/^0x[a-fA-F0-9]{40}$/.test(messageText)) {
-            await this.processTokenAddress(ctx, messageText);
+        const tokenAddressMatch = messageText.match(/0x[a-fA-F0-9]{40}/);
+        if (tokenAddressMatch) {
+            await this.processTokenAddress(ctx, tokenAddressMatch[0]);
             return;
         }
 
@@ -599,14 +600,51 @@ Configure your trading preferences:
                 tokenName: tokenInfo.token.name || 'Unknown Token'
             });
             
-            await ctx.reply(`🪙 *Token Found*
+            // Get user wallet and MON balance
+            const user = await this.database.getUserByTelegramId(userId);
+            const monBalanceData = await this.monorailAPI.getMONBalance(user.wallet_address);
+            const monBalance = parseFloat(monBalanceData.balance || '0');
+            
+            // Get token price information directly from token info API
+            let tokenPriceUSD = 0;
+            let tokenPriceInMON = 0;
+            let confidence = 100;
+            
+            if (tokenInfo.token.usd_per_token) {
+                tokenPriceUSD = parseFloat(tokenInfo.token.usd_per_token);
+            }
+            
+            if (tokenInfo.token.mon_per_token) {
+                tokenPriceInMON = parseFloat(tokenInfo.token.mon_per_token);
+            }
+            
+            if (tokenInfo.token.pconf) {
+                confidence = parseInt(tokenInfo.token.pconf);
+            }
+            
+            const tokenText = `*🟣 ${tokenInfo.token.symbol || 'Unknown'} | ${tokenInfo.token.name || 'Unknown Token'}*
+${tokenAddress}
 
-📛 *Name:* ${tokenInfo.token.name || 'Unknown'}
-🔤 *Symbol:* ${tokenInfo.token.symbol || 'Unknown'}
-📍 *Address:* \`${tokenAddress}\`
+*📊 Token Information:*
+• Price: ${tokenPriceUSD.toFixed(4)} USD
+• Price in MON: ${tokenPriceInMON.toFixed(4)} MON
+• Confidence: ${confidence}%
 
-💰 *Enter the amount of MON you want to spend:*`, {
-                parse_mode: 'Markdown'
+*💼 Your Wallet:*
+• MON Balance: ${monBalance.toFixed(6)} MON
+
+*💡 Select amount of MON to spend:*`;
+
+            const keyboard = Markup.inlineKeyboard([
+                [Markup.button.callback('0.1 MON', 'buy_amount_0.1'), Markup.button.callback('0.5 MON', 'buy_amount_0.5')],
+                [Markup.button.callback('1 MON', 'buy_amount_1'), Markup.button.callback('5 MON', 'buy_amount_5')],
+                [Markup.button.callback('📝 Custom Amount', 'buy_amount_custom'), Markup.button.callback('🔍 View on Explorer', `view_explorer_${tokenAddress}`)],
+                [Markup.button.callback('🏠 Back to Main', 'back_to_main'), Markup.button.callback('🔄 Refresh Data', `refresh_token_${tokenAddress}`)]
+            ]);
+
+            await ctx.reply(tokenText, {
+                parse_mode: 'Markdown',
+                reply_markup: keyboard.reply_markup
             });
             
         } catch (error) {

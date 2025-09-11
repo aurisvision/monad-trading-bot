@@ -10,11 +10,14 @@ CREATE TABLE user_settings (
     telegram_id BIGINT NOT NULL,
     slippage_tolerance DECIMAL(5,2) DEFAULT 5.0,
     gas_price BIGINT DEFAULT 20000000000,
+    sell_gas_price BIGINT DEFAULT 20000000000,
+    sell_slippage_tolerance DECIMAL(5,2) DEFAULT 5.0,
     custom_buy_amounts JSONB DEFAULT '[]'::jsonb,
     custom_sell_amounts JSONB DEFAULT '[]'::jsonb,
     turbo_mode BOOLEAN DEFAULT false,
     notifications_enabled BOOLEAN DEFAULT true,
-    degen_mode BOOLEAN DEFAULT false,
+    auto_buy_enabled BOOLEAN DEFAULT false,
+    auto_buy_amount DECIMAL(18,8) DEFAULT 0.1,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (telegram_id) REFERENCES users (telegram_id) ON DELETE CASCADE,
@@ -31,14 +34,17 @@ CREATE TRIGGER update_user_settings_updated_at
 CREATE INDEX IF NOT EXISTS idx_user_settings_telegram_id ON user_settings (telegram_id);
 
 -- Insert default settings for existing users
-INSERT INTO user_settings (telegram_id, slippage_tolerance, gas_price, turbo_mode, notifications_enabled, degen_mode)
+INSERT INTO user_settings (telegram_id, slippage_tolerance, gas_price, sell_gas_price, sell_slippage_tolerance, turbo_mode, notifications_enabled, auto_buy_enabled, auto_buy_amount)
 SELECT 
     telegram_id, 
     5.0 as slippage_tolerance,
     20000000000 as gas_price,
+    20000000000 as sell_gas_price,
+    5.0 as sell_slippage_tolerance,
     false as turbo_mode,
     true as notifications_enabled,
-    false as degen_mode
+    false as auto_buy_enabled,
+    0.1 as auto_buy_amount
 FROM users
 ON CONFLICT (telegram_id) DO NOTHING;
 

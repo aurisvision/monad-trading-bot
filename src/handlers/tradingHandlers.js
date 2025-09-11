@@ -54,12 +54,33 @@ Please enter the token contract address you want to buy:`;
                 return ctx.reply('❌ Token not found. Please try again.');
             }
             
-            const confirmText = `• Token: ${tokenInfo.token.name} (${tokenInfo.token.symbol})
-• Amount: ${amount} MON
+            // Get user's current MON balance from cache
+            let balanceText = '_Loading..._';
+            try {
+                const user = await this.database.getUser(ctx.from.id);
+                if (user && user.wallet_address) {
+                    const monBalance = await this.monorailAPI.getMONBalance(user.wallet_address);
+                    if (monBalance && monBalance.success && monBalance.balanceFormatted) {
+                        balanceText = `**${parseFloat(monBalance.balanceFormatted).toFixed(4)} MON**`;
+                    } else if (monBalance && monBalance.balance) {
+                        balanceText = `**${parseFloat(monBalance.balance).toFixed(4)} MON**`;
+                    }
+                }
+            } catch (error) {
+                this.monitoring.logError('Failed to get MON balance for purchase confirmation', error);
+                balanceText = '_Unable to load_';
+            }
+            
+            const confirmText = `🛒 ***Purchase Confirmation***
 
-💼 Your Balance: Loading...
+📋 ***Token Details:***
+• ***Name:*** _${tokenInfo.token.name}_
+• ***Symbol:*** **${tokenInfo.token.symbol}**
+• ***Amount:*** **${amount} MON**
 
-*Proceed with the purchase?*`;
+💼 ***Your Balance:*** ${balanceText}
+
+_Proceed with the purchase?_`;
 
             const keyboard = Markup.inlineKeyboard([
                 [Markup.button.callback('✅ Confirm', `confirm_buy_${tokenAddress}_${amount}`)],
@@ -202,12 +223,33 @@ Please enter the token contract address you want to buy:`;
                 return ctx.reply('❌ Token not found. Please try again.');
             }
             
-            const confirmText = `• Token: ${tokenInfo.token.name} (${tokenInfo.token.symbol})
-• Amount: ${amount} MON
+            // Get user's current MON balance from cache
+            let balanceText = '_Loading..._';
+            try {
+                const user = await this.database.getUser(ctx.from.id);
+                if (user && user.wallet_address) {
+                    const monBalance = await this.monorailAPI.getMONBalance(user.wallet_address);
+                    if (monBalance && monBalance.success && monBalance.balanceFormatted) {
+                        balanceText = `**${parseFloat(monBalance.balanceFormatted).toFixed(4)} MON**`;
+                    } else if (monBalance && monBalance.balance) {
+                        balanceText = `**${parseFloat(monBalance.balance).toFixed(4)} MON**`;
+                    }
+                }
+            } catch (error) {
+                this.monitoring.logError('Failed to get MON balance for purchase confirmation', error);
+                balanceText = '_Unable to load_';
+            }
+            
+            const confirmText = `🛒 ***Purchase Confirmation***
 
-💼 Your Balance: Loading...
+📋 ***Token Details:***
+• ***Name:*** _${tokenInfo.token.name}_
+• ***Symbol:*** **${tokenInfo.token.symbol}**
+• ***Amount:*** **${amount} MON**
 
-*Proceed with the purchase?*`;
+💼 ***Your Balance:*** ${balanceText}
+
+_Proceed with the purchase?_`;
 
             const keyboard = Markup.inlineKeyboard([
                 [Markup.button.callback('✅ Confirm', `confirm_buy_${tokenAddress}_${amount}`)],

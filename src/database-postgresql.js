@@ -111,7 +111,12 @@ class DatabasePostgreSQL {
                 telegram_id BIGINT UNIQUE NOT NULL REFERENCES users(telegram_id) ON DELETE CASCADE,
                 buy_slippage DECIMAL(5,2) DEFAULT 5.0,
                 sell_slippage DECIMAL(5,2) DEFAULT 5.0,
+                gas_price BIGINT DEFAULT 50000000000,
+                slippage_tolerance DECIMAL(5,2) DEFAULT 5.0,
                 auto_buy_enabled BOOLEAN DEFAULT false,
+                auto_buy_amount DECIMAL(10,4) DEFAULT 0.1,
+                auto_buy_gas BIGINT DEFAULT 50000000000,
+                auto_buy_slippage DECIMAL(5,2) DEFAULT 5.0,
                 auto_sell_enabled BOOLEAN DEFAULT false,
                 auto_sell_profit_target DECIMAL(10,2) DEFAULT 100.0,
                 custom_buy_amounts TEXT DEFAULT '0.1,0.5,1,5',
@@ -255,7 +260,6 @@ class DatabasePostgreSQL {
             'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_portfolio_user_token ON portfolio_entries(telegram_id, token_address)',
             
             // JSONB indexes for fast JSON queries
-            'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_user_settings_preferences ON user_settings USING GIN(preferences)',
             'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_temp_sell_quote_data ON temp_sell_data USING GIN(quote_data)'
         ];
 

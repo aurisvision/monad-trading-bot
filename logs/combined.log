@@ -4367,3 +4367,245 @@
 {"level":"info","message":"Session created","service":"area51-bot","sessionId":"session:6920475855:1757592900420","timestamp":"2025-09-11T12:15:00.420Z","userId":6920475855}
 {"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-11T12:15:00.534Z","userId":6920475855}
 {"level":"info","message":"Wallet imported successfully","service":"area51-bot","timestamp":"2025-09-11T12:15:05.065Z","userId":6920475855}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T12:44:38.391Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T12:44:38.456Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T12:44:38.458Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T12:44:38.569Z"}
+{"level":"info","message":"MON price updated in cache","price":3.31056,"service":"area51-bot","timestamp":"2025-09-11T12:44:39.229Z"}
+{"level":"info","message":"MON price caching initialized","service":"area51-bot","timestamp":"2025-09-11T12:44:39.232Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T12:44:39.233Z"}
+{"level":"info","message":"MON price updated in cache","price":3.303404,"service":"area51-bot","timestamp":"2025-09-11T12:49:39.575Z"}
+{"level":"info","message":"MON price updated in cache","price":3.303219,"service":"area51-bot","timestamp":"2025-09-11T12:54:39.532Z"}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T12:55:02.306Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T12:55:02.368Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T12:55:02.370Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T12:55:02.476Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T12:55:02.491Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-11T12:55:07.224Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-11T12:55:07.715Z","userId":6920475855}
+{"level":"info","message":"Fetching portfolio from API","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-11T12:55:12.834Z","walletAddress":"0x439ff8bc262Db1DBa4C7bE41abA7a11f1072ebD6"}
+{"level":"info","message":"Portfolio cached in Redis","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-11T12:55:13.065Z","tokenCount":1}
+{"level":"info","message":"Fetching portfolio from API","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-11T12:55:14.159Z","walletAddress":"0x439ff8bc262Db1DBa4C7bE41abA7a11f1072ebD6"}
+{"level":"info","message":"Portfolio cached in Redis","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-11T12:55:14.368Z","tokenCount":1}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T13:01:12.057Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T13:01:12.104Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T13:01:12.105Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T13:01:12.165Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T13:01:12.171Z"}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T13:07:52.264Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T13:07:52.303Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T13:07:52.304Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T13:07:52.477Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T13:07:52.482Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-11T13:07:55.061Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-11T13:07:55.828Z","userId":6920475855}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T13:15:33.909Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T13:15:33.971Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T13:15:33.973Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T13:15:34.099Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T13:15:34.112Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-11T13:15:40.632Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-11T13:15:41.108Z","userId":6920475855}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T14:03:13.962Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T14:03:14.003Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T14:03:14.004Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T14:03:14.124Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T14:03:14.133Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-11T14:03:16.228Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-11T14:03:16.888Z","userId":6920475855}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T14:07:19.181Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T14:07:19.222Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T14:07:19.223Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T14:07:19.249Z"}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T14:09:40.806Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T14:09:40.851Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T14:09:40.852Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T14:09:40.880Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T14:09:40.888Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-11T14:09:46.320Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-11T14:09:46.811Z","userId":6920475855}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-11T14:10:26.250Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-11T14:10:26.669Z","userId":6920475855}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T14:21:40.131Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T14:21:40.176Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T14:21:40.178Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T14:21:40.206Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T14:21:40.214Z"}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T14:25:59.748Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T14:25:59.790Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T14:25:59.791Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T14:25:59.819Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T14:25:59.827Z"}
+{"level":"info","message":"Cache cleared after successful buy transaction","service":"area51-bot","timestamp":"2025-09-11T14:26:33.744Z","txHash":"0xc8aa17bf5bc4d2ac398fae7b6e6a2819ce280f823891210995ecd807af6c4840","userId":6920475855}
+{"level":"info","message":"Cache cleared after successful buy transaction","service":"area51-bot","timestamp":"2025-09-11T14:27:33.006Z","txHash":"0x9835ed4db677930f3689a90c19138ea9e0a9e5390dcc949a9a6add7ca1649052","userId":6920475855}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T14:35:12.764Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T14:35:12.809Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T14:35:12.810Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T14:35:12.846Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T14:35:12.855Z"}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T14:43:44.896Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T14:43:44.933Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T14:43:44.934Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T14:43:44.959Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T14:43:44.967Z"}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T14:46:17.356Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T14:46:17.401Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T14:46:17.403Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T14:46:17.432Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T14:46:17.442Z"}
+{"level":"info","message":"Cache cleared after successful buy transaction","service":"area51-bot","timestamp":"2025-09-11T14:48:04.873Z","txHash":"0x24bd60c92cc0e05d3136db8157c752535987cb229a8cabb36927bf157fe57f36","userId":6920475855}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T14:48:57.220Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T14:48:57.257Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T14:48:57.258Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T14:48:57.283Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T14:48:57.291Z"}
+{"error":"column \"auto_buy_enabled\" of relation \"user_settings\" does not exist","level":"error","message":"Toggle auto buy failed","service":"area51-bot","stack":"error: column \"auto_buy_enabled\" of relation \"user_settings\" does not exist\n    at C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async DatabasePostgreSQL.query (C:\\Users\\user\\Monad Area\\area51-bot\\src\\database-postgresql.js:300:28)\n    at async DatabasePostgreSQL.getOne (C:\\Users\\user\\Monad Area\\area51-bot\\src\\database-postgresql.js:316:24)\n    at async DatabasePostgreSQL.updateUserSettings (C:\\Users\\user\\Monad Area\\area51-bot\\src\\database-postgresql.js:509:24)\n    at async Area51BotModularSimple.toggleAutoBuy (C:\\Users\\user\\Monad Area\\area51-bot\\src\\index-modular-simple.js:601:13)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\src\\index-modular-simple.js:217:13\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:519:21\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)","timestamp":"2025-09-11T14:54:19.742Z","userId":6920475855}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T14:59:36.096Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T14:59:36.143Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T14:59:36.145Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T14:59:36.173Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T14:59:36.181Z"}
+{"error":"column \"auto_buy_enabled\" of relation \"user_settings\" does not exist","level":"error","message":"Toggle auto buy failed","service":"area51-bot","stack":"error: column \"auto_buy_enabled\" of relation \"user_settings\" does not exist\n    at C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async DatabasePostgreSQL.query (C:\\Users\\user\\Monad Area\\area51-bot\\src\\database-postgresql.js:300:28)\n    at async DatabasePostgreSQL.getOne (C:\\Users\\user\\Monad Area\\area51-bot\\src\\database-postgresql.js:316:24)\n    at async DatabasePostgreSQL.updateUserSettings (C:\\Users\\user\\Monad Area\\area51-bot\\src\\database-postgresql.js:509:24)\n    at async Area51BotModularSimple.toggleAutoBuy (C:\\Users\\user\\Monad Area\\area51-bot\\src\\index-modular-simple.js:625:13)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\src\\index-modular-simple.js:217:13\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:519:21\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)","timestamp":"2025-09-11T15:00:24.029Z","userId":6920475855}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T15:04:12.240Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T15:04:12.279Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T15:04:12.280Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T15:04:12.305Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T15:04:12.312Z"}
+{"error":"column \"auto_buy_enabled\" of relation \"user_settings\" does not exist","level":"error","message":"Toggle auto buy failed","service":"area51-bot","stack":"error: column \"auto_buy_enabled\" of relation \"user_settings\" does not exist\n    at C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async DatabasePostgreSQL.query (C:\\Users\\user\\Monad Area\\area51-bot\\src\\database-postgresql.js:300:28)\n    at async DatabasePostgreSQL.getOne (C:\\Users\\user\\Monad Area\\area51-bot\\src\\database-postgresql.js:316:24)\n    at async DatabasePostgreSQL.updateUserSettings (C:\\Users\\user\\Monad Area\\area51-bot\\src\\database-postgresql.js:509:24)\n    at async Area51BotModularSimple.toggleAutoBuy (C:\\Users\\user\\Monad Area\\area51-bot\\src\\index-modular-simple.js:663:13)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\src\\index-modular-simple.js:217:13\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:519:21\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)","timestamp":"2025-09-11T15:04:42.553Z","userId":6920475855}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T15:04:51.277Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T15:04:51.330Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T15:04:51.332Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T15:04:51.361Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T15:04:51.369Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-11T15:05:11.607Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-11T15:05:12.126Z","userId":6920475855}
+{"error":"column \"auto_buy_enabled\" of relation \"user_settings\" does not exist","level":"error","message":"Toggle auto buy failed","service":"area51-bot","stack":"error: column \"auto_buy_enabled\" of relation \"user_settings\" does not exist\n    at C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async DatabasePostgreSQL.query (C:\\Users\\user\\Monad Area\\area51-bot\\src\\database-postgresql.js:300:28)\n    at async DatabasePostgreSQL.getOne (C:\\Users\\user\\Monad Area\\area51-bot\\src\\database-postgresql.js:316:24)\n    at async DatabasePostgreSQL.updateUserSettings (C:\\Users\\user\\Monad Area\\area51-bot\\src\\database-postgresql.js:509:24)\n    at async Area51BotModularSimple.toggleAutoBuy (C:\\Users\\user\\Monad Area\\area51-bot\\src\\index-modular-simple.js:663:13)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\src\\index-modular-simple.js:217:13\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:519:21\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)","timestamp":"2025-09-11T15:05:15.689Z","userId":6920475855}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T15:07:17.675Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T15:07:17.738Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T15:07:17.739Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T15:07:17.769Z"}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T15:07:46.314Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T15:07:46.365Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T15:07:46.366Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T15:07:46.393Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T15:07:46.403Z"}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T15:16:49.353Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T15:16:49.404Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T15:16:49.406Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T15:16:49.436Z"}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T15:17:09.418Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T15:17:09.461Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T15:17:09.462Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T15:17:09.487Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T15:17:09.495Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-11T15:17:33.713Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-11T15:17:34.367Z","userId":6920475855}
+{"error":"column \"auto_buy_enabled\" of relation \"user_settings\" does not exist","level":"error","message":"Toggle auto buy failed","service":"area51-bot","stack":"error: column \"auto_buy_enabled\" of relation \"user_settings\" does not exist\n    at C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async DatabasePostgreSQL.query (C:\\Users\\user\\Monad Area\\area51-bot\\src\\database-postgresql.js:305:28)\n    at async DatabasePostgreSQL.getOne (C:\\Users\\user\\Monad Area\\area51-bot\\src\\database-postgresql.js:321:24)\n    at async DatabasePostgreSQL.updateUserSettings (C:\\Users\\user\\Monad Area\\area51-bot\\src\\database-postgresql.js:514:24)\n    at async Area51BotModularSimple.toggleAutoBuy (C:\\Users\\user\\Monad Area\\area51-bot\\src\\index-modular-simple.js:663:13)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\src\\index-modular-simple.js:217:13\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:519:21\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)","timestamp":"2025-09-11T15:17:41.778Z","userId":6920475855}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T15:22:53.037Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T15:22:53.089Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T15:22:53.090Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T15:22:53.128Z"}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T15:23:11.069Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T15:23:11.116Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T15:23:11.117Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T15:23:11.153Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T15:23:11.170Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-11T15:24:55.172Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-11T15:24:55.743Z","userId":6920475855}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T15:36:05.394Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T15:36:05.430Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T15:36:05.431Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T15:36:05.455Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T15:36:05.462Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-11T15:36:15.764Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-11T15:36:16.552Z","userId":6920475855}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T15:47:41.124Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T15:47:41.166Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T15:47:41.167Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T15:47:41.191Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T15:47:41.198Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-11T15:47:46.240Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-11T15:47:47.974Z","userId":6920475855}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-11T15:53:16.866Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-11T15:53:17.483Z","userId":6920475855}
+{"level":"info","message":"Cache cleared after successful buy transaction","service":"area51-bot","timestamp":"2025-09-11T15:53:58.332Z","txHash":"0xe64651e3515e15ad9ce46ba0a304e397630c3f027def0c690c064eefa5353fc7","userId":6920475855}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T16:00:01.912Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T16:00:01.971Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T16:00:01.972Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T16:00:02.007Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T16:00:02.018Z"}
+{"error":"Failed to decrypt wallet","level":"error","message":"Buy amount handler failed","service":"area51-bot","stack":"Error: Failed to decrypt wallet\n    at WalletManager.getWallet (C:\\Users\\user\\Monad Area\\area51-bot\\src\\wallet.js:145:19)\n    at TradingHandlers.handleBuyAmount (C:\\Users\\user\\Monad Area\\area51-bot\\src\\handlers\\tradingHandlers.js:224:57)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\src\\handlers\\tradingHandlers.js:126:13\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:519:21\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:519:21\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:519:21","timestamp":"2025-09-11T16:00:14.556Z","userId":6920475855}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T16:04:19.621Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T16:04:19.661Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T16:04:19.662Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T16:04:19.688Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T16:04:19.697Z"}
+{"error":"Failed to decrypt wallet","level":"error","message":"Failed to get wallet/balance for purchase confirmation","service":"area51-bot","stack":"Error: Failed to decrypt wallet\n    at WalletManager.getWallet (C:\\Users\\user\\Monad Area\\area51-bot\\src\\wallet.js:145:19)\n    at TradingHandlers.handleBuyAmount (C:\\Users\\user\\Monad Area\\area51-bot\\src\\handlers\\tradingHandlers.js:227:61)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\src\\handlers\\tradingHandlers.js:127:13\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:519:21\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:519:21\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:519:21","timestamp":"2025-09-11T16:04:33.778Z"}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T16:12:51.102Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T16:12:51.159Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T16:12:51.160Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T16:12:51.189Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T16:12:51.197Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-11T16:13:23.668Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-11T16:13:24.230Z","userId":6920475855}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T16:14:56.455Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T16:14:56.497Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T16:14:56.499Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T16:14:56.526Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T16:14:56.535Z"}
+{"level":"info","message":"Cache cleared after successful buy transaction","service":"area51-bot","timestamp":"2025-09-11T16:15:24.366Z","txHash":"0x3f3299ff61f5d027401265d7f029101d0da83ee247cce150b8ce8f69dd081c24","userId":6920475855}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-11T16:15:29.337Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-11T16:15:29.853Z","userId":6920475855}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-11T16:21:14.327Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-11T16:21:15.089Z","userId":6920475855}
+{"level":"info","message":"Fetching portfolio from API","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-11T16:21:19.695Z","walletAddress":"0x439ff8bc262Db1DBa4C7bE41abA7a11f1072ebD6"}
+{"level":"info","message":"Portfolio cached in Redis","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-11T16:21:19.907Z","tokenCount":1}
+{"level":"info","message":"Fetching portfolio from API","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-11T16:21:21.668Z","walletAddress":"0x439ff8bc262Db1DBa4C7bE41abA7a11f1072ebD6"}
+{"level":"info","message":"Portfolio cached in Redis","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-11T16:21:21.866Z","tokenCount":1}
+{"level":"info","message":"Portfolio loaded from cache","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-11T16:21:24.790Z"}
+{"level":"info","message":"Fetching portfolio from API","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-11T16:21:28.775Z","walletAddress":"0x439ff8bc262Db1DBa4C7bE41abA7a11f1072ebD6"}
+{"level":"info","message":"Portfolio cached in Redis","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-11T16:21:28.983Z","tokenCount":1}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-11T16:21:48.356Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-11T16:21:48.719Z","userId":6920475855}
+{"level":"info","message":"Fetching portfolio from API","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-11T16:22:05.138Z","walletAddress":"0x439ff8bc262Db1DBa4C7bE41abA7a11f1072ebD6"}
+{"level":"info","message":"Portfolio cached in Redis","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-11T16:22:05.347Z","tokenCount":0}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T16:25:38.753Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T16:25:38.789Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T16:25:38.790Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T16:25:38.813Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T16:25:38.823Z"}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T16:27:30.486Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T16:27:30.539Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T16:27:30.542Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T16:27:30.575Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T16:27:30.585Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-11T16:27:32.610Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-11T16:27:33.093Z","userId":6920475855}
+{"error":"400: Bad Request: can't parse entities: Can't find end of the entity starting at byte offset 213","level":"error","message":"Settings failed","service":"area51-bot","stack":"Error: 400: Bad Request: can't parse entities: Can't find end of the entity starting at byte offset 213\n    at Telegram.callApi (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\core\\network\\client.js:315:19)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async Area51BotModularSimple.showSettings (C:\\Users\\user\\Monad Area\\area51-bot\\src\\index-modular-simple.js:404:17)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\src\\index-modular-simple.js:195:13\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:519:21\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:519:21\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\src\\index-modular-simple.js:177:13\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)","timestamp":"2025-09-11T16:27:48.645Z","userId":6920475855}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T16:31:02.198Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T16:31:02.234Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T16:31:02.235Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T16:31:02.257Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T16:31:02.263Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-11T16:31:19.792Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-11T16:31:20.204Z","userId":6920475855}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-11T16:33:44.827Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-11T16:33:45.373Z","userId":6920475855}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-11T16:34:18.618Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-11T16:34:19.143Z","userId":6920475855}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-11T16:34:54.468Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-11T16:34:54.832Z","userId":6920475855}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T16:38:46.735Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T16:38:46.775Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T16:38:46.776Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T16:38:46.804Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T16:38:46.813Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-11T16:38:49.682Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-11T16:38:50.201Z","userId":6920475855}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-11T16:41:58.813Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-11T16:41:58.851Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-11T16:41:58.852Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-11T16:41:58.880Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-11T16:41:58.888Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-11T16:44:19.063Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-11T16:44:19.568Z","userId":6920475855}

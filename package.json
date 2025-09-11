@@ -2,14 +2,10 @@
   "name": "area51-telegram-bot",
   "version": "1.0.0",
   "description": "Area51 - Telegram Trading Bot for Monad Testnet",
-  "main": "src/index-scalable.js",
+  "main": "src/index-modular-simple.js",
   "scripts": {
-    "start": "node src/index-scalable.js",
-    "start:scalable": "node src/index-scalable.js",
-    "start:modular": "node src/index-modular-simple.js",
-    "start:cluster": "node src/cluster.js",
-    "dev": "nodemon src/index-scalable.js",
-    "dev:modular": "nodemon src/index-modular.js",
+    "start": "node src/index-modular-simple.js",
+    "dev": "nodemon src/index-modular-simple.js",
     "migrate": "node scripts/migrate-to-postgresql.js",
     "test-migration": "node scripts/test-migration.js",
     "backup": "node backup/database-backup.js",
@@ -17,7 +13,7 @@
     "cleanup": "node -e \"require('./src/database-postgresql').cleanup()\"",
     "test": "node scripts/test-migration.js",
     "start:production": "node production-start.js",
-    "start:single": "NODE_ENV=production node src/index-scalable.js"
+    "start:single": "NODE_ENV=production node src/index-modular-simple.js"
   },
   "keywords": [
     "telegram",
