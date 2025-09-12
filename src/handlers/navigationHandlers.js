@@ -570,8 +570,195 @@ Configure your trading preferences:
             case 'awaiting_buy_amount':
                 await this.processCustomBuyAmount(ctx, ctx.message.text);
                 break;
+            case 'awaiting_custom_gas_buy':
+                await this.processCustomGas(ctx, ctx.message.text, 'buy');
+                break;
+            case 'awaiting_custom_gas_sell':
+                await this.processCustomGas(ctx, ctx.message.text, 'sell');
+                break;
+            case 'awaiting_custom_gas_auto_buy':
+                await this.processCustomGas(ctx, ctx.message.text, 'auto_buy');
+                break;
+            case 'awaiting_custom_slippage_buy':
+                await this.processCustomSlippage(ctx, ctx.message.text, 'buy');
+                break;
+            case 'awaiting_custom_slippage_sell':
+                await this.processCustomSlippage(ctx, ctx.message.text, 'sell');
+                break;
+            case 'awaiting_custom_slippage_auto_buy':
+                await this.processCustomSlippage(ctx, ctx.message.text, 'auto_buy');
+                break;
+            case 'awaiting_custom_auto_buy_amount':
+                await this.processCustomAutoBuyAmount(ctx, ctx.message.text);
+                break;
             default:
                 await ctx.reply('Please use the menu buttons to interact with the bot.');
+        }
+    }
+
+    // Custom input processing methods
+    async processCustomGas(ctx, gasValue, type) {
+        const userId = ctx.from.id;
+        
+        try {
+            const gasPrice = parseInt(gasValue);
+            
+            // Validate gas price range
+            if (isNaN(gasPrice) || gasPrice < 20 || gasPrice > 200) {
+                await ctx.reply('❌ Please enter a gas price between 20 and 200 Gwei.');
+                return;
+            }
+            
+            // Convert to wei (Gwei * 1e9)
+            const gasPriceWei = gasPrice * 1000000000;
+            
+            // Determine the field to update
+            let field;
+            switch (type) {
+                case 'buy':
+                    field = 'gas_price';
+                    break;
+                case 'sell':
+                    field = 'sell_gas_price';
+                    break;
+                case 'auto_buy':
+                    field = 'auto_buy_gas';
+                    break;
+                default:
+                    throw new Error('Invalid gas type');
+            }
+            
+            // Update database with timestamp tracking
+            const GasSlippagePriority = require('../utils/gasSlippagePriority');
+            const prioritySystem = new GasSlippagePriority(this.database);
+            await prioritySystem.updateGasSettings(userId, gasPriceWei, type);
+            
+            // Clear user state
+            await this.database.clearUserState(userId);
+            
+            // Invalidate cache
+            if (this.redis) {
+                await this.redis.del(`user:${userId}`);
+            }
+            
+            await ctx.reply(`✅ ${type.charAt(0).toUpperCase() + type.slice(1)} gas price set to ${gasPrice} Gwei`);
+            
+            // Return to appropriate menu
+            const userState = await this.database.getUserState(userId);
+            const returnMenu = userState?.data?.returnMenu || 'settings';
+            
+            if (returnMenu === 'buy_settings') {
+                // Return to buy settings menu - this would be handled by buy handler
+                await ctx.reply('Returning to buy settings...');
+            } else if (returnMenu === 'sell_settings') {
+                // Return to sell settings menu - this would be handled by sell handler
+                await ctx.reply('Returning to sell settings...');
+            } else if (returnMenu === 'auto_buy_settings') {
+                // Return to auto buy settings menu - this would be handled by auto buy handler
+                await ctx.reply('Returning to auto buy settings...');
+            } else {
+                // Return to main settings
+                await ctx.reply('Use /start to return to main menu');
+            }
+            
+        } catch (error) {
+            this.monitoring.logError('Custom gas processing failed', error, { userId, gasValue, type });
+            await ctx.reply('❌ Error updating gas settings. Please try again.');
+        }
+    }
+    
+    async processCustomSlippage(ctx, slippageValue, type) {
+        const userId = ctx.from.id;
+        
+        try {
+            const slippage = parseFloat(slippageValue);
+            
+            // Validate slippage range
+            if (isNaN(slippage) || slippage < 0.1 || slippage > 50) {
+                await ctx.reply('❌ Please enter a slippage between 0.1% and 50%.');
+                return;
+            }
+            
+            // Determine the field to update
+            let field;
+            switch (type) {
+                case 'buy':
+                    field = 'slippage_tolerance';
+                    break;
+                case 'sell':
+                    field = 'sell_slippage_tolerance';
+                    break;
+                case 'auto_buy':
+                    field = 'auto_buy_slippage';
+                    break;
+                default:
+                    throw new Error('Invalid slippage type');
+            }
+            
+            // Update database with timestamp tracking
+            const GasSlippagePriority = require('../utils/gasSlippagePriority');
+            const prioritySystem = new GasSlippagePriority(this.database);
+            await prioritySystem.updateSlippageSettings(userId, slippage, type);
+            
+            // Clear user state
+            await this.database.clearUserState(userId);
+            
+            // Invalidate cache
+            if (this.redis) {
+                await this.redis.del(`user:${userId}`);
+            }
+            
+            await ctx.reply(`✅ ${type.charAt(0).toUpperCase() + type.slice(1)} slippage set to ${slippage}%`);
+            
+            // Return to appropriate menu
+            const userState = await this.database.getUserState(userId);
+            const returnMenu = userState?.data?.returnMenu || 'settings';
+            
+            if (returnMenu === 'buy_settings') {
+                await ctx.reply('Returning to buy settings...');
+            } else if (returnMenu === 'sell_settings') {
+                await ctx.reply('Returning to sell settings...');
+            } else if (returnMenu === 'auto_buy_settings') {
+                await ctx.reply('Returning to auto buy settings...');
+            } else {
+                await ctx.reply('Use /start to return to main menu');
+            }
+            
+        } catch (error) {
+            this.monitoring.logError('Custom slippage processing failed', error, { userId, slippageValue, type });
+            await ctx.reply('❌ Error updating slippage settings. Please try again.');
+        }
+    }
+    
+    async processCustomAutoBuyAmount(ctx, amountValue) {
+        const userId = ctx.from.id;
+        
+        try {
+            const amount = parseFloat(amountValue);
+            
+            // Validate amount range
+            if (isNaN(amount) || amount < 0.01 || amount > 100) {
+                await ctx.reply('❌ Please enter an amount between 0.01 and 100 MON.');
+                return;
+            }
+            
+            // Update database
+            await this.database.updateUserSettings(userId, { auto_buy_amount: amount });
+            
+            // Clear user state
+            await this.database.clearUserState(userId);
+            
+            // Invalidate cache
+            if (this.redis) {
+                await this.redis.del(`user:${userId}`);
+            }
+            
+            await ctx.reply(`✅ Auto buy amount set to ${amount} MON`);
+            await ctx.reply('Returning to auto buy settings...');
+            
+        } catch (error) {
+            this.monitoring.logError('Custom auto buy amount processing failed', error, { userId, amountValue });
+            await ctx.reply('❌ Error updating auto buy amount. Please try again.');
         }
     }
 

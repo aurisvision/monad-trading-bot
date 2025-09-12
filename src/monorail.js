@@ -104,45 +104,66 @@ class MonorailAPI {
 
             // Quote response received successfully
 
-            if (response.data && response.data.output_formatted) {
-                // Validate transaction data exists when sender is provided
-                if (sender && !response.data.transaction) {
-                    console.error('No transaction data returned despite sender being provided');
-                    console.error('Full API response:', JSON.stringify(response.data, null, 2));
-                    return {
-                        success: false,
-                        error: 'Monorail API did not return transaction data'
-                    };
-                }
+            // Debug: Log full API response for troubleshooting
+            console.log('🔍 Monorail API Response:', JSON.stringify(response.data, null, 2));
 
-                // Additional validation for transaction data completeness
-                if (response.data.transaction && (!response.data.transaction.data || response.data.transaction.data === '0x' || response.data.transaction.data === '')) {
-                    console.error('❌ Transaction data field is empty or invalid');
-                    console.error('Transaction object:', JSON.stringify(response.data.transaction, null, 2));
+            if (response.data) {
+                // Check for different possible response formats
+                if (response.data.output_formatted || response.data.output) {
+                    // Standard successful response
+                    const outputAmount = response.data.output_formatted || response.data.output;
                     
-                    // Try to construct a basic swap transaction if we have the necessary info
-                    if (response.data.transaction.to) {
-                        // Using transaction without data field
-                    } else {
+                    // Validate transaction data exists when sender is provided
+                    if (sender && !response.data.transaction) {
+                        console.error('No transaction data returned despite sender being provided');
                         return {
                             success: false,
-                            error: 'Monorail API returned incomplete transaction data'
+                            error: 'Monorail API did not return transaction data'
                         };
                     }
-                }
 
+                    // Additional validation for transaction data completeness
+                    if (response.data.transaction && (!response.data.transaction.data || response.data.transaction.data === '0x' || response.data.transaction.data === '')) {
+                        console.error('❌ Transaction data field is empty or invalid');
+                        console.error('Transaction object:', JSON.stringify(response.data.transaction, null, 2));
+                        
+                        // Try to use transaction with minimal data if 'to' address exists
+                        if (!response.data.transaction.to) {
+                            return {
+                                success: false,
+                                error: 'Monorail API returned incomplete transaction data'
+                            };
+                        }
+                    }
+
+                    return {
+                        success: true,
+                        outputAmount: outputAmount,
+                        outputAmountRaw: response.data.output || response.data.output_formatted,
+                        priceImpact: response.data.price_impact || 0,
+                        route: response.data.route || [],
+                        gasEstimate: response.data.gas_estimate || '300000',
+                        transaction: response.data.transaction
+                    };
+                }
+                
+                // Check for error response format
+                if (response.data.error || response.data.message) {
+                    return {
+                        success: false,
+                        error: response.data.error || response.data.message
+                    };
+                }
+                
+                // Unknown response format
+                console.error('❌ Unknown API response format:', response.data);
                 return {
-                    success: true,
-                    outputAmount: response.data.output_formatted,
-                    outputAmountRaw: response.data.output,
-                    priceImpact: response.data.price_impact,
-                    route: response.data.route,
-                    gasEstimate: response.data.gas_estimate,
-                    transaction: response.data.transaction
+                    success: false,
+                    error: 'Unknown response format from Monorail API'
                 };
             }
 
-            throw new Error('Invalid response format from Monorail API');
+            throw new Error('Empty response from Monorail API');
         } catch (error) {
             console.error('Error getting quote:', error);
             console.error('Error details:', error.response?.data || error.message);
@@ -764,13 +785,17 @@ class MonorailAPI {
                 // Using fallback gas limit
             }
             
-            // Apply simple gas pricing
-            if (options.turboMode) {
+            // Apply gas pricing with custom support
+            if (options.gasPrice) {
+                // Use custom gas price from priority system
+                transaction.gasPrice = options.gasPrice;
+                console.log(`🎯 Using custom gas price: ${Math.round(options.gasPrice / 1000000000)} Gwei`);
+            } else if (options.turboMode) {
                 transaction.gasPrice = ethers.parseUnits('100', 'gwei');
-                // Turbo mode: 100 gwei gas price
+                console.log('🚀 Turbo mode: 100 gwei gas price');
             } else {
                 transaction.gasPrice = ethers.parseUnits('50', 'gwei');
-                // Normal mode: 50 gwei gas price
+                console.log('⚡ Normal mode: 50 gwei gas price');
             }
             
             // Additional validation before sending

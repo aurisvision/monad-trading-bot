@@ -1,4 +1,55 @@
-# Changelog - Area51 Telegram Bot
+# Changelog
+
+All notable changes to the Area51 Telegram Bot project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [2.1.0] - 2025-09-12
+
+### Added
+- **Gas and Slippage Priority System**: Intelligent priority system that determines which gas/slippage settings to use based on the most recent user action
+- **Timestamp Tracking**: Database columns to track when turbo mode, gas settings, and slippage settings were last updated
+- **Custom Input Handlers**: Support for user-defined gas prices (20-200 Gwei) and slippage values (0.1%-50%)
+- **Priority System Utility**: New `GasSlippagePriority` class for managing setting precedence
+- **Auto Buy Engine**: Separate auto buy system with independent gas, slippage, and amount settings
+- **Enhanced Monorail API**: Support for custom gas prices in transaction execution
+- **Comprehensive Documentation**: Detailed documentation of the priority system implementation
+
+### Changed
+- **Transaction Execution**: `executeBuy()` and `executeSell()` now use priority-based gas and slippage calculation
+- **Turbo Mode Logic**: Turbo mode now properly integrates with custom settings using timestamp comparison
+- **Database Schema**: Added `turbo_mode_updated_at`, `gas_settings_updated_at`, and `slippage_settings_updated_at` columns
+- **Settings Handlers**: All gas and slippage updates now include timestamp tracking
+- **Monorail API Gas Logic**: Enhanced to support custom gas prices with proper fallback hierarchy
+
+### Fixed
+- **Database Method Calls**: Fixed incorrect `getUserByTelegramId()` calls to use proper `getUser()` method
+- **TradingEngine Initialization**: Corrected parameter order in TradingEngine constructor
+- **Custom Input Processing**: Fixed missing text message handlers for custom gas, slippage, and auto buy amount inputs
+- **Gas Price Application**: Fixed issue where custom gas prices weren't being applied to actual transactions
+
+### Technical Details
+- **Priority Logic**: Last action wins - compares timestamps between turbo mode and custom settings
+- **Default Settings**: 50 Gwei gas, 5% slippage for new users
+- **Turbo Override**: 100 Gwei gas when turbo mode is the most recent action
+- **Custom Override**: User-defined values when custom settings are more recent than turbo mode
+- **Auto Buy Independence**: Auto buy system completely separate from regular buy/sell settings
+- **Database Migration**: `scripts/add-timestamp-columns.sql` for existing installations
+
+### Performance
+- **Minimal Overhead**: 2-3 additional database queries per transaction
+- **Redis Caching**: User settings cached effectively with proper invalidation
+- **Database Indexes**: Optimized timestamp columns with appropriate indexes
+- **Memory Efficient**: Priority calculations performed on-demand
+
+### Security
+- **Input Validation**: Gas prices limited to safe 20-200 Gwei range
+- **Slippage Limits**: 0.1%-50% range prevents extreme values
+- **Timestamp Integrity**: Uses database CURRENT_TIMESTAMP for accuracy
+- **Cache Security**: Proper cache invalidation after setting updates
+
+---
 
 ## [v2.2.0] - 2025-09-11 - Modular Architecture & Critical Bug Fixes
 

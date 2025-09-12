@@ -1,14 +1,19 @@
 const { ethers } = require('ethers');
 
 class TradingEngine {
-    constructor(monorailAPI, walletManager, database) {
+    constructor(database, monorailAPI, walletManager, monitoring) {
+        this.db = database;
         this.monorailAPI = monorailAPI;
         this.walletManager = walletManager;
-        this.db = database;
+        this.monitoring = monitoring;
+        
+        // Initialize gas/slippage priority system
+        const GasSlippagePriority = require('./utils/gasSlippagePriority');
+        this.prioritySystem = new GasSlippagePriority(database);
     }
 
     // Execute buy order
-    async executeBuy(telegramId, tokenAddress, monAmount, slippage = 1) {
+    async executeBuy(telegramId, tokenAddress, monAmount, slippage = null) {
         try {
             // Validate inputs
             if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) {
@@ -20,10 +25,16 @@ class TradingEngine {
             }
 
             // Get user wallet
-            const user = await this.db.getUserByTelegramId(telegramId);
+            const user = await this.db.getUser(telegramId);
             if (!user) {
                 throw new Error('User not found');
             }
+
+            // Get effective gas and slippage based on priority system
+            const effectiveGasPrice = await this.prioritySystem.getEffectiveGasPrice(telegramId, 'buy');
+            const effectiveSlippage = slippage !== null ? slippage : await this.prioritySystem.getEffectiveSlippage(telegramId, 'buy');
+            
+            console.log(`🎯 Using priority-based settings: Gas=${Math.round(effectiveGasPrice/1000000000)} Gwei, Slippage=${effectiveSlippage}%`);
 
             let wallet;
             try {
@@ -80,17 +91,17 @@ class TradingEngine {
                 console.log('Could not check approval status:', approvalError.message);
             }
 
-            // Try with higher slippage first to avoid liquidity issues
-            let finalSlippage = Math.max(slippage, 5); // Minimum 5% slippage
-            console.log(`Using slippage: ${finalSlippage}% (requested: ${slippage}%)`);
+            // Use effective slippage from priority system
+            let finalSlippage = Math.max(effectiveSlippage, 5); // Minimum 5% slippage
+            console.log(`Using slippage: ${finalSlippage}% (effective: ${effectiveSlippage}%)`);
             
-            // Execute swap with dynamic gas estimation from Monorail
+            // Execute swap with priority-based gas and slippage
             const swapResult = await this.monorailAPI.buyToken(
                 wallet,
                 tokenAddress,
                 monAmount,
-                finalSlippage
-                // No custom gasLimit - let Monorail API determine it
+                finalSlippage,
+                { gasPrice: effectiveGasPrice } // Pass effective gas price
             );
 
             if (!swapResult.success) {
@@ -166,7 +177,7 @@ Current balance: ${monBalance} MON`;
             console.log(`🚀 TURBO BUY: ${monAmount} MON for token ${tokenAddress}`);
             
             // Minimal validation - only user lookup
-            const user = await this.db.getUserByTelegramId(telegramId);
+            const user = await this.db.getUser(telegramId);
             if (!user) {
                 throw new Error('User not found');
             }
@@ -216,21 +227,24 @@ Current balance: ${monBalance} MON`;
     }
 
     // Execute sell order
-    async executeSell(telegramId, tokenAddress, tokenAmount, slippage = 1) {
+    async executeSell(telegramId, tokenAddress, tokenAmount, slippage = null) {
         try {
-            console.log(`Executing sell: ${tokenAddress} -> MON, amount: ${tokenAmount}, slippage: ${slippage}%`);
+            // Get effective gas and slippage based on priority system
+            const effectiveGasPrice = await this.prioritySystem.getEffectiveGasPrice(telegramId, 'sell');
+            const effectiveSlippage = slippage !== null ? slippage : await this.prioritySystem.getEffectiveSlippage(telegramId, 'sell');
+            
+            console.log(`🎯 Sell using priority settings: Gas=${Math.round(effectiveGasPrice/1000000000)} Gwei, Slippage=${effectiveSlippage}%`);
+            console.log(`Executing sell: ${tokenAddress} -> MON, amount: ${tokenAmount}, slippage: ${effectiveSlippage}%`);
 
-            // Fast pre-flight validation (prevents gas loss)
             const { wallet, approvalStatus } = await this.fastPreflightCheck(telegramId, tokenAddress, tokenAmount);
             
-            // Execute with dynamic gas estimation from Monorail
+            // Execute with priority-based gas and slippage
             const swapResult = await this.monorailAPI.sellTokenOptimized(
                 wallet,
                 tokenAddress, 
                 tokenAmount, 
-                slippage,
-                { approvalStatus }
-                // No custom gasPrice or gasLimit - let Monorail API determine them
+                effectiveSlippage,
+                { gasPrice: effectiveGasPrice } // Pass effective gas price
             );
             
             if (!swapResult.success) {
@@ -295,7 +309,7 @@ Current balance: ${monBalance} MON`;
             }
             
             // Get user wallet for sender parameter
-            const user = await this.db.getUserByTelegramId(telegramId);
+            const user = await this.db.getUser(telegramId);
             if (!user) {
                 return {
                     success: false,
@@ -346,7 +360,7 @@ Current balance: ${monBalance} MON`;
             throw new Error('Invalid sell amount');
         }
 
-        const user = await this.db.getUserByTelegramId(telegramId);
+        const user = await this.db.getUser(telegramId);
         if (!user) {
             throw new Error('User not found');
         }
@@ -423,7 +437,7 @@ Current balance: ${monBalance} MON`;
     // Calculate percentage of token balance to sell
     async calculateSellAmount(telegramId, tokenAddress, percentage) {
         try {
-            const user = await this.db.getUserByTelegramId(telegramId);
+            const user = await this.db.getUser(telegramId);
             if (!user) {
                 throw new Error('User not found');
             }

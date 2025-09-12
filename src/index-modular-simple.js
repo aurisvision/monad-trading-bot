@@ -78,7 +78,7 @@ class Area51BotModularSimple {
         // Initialize services
         this.monorailAPI = new MonorailAPI(this.redis);
         this.walletManager = new WalletManager(this.database, this.monitoring);
-        this.tradingEngine = new TradingEngine(this.monorailAPI, this.walletManager, this.database);
+        this.tradingEngine = new TradingEngine(this.database, this.monorailAPI, this.walletManager, this.monitoring);
         // this.portfolioManager = new PortfolioManager(this.monorailAPI, this.database, this.redis); // Removed - using portfolioService instead
         this.portfolioService = new (require('./portfolioService'))(this.monorailAPI, this.redis, this.monitoring);
         
@@ -468,6 +468,10 @@ class Area51BotModularSimple {
             const newTurboMode = !currentTurboMode;
             console.log('🔄 Turbo mode toggle:', currentTurboMode, '->', newTurboMode);
             
+            // Initialize priority system
+            const GasSlippagePriority = require('./utils/gasSlippagePriority');
+            const prioritySystem = new GasSlippagePriority(this.database);
+            
             // Show warning message when enabling Turbo Mode
             if (newTurboMode) {
                 const warningText = `⚠️ *Turbo Mode Enabled*
@@ -490,8 +494,8 @@ Are you sure you want to continue?`;
                     reply_markup: keyboard.reply_markup
                 });
             } else {
-                // Turbo mode disabled - update database and show success
-                await this.database.updateUserSettings(userId, { turbo_mode: false });
+                // Disable turbo mode with timestamp tracking
+                await prioritySystem.updateTurboMode(userId, false);
                 
                 await ctx.editMessageText('✅ *Turbo Mode Disabled*\n\nSafe trading mode is now active.', {
                     parse_mode: 'Markdown'
@@ -514,8 +518,10 @@ Are you sure you want to continue?`;
             
             const userId = ctx.from.id;
             
-            // Confirm turbo mode is enabled
-            await this.database.updateUserSettings(userId, { turbo_mode: true });
+            // Confirm turbo mode is enabled with timestamp tracking
+            const GasSlippagePriority = require('./utils/gasSlippagePriority');
+            const prioritySystem = new GasSlippagePriority(this.database);
+            await prioritySystem.updateTurboMode(userId, true);
             
             await ctx.editMessageText('🚀 *Turbo Mode Activated!*\n\nMaximum speed trading is now enabled.\n\n⚠️ *Use with caution!*', {
                 parse_mode: 'Markdown'
