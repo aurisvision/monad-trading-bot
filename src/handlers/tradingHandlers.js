@@ -383,13 +383,13 @@ Please try again or contact support.`, {
                     balance = parseFloat(rpcBalance || 0);
                 }
             } catch (error) {
-                console.log('Error getting balance:', error);
+
                 // Final fallback
                 try {
                     const rpcBalance = await this.walletManager.getBalance(user.wallet_address);
                     balance = parseFloat(rpcBalance || 0);
                 } catch (fallbackError) {
-                    console.log('Fallback balance fetch failed:', fallbackError);
+
                 }
             }
 

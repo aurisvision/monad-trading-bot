@@ -795,7 +795,7 @@ class MonorailAPI {
                 console.log('🚀 Turbo mode: 100 gwei gas price');
             } else {
                 transaction.gasPrice = ethers.parseUnits('50', 'gwei');
-                console.log('⚡ Normal mode: 50 gwei gas price');
+
             }
             
             // Additional validation before sending

@@ -58,7 +58,7 @@ class HealthCheckServer {
 
     start() {
         this.server = this.app.listen(this.port, () => {
-            console.log(`Health check server running on port ${this.port}`);
+
         });
     }
 

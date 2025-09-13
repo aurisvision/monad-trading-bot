@@ -54,9 +54,7 @@ class TradingEngine {
             const requiredAmount = parseFloat(monAmount);
             const gasBuffer = 0.05; // Reserve 0.05 MON for gas fees
             const availableForSwap = parseFloat(monBalance) - gasBuffer;
-            
-            console.log(`Balance check: Available: ${monBalance} MON, Required: ${requiredAmount} MON, Gas buffer: ${gasBuffer} MON`);
-            
+
             if (availableForSwap < requiredAmount) {
                 throw new Error(`Insufficient MON balance. Available for swap: ${availableForSwap.toFixed(4)} MON (${monBalance} total - ${gasBuffer} gas buffer), Required: ${requiredAmount} MON`);
             }
@@ -86,9 +84,9 @@ class TradingEngine {
             // Check if token approval is needed (for safety)
             try {
                 const approvalStatus = await this.monorailAPI.checkTokenApproval(wallet.address, tokenAddress);
-                console.log('Token approval status:', approvalStatus);
+
             } catch (approvalError) {
-                console.log('Could not check approval status:', approvalError.message);
+
             }
 
             // Use effective slippage from priority system
@@ -234,7 +232,6 @@ Current balance: ${monBalance} MON`;
             const effectiveSlippage = slippage !== null ? slippage : await this.prioritySystem.getEffectiveSlippage(telegramId, 'sell');
             
             console.log(`🎯 Sell using priority settings: Gas=${Math.round(effectiveGasPrice/1000000000)} Gwei, Slippage=${effectiveSlippage}%`);
-            console.log(`Executing sell: ${tokenAddress} -> MON, amount: ${tokenAmount}, slippage: ${effectiveSlippage}%`);
 
             const { wallet, approvalStatus } = await this.fastPreflightCheck(telegramId, tokenAddress, tokenAmount);
             
@@ -276,8 +273,7 @@ Current balance: ${monBalance} MON`;
     // Sell token method for portfolio sell flow
     async sellToken(walletAddress, tokenAddress, tokenAmount, slippage = 1) {
         try {
-            console.log(`sellToken called: wallet=${walletAddress}, token=${tokenAddress}, amount=${tokenAmount}`);
-            
+
             // Find user by wallet address
             const user = await this.db.getUserByWalletAddress(walletAddress);
             if (!user) {
@@ -299,8 +295,7 @@ Current balance: ${monBalance} MON`;
     // Get buy quote
     async getBuyQuote(telegramId, tokenAddress, monAmount) {
         try {
-            console.log('getBuyQuote called with:', { tokenAddress, monAmount });
-            
+
             if (!tokenAddress || tokenAddress === 'undefined') {
                 return {
                     success: false,
@@ -392,7 +387,6 @@ Current balance: ${monBalance} MON`;
     // Get sell quote for display purposes
     async getSellQuote(telegramId, tokenAddress, tokenAmount) {
         try {
-            console.log(`Getting sell quote: ${tokenAddress} -> ${this.monorailAPI.tokens.MON}, amount: ${tokenAmount}`);
 
             // Fast pre-flight check first
             const { wallet } = await this.fastPreflightCheck(telegramId, tokenAddress, tokenAmount);

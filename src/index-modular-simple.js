@@ -66,7 +66,7 @@ class Area51BotModularSimple {
             await Promise.race([connectPromise, timeoutPromise]);
             this.monitoring.logInfo('Redis connected successfully');
         } catch (error) {
-            console.log('⚠️ Redis connection failed, using memory fallback:', error.message);
+
             this.redis = null;
         }
 
@@ -299,32 +299,32 @@ class Area51BotModularSimple {
 
         // Auto Buy Amount handlers - specific handlers only
         this.bot.action('set_auto_buy_0.1', async (ctx) => {
-            console.log('🔧 Auto Buy Amount 0.1 button pressed by user:', ctx.from.id);
+
             await this.updateAutoBuyAmount(ctx, 0.1);
         });
 
         this.bot.action('set_auto_buy_0.5', async (ctx) => {
-            console.log('🔧 Auto Buy Amount 0.5 button pressed by user:', ctx.from.id);
+
             await this.updateAutoBuyAmount(ctx, 0.5);
         });
 
         this.bot.action('set_auto_buy_1', async (ctx) => {
-            console.log('🔧 Auto Buy Amount 1 button pressed by user:', ctx.from.id);
+
             await this.updateAutoBuyAmount(ctx, 1);
         });
 
         this.bot.action('set_auto_buy_2', async (ctx) => {
-            console.log('🔧 Auto Buy Amount 2 button pressed by user:', ctx.from.id);
+
             await this.updateAutoBuyAmount(ctx, 2);
         });
 
         this.bot.action('set_auto_buy_5', async (ctx) => {
-            console.log('🔧 Auto Buy Amount 5 button pressed by user:', ctx.from.id);
+
             await this.updateAutoBuyAmount(ctx, 5);
         });
 
         this.bot.action('set_auto_buy_10', async (ctx) => {
-            console.log('🔧 Auto Buy Amount 10 button pressed by user:', ctx.from.id);
+
             await this.updateAutoBuyAmount(ctx, 10);
         });
 
@@ -349,12 +349,12 @@ class Area51BotModularSimple {
 
         // Specific Auto Buy Gas handlers (remove regex handler that conflicts)
         this.bot.action('set_auto_buy_gas_50', async (ctx) => {
-            console.log('🔧 Auto Buy Gas 50 button pressed by user:', ctx.from.id);
+
             await this.updateAutoBuyGas(ctx, 50);
         });
 
         this.bot.action('set_auto_buy_gas_100', async (ctx) => {
-            console.log('🔧 Auto Buy Gas 100 button pressed by user:', ctx.from.id);
+
             await this.updateAutoBuyGas(ctx, 100);
         });
 
@@ -364,22 +364,22 @@ class Area51BotModularSimple {
 
         // Specific Auto Buy Slippage handlers
         this.bot.action('set_auto_buy_slippage_1', async (ctx) => {
-            console.log('🔧 Auto Buy Slippage 1% button pressed by user:', ctx.from.id);
+
             await this.updateAutoBuySlippage(ctx, 1);
         });
 
         this.bot.action('set_auto_buy_slippage_3', async (ctx) => {
-            console.log('🔧 Auto Buy Slippage 3% button pressed by user:', ctx.from.id);
+
             await this.updateAutoBuySlippage(ctx, 3);
         });
 
         this.bot.action('set_auto_buy_slippage_5', async (ctx) => {
-            console.log('🔧 Auto Buy Slippage 5% button pressed by user:', ctx.from.id);
+
             await this.updateAutoBuySlippage(ctx, 5);
         });
 
         this.bot.action('set_auto_buy_slippage_10', async (ctx) => {
-            console.log('🔧 Auto Buy Slippage 10% button pressed by user:', ctx.from.id);
+
             await this.updateAutoBuySlippage(ctx, 10);
         });
 
@@ -413,7 +413,7 @@ class Area51BotModularSimple {
 
         // Turbo Mode handlers
         this.bot.action('toggle_turbo_mode', async (ctx) => {
-            console.log('� handleToggleTurboMode called for user:', ctx.from.id);
+
             try {
                 await this.handleToggleTurboMode(ctx);
             } catch (error) {
@@ -466,8 +466,7 @@ class Area51BotModularSimple {
 
         // Text message handler for custom input
         this.bot.on('text', async (ctx) => {
-            console.log('📝 Text message received from user:', ctx.from.id, 'Message:', ctx.message.text);
-            
+
             const userState = await this.database.getUserState(ctx.from.id);
             console.log('🔍 User state:', userState);
             
@@ -548,19 +547,17 @@ class Area51BotModularSimple {
 
     async handleToggleTurboMode(ctx) {
         try {
-            console.log('🔧 handleToggleTurboMode called for user:', ctx.from.id);
+
             await ctx.answerCbQuery();
             
             const userId = ctx.from.id;
-            console.log('📊 Getting user settings for user:', userId);
+
             const currentSettings = await this.database.getUserSettings(userId);
-            console.log('📊 Current settings:', currentSettings);
-            
+
             // Handle case where turbo_mode doesn't exist yet
             const currentTurboMode = currentSettings?.turbo_mode || false;
             const newTurboMode = !currentTurboMode;
-            console.log('🔄 Turbo mode toggle:', currentTurboMode, '->', newTurboMode);
-            
+
             // Initialize priority system
             const GasSlippagePriority = require('./utils/gasSlippagePriority');
             const prioritySystem = new GasSlippagePriority(this.database);
@@ -794,14 +791,7 @@ _Set price tolerance for market volatility:_
             // Use only auto_buy_slippage, not fallback to slippage_tolerance
             const autoBuySlippage = userSettings?.auto_buy_slippage || 5;
             const status = autoBuyEnabled ? '🟢 ON' : '🔴 OFF';
-            
-            console.log('🎯 Auto Buy Settings Display - Processed values:', {
-                status,
-                amount: autoBuyAmount,
-                gas: autoBuyGas,
-                slippage: autoBuySlippage
-            });
-            
+
             const settingsText = `🔄 **Auto Buy Settings**
 
 **Status:** ${status} | **Amount:** ${autoBuyAmount} MON
@@ -1060,28 +1050,20 @@ _Price variance tolerance for sell transactions:_
             await ctx.answerCbQuery();
             
             const userId = ctx.from.id;
-            console.log(`🔧 DEEP DEBUG - updateGasSetting called with:`);
-            console.log(`   - field: ${field}`);
+
+
             console.log(`   - value: ${value} (${Math.round(value / 1000000000)} Gwei)`);
-            console.log(`   - userId: ${userId}`);
-            console.log(`   - returnMenu: ${returnMenu}`);
-            
+
+
             // Check current settings before update
             const currentSettings = await this.database.getUserSettings(userId);
-            console.log(`📋 Current settings BEFORE update:`, {
-                auto_buy_gas: currentSettings?.auto_buy_gas,
-                gas_price: currentSettings?.gas_price,
-                [field]: currentSettings?.[field]
-            });
-            
+
             // Ensure user settings exist first
-            console.log('🔧 Creating user settings if not exists...');
+
             await this.database.createUserSettings(userId);
-            
-            console.log('🔧 Calling database.updateUserSettings...');
+
             const result = await this.database.updateUserSettings(userId, { [field]: value });
-            console.log('📊 Database update result:', result);
-            
+
             // Verify the update worked
             const verifySettings = await this.database.getUserSettings(userId);
             console.log(`✅ Settings AFTER update verification:`, {
@@ -1097,9 +1079,9 @@ _Price variance tolerance for sell transactions:_
                         this.redis.del(`settings:${userId}`),
                         this.redis.del(`user:${userId}`)
                     ]);
-                    console.log('🗑️ Cleared settings cache for user', userId);
+
                 } catch (cacheError) {
-                    console.log('⚠️ Cache clear failed:', cacheError.message);
+
                 }
             }
             
@@ -1129,14 +1111,12 @@ _Price variance tolerance for sell transactions:_
             await ctx.answerCbQuery();
             
             const userId = ctx.from.id;
-            console.log(`🔧 Updating ${field} to ${value}% for user ${userId}`);
-            
+
             // Ensure user settings exist first
             await this.database.createUserSettings(userId);
             
             const result = await this.database.updateUserSettings(userId, { [field]: value });
-            console.log('📊 Database update result:', result);
-            
+
             // Clear cache to ensure fresh data
             if (this.redis) {
                 try {
@@ -1144,9 +1124,9 @@ _Price variance tolerance for sell transactions:_
                         this.redis.del(`settings:${userId}`),
                         this.redis.del(`user:${userId}`)
                     ]);
-                    console.log('🗑️ Cleared settings cache for user', userId);
+
                 } catch (cacheError) {
-                    console.log('⚠️ Cache clear failed:', cacheError.message);
+
                 }
             }
             
@@ -1176,26 +1156,18 @@ _Price variance tolerance for sell transactions:_
             await ctx.answerCbQuery();
             
             const userId = ctx.from.id;
-            console.log(`🔧 DEEP DEBUG - updateAutoBuyAmount called with:`);
-            console.log(`   - amount: ${amount} MON`);
-            console.log(`   - userId: ${userId}`);
-            
+
+
+
             // Check current settings before update
             const currentSettings = await this.database.getUserSettings(userId);
-            console.log(`📋 Current settings BEFORE amount update:`, {
-                auto_buy_amount: currentSettings?.auto_buy_amount,
-                auto_buy_gas: currentSettings?.auto_buy_gas,
-                auto_buy_slippage: currentSettings?.auto_buy_slippage
-            });
-            
+
             // Ensure user settings exist first
-            console.log('🔧 Creating user settings if not exists...');
+
             await this.database.createUserSettings(userId);
-            
-            console.log('🔧 Calling database.updateUserSettings for auto_buy_amount...');
+
             const result = await this.database.updateUserSettings(userId, { auto_buy_amount: amount });
-            console.log('📊 Database update result:', result);
-            
+
             // Verify the update worked
             const verifySettings = await this.database.getUserSettings(userId);
             console.log(`✅ Settings AFTER amount update verification:`, {
@@ -1211,9 +1183,9 @@ _Price variance tolerance for sell transactions:_
                         this.redis.del(`settings:${userId}`),
                         this.redis.del(`user:${userId}`)
                     ]);
-                    console.log('🗑️ Cleared settings cache for user', userId);
+
                 } catch (cacheError) {
-                    console.log('⚠️ Cache clear failed:', cacheError.message);
+
                 }
             }
             
@@ -1238,28 +1210,19 @@ _Price variance tolerance for sell transactions:_
             
             const userId = ctx.from.id;
             const gasWei = gasGwei * 1000000000; // Convert Gwei to Wei
-            
-            console.log(`🔧 DEEP DEBUG - updateAutoBuyGas called with:`);
-            console.log(`   - gasGwei: ${gasGwei} Gwei`);
-            console.log(`   - gasWei: ${gasWei} Wei`);
-            console.log(`   - userId: ${userId}`);
-            
+
+
+
+
             // Check current settings before update
             const currentSettings = await this.database.getUserSettings(userId);
-            console.log(`📋 Current settings BEFORE gas update:`, {
-                auto_buy_amount: currentSettings?.auto_buy_amount,
-                auto_buy_gas: currentSettings?.auto_buy_gas,
-                auto_buy_slippage: currentSettings?.auto_buy_slippage
-            });
-            
+
             // Ensure user settings exist first
-            console.log('🔧 Creating user settings if not exists...');
+
             await this.database.createUserSettings(userId);
-            
-            console.log('🔧 Calling database.updateUserSettings for auto_buy_gas...');
+
             const result = await this.database.updateUserSettings(userId, { auto_buy_gas: gasWei });
-            console.log('📊 Database update result:', result);
-            
+
             // Verify the update worked
             const verifySettings = await this.database.getUserSettings(userId);
             console.log(`✅ Settings AFTER gas update verification:`, {
@@ -1275,9 +1238,9 @@ _Price variance tolerance for sell transactions:_
                         this.redis.del(`settings:${userId}`),
                         this.redis.del(`user:${userId}`)
                     ]);
-                    console.log('🗑️ Cleared settings cache for user', userId);
+
                 } catch (cacheError) {
-                    console.log('⚠️ Cache clear failed:', cacheError.message);
+
                 }
             }
             
@@ -1301,26 +1264,18 @@ _Price variance tolerance for sell transactions:_
             await ctx.answerCbQuery();
             
             const userId = ctx.from.id;
-            console.log(`🔧 DEEP DEBUG - updateAutoBuySlippage called with:`);
-            console.log(`   - slippage: ${slippage}%`);
-            console.log(`   - userId: ${userId}`);
-            
+
+
+
             // Check current settings before update
             const currentSettings = await this.database.getUserSettings(userId);
-            console.log(`📋 Current settings BEFORE slippage update:`, {
-                auto_buy_amount: currentSettings?.auto_buy_amount,
-                auto_buy_gas: currentSettings?.auto_buy_gas,
-                auto_buy_slippage: currentSettings?.auto_buy_slippage
-            });
-            
+
             // Ensure user settings exist first
-            console.log('🔧 Creating user settings if not exists...');
+
             await this.database.createUserSettings(userId);
-            
-            console.log('🔧 Calling database.updateUserSettings for auto_buy_slippage...');
+
             const result = await this.database.updateUserSettings(userId, { auto_buy_slippage: slippage });
-            console.log('📊 Database update result:', result);
-            
+
             // Verify the update worked
             const verifySettings = await this.database.getUserSettings(userId);
             console.log(`✅ Settings AFTER slippage update verification:`, {
@@ -1336,9 +1291,9 @@ _Price variance tolerance for sell transactions:_
                         this.redis.del(`settings:${userId}`),
                         this.redis.del(`user:${userId}`)
                     ]);
-                    console.log('🗑️ Cleared settings cache for user', userId);
+
                 } catch (cacheError) {
-                    console.log('⚠️ Cache clear failed:', cacheError.message);
+
                 }
             }
             

@@ -52,8 +52,7 @@ class DatabasePostgreSQL {
     async initialize() {
         try {
             // Test PostgreSQL connection with timeout
-            console.log('🔄 Testing PostgreSQL connection...');
-            
+
             const connectionPromise = this.pool.connect();
             const timeoutPromise = new Promise((_, reject) => {
                 setTimeout(() => reject(new Error('PostgreSQL connection timeout')), 8000);
@@ -64,7 +63,7 @@ class DatabasePostgreSQL {
             if (this.monitoring) {
                 this.monitoring.logInfo('PostgreSQL connected successfully');
             } else {
-                console.log('🐘 PostgreSQL connected successfully');
+
             }
             client.release();
 
@@ -73,17 +72,15 @@ class DatabasePostgreSQL {
                 if (this.monitoring) {
                     this.monitoring.logInfo('Redis cache available for database operations');
                 } else {
-                    console.log('🔴 Redis cache available for database operations');
+
                 }
             }
 
-            console.log('🔄 Creating database tables...');
-            console.log('📋 Found 6 tables, checking indexes...');
+
             await this.createTables();
             await this.createIndexes();
             await this.createIndexes();
-            
-            console.log('📁 Database initialized for high-scale operations');
+
         } catch (error) {
             console.error('Database initialization failed:', error);
             throw error;
@@ -223,11 +220,10 @@ class DatabasePostgreSQL {
             `);
             
             if (tableCheck.rows.length === 0) {
-                console.log('📋 No tables found, skipping index creation');
+
                 return;
             }
 
-            console.log(`📋 Found ${tableCheck.rows.length} tables, creating indexes...`);
         } catch (error) {
             console.warn('⚠️ Could not check table existence, attempting index creation anyway');
         }
@@ -290,8 +286,6 @@ class DatabasePostgreSQL {
             }
         }
 
-        console.log(`📊 Index creation summary: ${successCount} created, ${skipCount} existed, ${errorCount} errors`);
-        
         // Don't throw error if some indexes failed - database can still function
         if (successCount > 0 || skipCount > 0) {
             console.log('✅ Database indexes ready (some may have been skipped due to permissions)');
@@ -387,7 +381,7 @@ class DatabasePostgreSQL {
         try {
             const key = `${this.staticCacheKeys[type]}${telegramId}`;
             await this.redis.del(key);
-            console.log(`🗑️ Invalidated ${type} cache for user ${telegramId}`);
+
         } catch (error) {
             console.warn(`Static cache invalidation error for ${type}:`, error);
         }
@@ -732,7 +726,7 @@ class DatabasePostgreSQL {
             try {
                 const result = await this.query(query);
                 if (result.rowCount > 0) {
-                    console.log(`Cleaned up ${result.rowCount} expired records`);
+
                 }
             } catch (error) {
                 console.error('Cleanup error:', error);
@@ -982,12 +976,12 @@ class DatabasePostgreSQL {
             
             if (this.cacheEnabled && this.redis) {
                 await this.redis.quit();
-                console.log('🔴 Redis connection closed');
+
             }
             
             if (this.pool) {
                 await this.pool.end();
-                console.log('🔴 PostgreSQL connection pool closed');
+
             }
         } catch (error) {
             console.error('Error during database shutdown:', error);

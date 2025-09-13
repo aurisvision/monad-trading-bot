@@ -22,7 +22,7 @@ class PortfolioService {
         try {
             const key = this.getPortfolioKey(telegramId);
             await this.redis.del(key);
-            console.log(`🗑️ Portfolio cache cleared for user ${telegramId}`);
+
         } catch (error) {
             console.error('Error clearing portfolio cache:', error);
         }

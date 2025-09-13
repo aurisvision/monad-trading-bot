@@ -21,7 +21,6 @@ class AutoBuyEngine {
      */
     async executeBuy(telegramId, tokenAddress, buyAmount) {
         try {
-            console.log(`🤖 Auto Buy executeBuy triggered for user ${telegramId}, token: ${tokenAddress}, amount: ${buyAmount} MON`);
 
             // Get user wallet
             const user = await this.database.getUser(telegramId);
@@ -116,7 +115,6 @@ class AutoBuyEngine {
      */
     async executeAutoBuy(telegramId, tokenAddress) {
         try {
-            console.log(`🤖 Auto Buy triggered for user ${telegramId}, token: ${tokenAddress}`);
 
             // Get user wallet
             const user = await this.database.getUserByTelegramId(telegramId);
