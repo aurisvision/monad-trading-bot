@@ -177,45 +177,45 @@ class PortfolioService {
 
         if (pageTokens.length === 0) {
             return {
-                text: `📊 Portfolio\n\n_No tokens found in your portfolio._`,
+                text: `*📊 Portfolio*\n\n_No tokens found in your portfolio._`,
                 hasTokens: false,
                 totalPages: 0,
                 currentPage: page
             };
         }
 
-        let message = `📊 Portfolio\n\n`;
+        let message = `*📊 Portfolio*\n\n`;
 
         pageTokens.forEach(token => {
             const balance = parseFloat(token.balance || '0').toFixed(6);
             const monValue = parseFloat(token.mon_value || '0').toFixed(4);
             const usdPrice = token.usd_price || null;
             
-            message += `🟣 ${token.symbol} (${token.name})\n`;
-            message += `• Balance: ${balance} ${token.symbol}\n`;
-            message += `• Value in MON: ${monValue}\n`;
+            message += `🟣 *${token.symbol}* _(${token.name})_\n`;
+            message += `• *Balance:* ${balance} ${token.symbol}\n`;
+            message += `• *Value in MON:* ${monValue}\n`;
             
             if (usdPrice !== null && usdPrice > 0) {
-                message += `• Price: ${this.formatPrice(usdPrice)}\n\n`;
+                message += `• *Price:* ${this.formatPrice(usdPrice)}\n\n`;
             } else {
-                message += `• Price: $0.00000\n\n`;
+                message += `• *Price:* $0.00000\n\n`;
             }
         });
 
         // Add pagination info if multiple pages
         if (totalPages > 1) {
-            message += `📄 Page ${page} of ${totalPages}\n\n`;
+            message += `*📄 Page ${page} of ${totalPages}*\n\n`;
         }
 
         // Add last updated timestamp
         const now = new Date();
-        const timeString = now.toLocaleTimeString('ar-EG', { 
+        const timeString = now.toLocaleTimeString('en-US', { 
             hour12: true,
             hour: 'numeric',
             minute: '2-digit',
             second: '2-digit'
         });
-        message += `⏱️ Last updated: ${timeString}`;
+        message += `_🕒 Last updated: ${timeString}_`;
 
         return {
             text: message,
@@ -281,10 +281,10 @@ class PortfolioService {
         
         if (totalPages > 1) {
             if (currentPage > 1) {
-                navButtons.push(Markup.button.callback('⏮️ Prev', `portfolio:page:${currentPage - 1}`));
+                navButtons.push(Markup.button.callback('⬅️ Prev', `portfolio:page:${currentPage - 1}`));
             }
             if (currentPage < totalPages) {
-                navButtons.push(Markup.button.callback('Next ⏭️', `portfolio:page:${currentPage + 1}`));
+                navButtons.push(Markup.button.callback('Next ➡️', `portfolio:page:${currentPage + 1}`));
             }
         }
 
@@ -296,7 +296,7 @@ class PortfolioService {
         buttons.push([Markup.button.callback('🔄 Refresh', 'portfolio:refresh')]);
 
         // Add back button
-        buttons.push([Markup.button.callback('🔙 Back to Main', 'main')]);
+        buttons.push([Markup.button.callback('🏠 Back to Main', 'main')]);
 
         return Markup.inlineKeyboard(buttons);
     }
@@ -324,11 +324,12 @@ class PortfolioService {
         } catch (error) {
             this.monitoring?.logError('Portfolio display generation failed', error);
             
+            const { Markup } = require('telegraf');
             return {
                 text: '❌ Failed to load portfolio. Please try again.',
                 keyboard: Markup.inlineKeyboard([
                     [Markup.button.callback('🔄 Try Again', 'portfolio:refresh')],
-                    [Markup.button.callback('🔙 Back to Main', 'main')]
+                    [Markup.button.callback('🏠 Back to Main', 'main')]
                 ]).reply_markup,
                 hasTokens: false,
                 totalPages: 0,

@@ -1,5 +1,6 @@
 // Portfolio Management Handlers
 const { Markup } = require('telegraf');
+const InterfaceUtils = require('../utils/interfaceUtils');
 
 class PortfolioHandlers {
     constructor(bot, database, portfolioService, monitoring) {
@@ -150,11 +151,7 @@ class PortfolioHandlers {
                 this.monorailAPI.getMONPriceUSD(true) // Force refresh
             ]);
 
-            console.log('API Responses:', {
-                monBalanceData,
-                portfolioValueData,
-                monPriceData
-            });
+            // Process API responses
 
             // Process the data
             const monBalance = parseFloat(monBalanceData.balance || '0');
@@ -163,44 +160,14 @@ class PortfolioHandlers {
             const portfolioValueMON = monPriceUSD > 0 ? portfolioValueUSD / monPriceUSD : 0;
             const monValueUSD = monBalance * monPriceUSD;
 
-            console.log('Processed values:', {
-                monBalance,
-                monPriceUSD,
-                portfolioValueUSD,
-                portfolioValueMON,
-                monValueUSD
-            });
+            // Values processed for display
 
-            const welcomeText = `🛸 *Welcome to Area51!*
-_The main area for real nads!_
-
-🧾 *Your Wallet Address:*
-\`${user.wallet_address}\`
-
-💼 *Balance:*
-• MON: ${monBalance.toFixed(6)} ~$${monValueUSD.toFixed(2)}
-• Portfolio Value: ${portfolioValueMON.toFixed(6)} MON ~$${portfolioValueUSD.toFixed(2)}
-
-🟣 *Current MON Price:* $${monPriceUSD.toFixed(4)}
-
-▫️*What you can do:*
-• Buy and sell tokens instantly
-• Track your portfolio with real-time P&L
-• Browse trending token categories
-• Manage your wallet securely
-
-💡 Click on the Refresh button to update your current balance.`;
-
-            const keyboard = Markup.inlineKeyboard([
-                [Markup.button.callback('💰 Buy', 'buy')],
-                [Markup.button.callback('👛 Wallet', 'wallet'), Markup.button.callback('📊 Portfolio', 'portfolio')],
-                [Markup.button.callback('📈 Categories', 'token_categories'), Markup.button.callback('⚙️ Settings', 'settings')],
-                [Markup.button.callback('📤 Transfer', 'transfer'), Markup.button.callback('🔄 Refresh', 'refresh')],
-                [Markup.button.callback('❓ Help', 'help')]
-            ]);
+            const { text, keyboard } = InterfaceUtils.generateMainInterface(
+                user, monBalance, monPriceUSD, portfolioValueUSD
+            );
 
             // Update the message with fresh data
-            await ctx.editMessageText(welcomeText, {
+            await ctx.editMessageText(text, {
                 parse_mode: 'Markdown',
                 reply_markup: keyboard.reply_markup
             });
@@ -236,39 +203,13 @@ _The main area for real nads!_
             const monBalance = parseFloat(monBalanceData.balance || '0');
             const monPriceUSD = parseFloat(monPriceData.price || '0');
             const portfolioValueUSD = parseFloat(portfolioValueData.value || '0');
-            const portfolioValueMON = monPriceUSD > 0 ? portfolioValueUSD / monPriceUSD : 0;
-            const monValueUSD = monBalance * monPriceUSD;
 
-            const welcomeText = `🛸 *Welcome to Area51!*
-_The main area for real nads!_
-
-🧾 *Your Wallet Address:*
-\`${user.wallet_address}\`
-
-💼 *Balance:*
-• MON: ${monBalance.toFixed(6)} ~$${monValueUSD.toFixed(2)}
-• Portfolio Value: ${portfolioValueMON.toFixed(6)} MON ~$${portfolioValueUSD.toFixed(2)}
-
-🟣 *Current MON Price:* $${monPriceUSD.toFixed(4)}
-
-▫️*What you can do:*
-• Buy and sell tokens instantly
-• Track your portfolio with real-time P&L
-• Browse trending token categories
-• Manage your wallet securely
-
-💡 Click on the Refresh button to update your current balance.`;
-
-            const keyboard = Markup.inlineKeyboard([
-                [Markup.button.callback('💰 Buy', 'buy')],
-                [Markup.button.callback('👛 Wallet', 'wallet'), Markup.button.callback('📊 Portfolio', 'portfolio')],
-                [Markup.button.callback('📈 Categories', 'token_categories'), Markup.button.callback('⚙️ Settings', 'settings')],
-                [Markup.button.callback('📤 Transfer', 'transfer'), Markup.button.callback('🔄 Refresh', 'refresh')],
-                [Markup.button.callback('❓ Help', 'help')]
-            ]);
+            const { text, keyboard } = InterfaceUtils.generateMainInterface(
+                user, monBalance, monPriceUSD, portfolioValueUSD
+            );
 
             // Update the message with fresh data
-            await ctx.editMessageText(welcomeText, {
+            await ctx.editMessageText(text, {
                 parse_mode: 'Markdown',
                 reply_markup: keyboard.reply_markup
             });

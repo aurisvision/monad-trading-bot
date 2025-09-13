@@ -821,6 +821,7 @@ class MonorailAPI {
             return {
                 success: true,
                 txHash: txResponse.hash,
+                transactionHash: txResponse.hash, // Add this for compatibility
                 expectedOutput: quote.outputAmount,
                 priceImpact: quote.priceImpact,
                 route: quote.route,
@@ -992,7 +993,12 @@ class MonorailAPI {
 
     // Sell token for MON
     async sellToken(wallet, tokenAddress, tokenAmount, slippage = 5) {
-        return await this.executeSwap(wallet, tokenAddress, this.tokens.MON, tokenAmount, slippage);
+        const result = await this.executeSwap(wallet, tokenAddress, this.tokens.MON, tokenAmount, slippage);
+        // Ensure transactionHash is included for compatibility
+        if (result.success && result.txHash && !result.transactionHash) {
+            result.transactionHash = result.txHash;
+        }
+        return result;
     }
 
     // Get trending tokens

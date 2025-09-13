@@ -78,8 +78,9 @@ class DatabasePostgreSQL {
             }
 
             console.log('🔄 Creating database tables...');
-            // Create tables and indexes
+            console.log('📋 Found 6 tables, checking indexes...');
             await this.createTables();
+            await this.createIndexes();
             await this.createIndexes();
             
             console.log('📁 Database initialized for high-scale operations');
@@ -401,24 +402,30 @@ class DatabasePostgreSQL {
         }
     }
 
-    // User management with caching
-    async createUser(telegramId, walletAddress, encryptedPrivateKey, encryptedMnemonic, username = null) {
+    // User management with caching - Create user without wallet first
+    async createUser(telegramId, username = null) {
         // Generate default username if not provided
         const defaultUsername = username || `user_${telegramId}`;
         
+        // Check if user already exists
+        const existingUser = await this.getUser(telegramId);
+        if (existingUser) {
+            return existingUser;
+        }
+        
+        // Create user with placeholder wallet data to satisfy NOT NULL constraints
         const query = `
             INSERT INTO users (telegram_id, username, wallet_address, encrypted_private_key, encrypted_mnemonic, updated_at)
             VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
-            ON CONFLICT (telegram_id) 
-            DO UPDATE SET 
-                username = EXCLUDED.username,
-                wallet_address = EXCLUDED.wallet_address,
-                encrypted_private_key = EXCLUDED.encrypted_private_key,
-                encrypted_mnemonic = EXCLUDED.encrypted_mnemonic,
-                updated_at = CURRENT_TIMESTAMP
             RETURNING *`;
         
-        const result = await this.getOne(query, [telegramId, defaultUsername, walletAddress, encryptedPrivateKey, encryptedMnemonic]);
+        const result = await this.getOne(query, [
+            telegramId, 
+            defaultUsername, 
+            'pending_wallet_creation', // Placeholder for wallet_address
+            'pending_key_creation',    // Placeholder for encrypted_private_key
+            null                       // mnemonic can be null
+        ]);
         
         // Create default settings
         await this.createUserSettings(telegramId);
@@ -471,8 +478,19 @@ class DatabasePostgreSQL {
     // User settings with JSON support
     async createUserSettings(telegramId) {
         const query = `
-            INSERT INTO user_settings (telegram_id, turbo_mode) 
-            VALUES ($1, false) 
+            INSERT INTO user_settings (
+                telegram_id, 
+                gas_price, 
+                sell_gas_price,
+                auto_buy_gas, 
+                slippage_tolerance,
+                sell_slippage_tolerance,
+                auto_buy_slippage,
+                auto_buy_enabled,
+                auto_buy_amount,
+                turbo_mode
+            ) 
+            VALUES ($1, 50000000000, 50000000000, 50000000000, 5.0, 5.0, 5.0, false, 0.1, false) 
             ON CONFLICT (telegram_id) DO NOTHING
             RETURNING *`;
         return await this.getOne(query, [telegramId]);

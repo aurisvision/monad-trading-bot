@@ -203,69 +203,7 @@ Please enter the token contract address you want to buy:`;
         await this.database.setUserState(ctx.from.id, 'awaiting_token_address', {});
     }
 
-    async handleBuyAmount(ctx) {
-        await ctx.answerCbQuery();
-        const amount = ctx.match[1];
-        
-        try {
-            // Get user state to find the selected token
-            const userState = await this.database.getUserState(ctx.from.id);
-            
-            if ((userState?.state !== 'awaiting_buy_amount' && userState?.state !== 'buy_token') || !userState?.data?.tokenAddress) {
-                return ctx.reply('❌ Token selection expired. Please try again.');
-            }
-            
-            const tokenAddress = userState.data.tokenAddress;
-            
-            // Get token info for confirmation
-            const tokenInfo = await this.monorailAPI.getTokenInfo(tokenAddress);
-            if (!tokenInfo.success) {
-                return ctx.reply('❌ Token not found. Please try again.');
-            }
-            
-            // Get user's current MON balance from cache
-            let balanceText = '_Loading..._';
-            try {
-                const user = await this.database.getUser(ctx.from.id);
-                if (user && user.wallet_address) {
-                    const monBalance = await this.monorailAPI.getMONBalance(user.wallet_address);
-                    if (monBalance && monBalance.success && monBalance.balanceFormatted) {
-                        balanceText = `**${parseFloat(monBalance.balanceFormatted).toFixed(4)} MON**`;
-                    } else if (monBalance && monBalance.balance) {
-                        balanceText = `**${parseFloat(monBalance.balance).toFixed(4)} MON**`;
-                    }
-                }
-            } catch (error) {
-                this.monitoring.logError('Failed to get MON balance for purchase confirmation', error);
-                balanceText = '_Unable to load_';
-            }
-            
-            const confirmText = `🛒 ***Purchase Confirmation***
-
-📋 ***Token Details:***
-• ***Name:*** _${tokenInfo.token.name}_
-• ***Symbol:*** **${tokenInfo.token.symbol}**
-• ***Amount:*** **${amount} MON**
-
-💼 ***Your Balance:*** ${balanceText}
-
-_Proceed with the purchase?_`;
-
-            const keyboard = Markup.inlineKeyboard([
-                [Markup.button.callback('✅ Confirm', `confirm_buy_${tokenAddress}_${amount}`)],
-                [Markup.button.callback('❌ Cancel', 'cancel_trade')]
-            ]);
-
-            await ctx.editMessageText(confirmText, {
-                parse_mode: 'Markdown',
-                reply_markup: keyboard.reply_markup
-            });
-            
-        } catch (error) {
-            this.monitoring.logError('Buy amount handler failed', error, { userId: ctx.from.id });
-            await ctx.reply('❌ Error processing purchase. Please try again.');
-        }
-    }
+    // Duplicate method removed - keeping only the first implementation
 
     async handleCustomBuy(ctx) {
         await ctx.answerCbQuery();
@@ -289,7 +227,7 @@ _Proceed with the purchase?_`;
         await ctx.answerCbQuery();
         const tokenAddress = ctx.match[1];
         
-        console.log('Buy token clicked, address:', tokenAddress);
+        // Token address validation
         
         // Validate token address
         if (!tokenAddress || tokenAddress === 'undefined') {

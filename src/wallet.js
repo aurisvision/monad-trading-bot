@@ -267,8 +267,9 @@ class WalletManager {
             // Convert amount to wei
             const amountWei = ethers.parseEther(amount.toString());
 
-            // Get current gas price
-            const gasPrice = await wallet.provider.getGasPrice();
+            // Get current gas price using getFeeData for ethers v6 compatibility
+            const feeData = await wallet.provider.getFeeData();
+            const gasPrice = feeData.gasPrice;
 
             // Estimate gas limit
             const gasLimit = await wallet.estimateGas({
@@ -288,6 +289,8 @@ class WalletManager {
             const txResponse = await wallet.sendTransaction(tx);
             
             return {
+                success: true,
+                transactionHash: txResponse.hash,
                 txHash: txResponse.hash,
                 from: wallet.address,
                 to: toAddress,
@@ -297,7 +300,10 @@ class WalletManager {
             };
         } catch (error) {
             console.error('Error sending MON:', error);
-            throw new Error('Failed to send MON: ' + error.message);
+            return {
+                success: false,
+                error: error.message
+            };
         }
     }
 

@@ -9,7 +9,7 @@ const TradingEngine = require('./trading');
 const MonorailAPI = require('./monorail');
 const MonitoringSystem = require('./monitoring');
 const HealthCheckServer = require('./healthCheck');
-const { RateLimiter, SecurityEnhancements, SessionManager, MemoryRateLimiter, MemorySessionManager } = require('./rateLimiter');
+// const { RateLimiter, SecurityEnhancements, SessionManager, MemoryRateLimiter, MemorySessionManager } = require('./rateLimiter');
 const Redis = require('redis');
 
 // Import handler modules
@@ -82,15 +82,15 @@ class Area51BotModularSimple {
         // this.portfolioManager = new PortfolioManager(this.monorailAPI, this.database, this.redis); // Removed - using portfolioService instead
         this.portfolioService = new (require('./portfolioService'))(this.monorailAPI, this.redis, this.monitoring);
         
-        // Initialize security and rate limiting
-        if (this.redis) {
-            this.rateLimiter = new RateLimiter(this.redis, this.monitoring);
-            this.sessionManager = new SessionManager(this.redis, this.monitoring);
-        } else {
-            this.rateLimiter = new MemoryRateLimiter(this.monitoring);
-            this.sessionManager = new MemorySessionManager(this.monitoring);
-        }
-        this.security = new SecurityEnhancements(this.monitoring);
+        // Initialize security and rate limiting - DISABLED
+        // if (this.redis) {
+        //     this.rateLimiter = new RateLimiter(this.redis, this.monitoring);
+        //     this.sessionManager = new SessionManager(this.redis, this.monitoring);
+        // } else {
+        //     this.rateLimiter = new MemoryRateLimiter(this.monitoring);
+        //     this.sessionManager = new MemorySessionManager(this.monitoring);
+        // }
+        // this.security = new SecurityEnhancements(this.monitoring);
         
         // Initialize health check server
         this.healthServer = new HealthCheckServer(this.monitoring, 
@@ -113,14 +113,14 @@ class Area51BotModularSimple {
             this.monorailAPI, 
             this.monitoring, 
             this.walletManager, 
-            this.portfolioService, 
+            this.portfolioService,
             this.redis
         );
         
         this.portfolioHandlers = new PortfolioHandlers(
             this.bot, 
             this.database, 
-            this.portfolioService, 
+            this.portfolioService,
             this.monitoring
         );
         
@@ -129,7 +129,9 @@ class Area51BotModularSimple {
             this.database, 
             this.monorailAPI, 
             this.monitoring, 
-            this.redis
+            this.redis,
+            this.walletManager,
+            this // Pass main bot instance
         );
         
         this.monitoring.logInfo('All components initialized successfully');
@@ -144,13 +146,15 @@ class Area51BotModularSimple {
             });
         });
 
-        // Rate limiting middleware
-        if (process.env.RATE_LIMIT_ENABLED === 'true' && this.rateLimiter) {
-            this.bot.use(this.rateLimiter.middleware('requests'));
-        }
+        // Rate limiting middleware - DISABLED
+        // if (process.env.RATE_LIMIT_ENABLED === 'true' && this.rateLimiter) {
+        //     this.bot.use(this.rateLimiter.middleware('requests'));
+        // }
 
-        // Security middleware
-        this.bot.use(this.security.inputValidationMiddleware());
+        // Security middleware - DISABLED
+        // if (this.security) {
+        //     this.bot.use(this.security.middleware());
+        // }
 
         // Performance monitoring middleware
         this.bot.use(async (ctx, next) => {
@@ -234,15 +238,21 @@ class Area51BotModularSimple {
             await this.showSellSlippageSettings(ctx);
         });
 
-        // Gas Settings handlers
-        this.bot.action(/^set_buy_gas_(\d+)$/, async (ctx) => {
-            const gasPrice = parseInt(ctx.match[1]);
-            await this.updateGasSetting(ctx, 'gas_price', gasPrice * 1000000000, 'buy_settings');
+        // Gas Settings handlers - specific handlers for defined buttons
+        this.bot.action('set_buy_gas_50', async (ctx) => {
+            await this.updateGasSetting(ctx, 'gas_price', 50 * 1000000000, 'buy_settings');
         });
 
-        this.bot.action(/^set_sell_gas_(\d+)$/, async (ctx) => {
-            const gasPrice = parseInt(ctx.match[1]);
-            await this.updateGasSetting(ctx, 'sell_gas_price', gasPrice * 1000000000, 'sell_settings');
+        this.bot.action('set_buy_gas_100', async (ctx) => {
+            await this.updateGasSetting(ctx, 'gas_price', 100 * 1000000000, 'buy_settings');
+        });
+
+        this.bot.action('set_sell_gas_50', async (ctx) => {
+            await this.updateGasSetting(ctx, 'sell_gas_price', 50 * 1000000000, 'sell_settings');
+        });
+
+        this.bot.action('set_sell_gas_100', async (ctx) => {
+            await this.updateGasSetting(ctx, 'sell_gas_price', 100 * 1000000000, 'sell_settings');
         });
 
         // Custom Gas handlers
@@ -254,39 +264,70 @@ class Area51BotModularSimple {
             await this.showCustomGas(ctx, 'sell');
         });
 
-        // Slippage Settings handlers
-        this.bot.action(/^set_buy_slippage_(\d+)$/, async (ctx) => {
-            const slippage = parseInt(ctx.match[1]);
-            await this.updateSlippageSetting(ctx, 'slippage_tolerance', slippage, 'buy_settings');
+        // Slippage Settings handlers - specific handlers for defined buttons
+        this.bot.action('set_buy_slippage_1', async (ctx) => {
+            await this.updateSlippageSetting(ctx, 'slippage_tolerance', 1, 'buy_settings');
         });
 
-        this.bot.action(/^set_sell_slippage_(\d+)$/, async (ctx) => {
-            const slippage = parseInt(ctx.match[1]);
-            await this.updateSlippageSetting(ctx, 'sell_slippage_tolerance', slippage, 'sell_settings');
+        this.bot.action('set_buy_slippage_3', async (ctx) => {
+            await this.updateSlippageSetting(ctx, 'slippage_tolerance', 3, 'buy_settings');
         });
 
-        // Auto Buy Amount handlers
-        this.bot.action(/^set_auto_buy_(.+)$/, async (ctx) => {
-            const amount = parseFloat(ctx.match[1]);
-            await this.updateAutoBuyAmount(ctx, amount);
+        this.bot.action('set_buy_slippage_5', async (ctx) => {
+            await this.updateSlippageSetting(ctx, 'slippage_tolerance', 5, 'buy_settings');
         });
 
-        // New Gas handlers for updated values
-        this.bot.action('set_buy_gas_25', async (ctx) => {
-            await this.updateGasSetting(ctx, 'gas_price', 25 * 1000000000, 'buy_settings');
+        this.bot.action('set_buy_slippage_10', async (ctx) => {
+            await this.updateSlippageSetting(ctx, 'slippage_tolerance', 10, 'buy_settings');
         });
 
-        this.bot.action('set_buy_gas_35', async (ctx) => {
-            await this.updateGasSetting(ctx, 'gas_price', 35 * 1000000000, 'buy_settings');
+        this.bot.action('set_sell_slippage_1', async (ctx) => {
+            await this.updateSlippageSetting(ctx, 'sell_slippage_tolerance', 1, 'sell_settings');
         });
 
-        this.bot.action('set_sell_gas_25', async (ctx) => {
-            await this.updateGasSetting(ctx, 'sell_gas_price', 25 * 1000000000, 'sell_settings');
+        this.bot.action('set_sell_slippage_3', async (ctx) => {
+            await this.updateSlippageSetting(ctx, 'sell_slippage_tolerance', 3, 'sell_settings');
         });
 
-        this.bot.action('set_sell_gas_35', async (ctx) => {
-            await this.updateGasSetting(ctx, 'sell_gas_price', 35 * 1000000000, 'sell_settings');
+        this.bot.action('set_sell_slippage_5', async (ctx) => {
+            await this.updateSlippageSetting(ctx, 'sell_slippage_tolerance', 5, 'sell_settings');
         });
+
+        this.bot.action('set_sell_slippage_10', async (ctx) => {
+            await this.updateSlippageSetting(ctx, 'sell_slippage_tolerance', 10, 'sell_settings');
+        });
+
+        // Auto Buy Amount handlers - specific handlers only
+        this.bot.action('set_auto_buy_0.1', async (ctx) => {
+            console.log('🔧 Auto Buy Amount 0.1 button pressed by user:', ctx.from.id);
+            await this.updateAutoBuyAmount(ctx, 0.1);
+        });
+
+        this.bot.action('set_auto_buy_0.5', async (ctx) => {
+            console.log('🔧 Auto Buy Amount 0.5 button pressed by user:', ctx.from.id);
+            await this.updateAutoBuyAmount(ctx, 0.5);
+        });
+
+        this.bot.action('set_auto_buy_1', async (ctx) => {
+            console.log('🔧 Auto Buy Amount 1 button pressed by user:', ctx.from.id);
+            await this.updateAutoBuyAmount(ctx, 1);
+        });
+
+        this.bot.action('set_auto_buy_2', async (ctx) => {
+            console.log('🔧 Auto Buy Amount 2 button pressed by user:', ctx.from.id);
+            await this.updateAutoBuyAmount(ctx, 2);
+        });
+
+        this.bot.action('set_auto_buy_5', async (ctx) => {
+            console.log('🔧 Auto Buy Amount 5 button pressed by user:', ctx.from.id);
+            await this.updateAutoBuyAmount(ctx, 5);
+        });
+
+        this.bot.action('set_auto_buy_10', async (ctx) => {
+            console.log('🔧 Auto Buy Amount 10 button pressed by user:', ctx.from.id);
+            await this.updateAutoBuyAmount(ctx, 10);
+        });
+
 
         // Custom Slippage handlers
         this.bot.action('buy_slippage_custom', async (ctx) => {
@@ -306,45 +347,48 @@ class Area51BotModularSimple {
             await this.showAutoBuySlippageSettings(ctx);
         });
 
-        // Auto Buy Gas handlers
-        this.bot.action(/^set_auto_buy_gas_(\d+)$/, async (ctx) => {
-            const gasPrice = parseInt(ctx.match[1]);
-            await this.updateGasSetting(ctx, 'auto_buy_gas', gasPrice * 1000000000, 'auto_buy_settings');
-        });
-
-        // Specific Auto Buy Gas handlers
+        // Specific Auto Buy Gas handlers (remove regex handler that conflicts)
         this.bot.action('set_auto_buy_gas_50', async (ctx) => {
             console.log('🔧 Auto Buy Gas 50 button pressed by user:', ctx.from.id);
-            try {
-                await this.updateGasSetting(ctx, 'auto_buy_gas', 50 * 1000000000, 'auto_buy_settings');
-            } catch (error) {
-                console.error('❌ Error in set_auto_buy_gas_50:', error);
-                await ctx.reply('❌ Error updating gas settings. Please try again.');
-            }
+            await this.updateAutoBuyGas(ctx, 50);
         });
 
         this.bot.action('set_auto_buy_gas_100', async (ctx) => {
             console.log('🔧 Auto Buy Gas 100 button pressed by user:', ctx.from.id);
-            try {
-                await this.updateGasSetting(ctx, 'auto_buy_gas', 100 * 1000000000, 'auto_buy_settings');
-            } catch (error) {
-                console.error('❌ Error in set_auto_buy_gas_100:', error);
-                await ctx.reply('❌ Error updating gas settings. Please try again.');
-            }
+            await this.updateAutoBuyGas(ctx, 100);
         });
 
         this.bot.action('auto_buy_gas_custom', async (ctx) => {
             await this.showCustomGas(ctx, 'auto_buy');
         });
 
-        // Auto Buy Slippage handlers
-        this.bot.action(/^set_auto_buy_slippage_(\d+)$/, async (ctx) => {
-            const slippage = parseInt(ctx.match[1]);
-            await this.updateSlippageSetting(ctx, 'auto_buy_slippage', slippage, 'auto_buy_settings');
+        // Specific Auto Buy Slippage handlers
+        this.bot.action('set_auto_buy_slippage_1', async (ctx) => {
+            console.log('🔧 Auto Buy Slippage 1% button pressed by user:', ctx.from.id);
+            await this.updateAutoBuySlippage(ctx, 1);
+        });
+
+        this.bot.action('set_auto_buy_slippage_3', async (ctx) => {
+            console.log('🔧 Auto Buy Slippage 3% button pressed by user:', ctx.from.id);
+            await this.updateAutoBuySlippage(ctx, 3);
+        });
+
+        this.bot.action('set_auto_buy_slippage_5', async (ctx) => {
+            console.log('🔧 Auto Buy Slippage 5% button pressed by user:', ctx.from.id);
+            await this.updateAutoBuySlippage(ctx, 5);
+        });
+
+        this.bot.action('set_auto_buy_slippage_10', async (ctx) => {
+            console.log('🔧 Auto Buy Slippage 10% button pressed by user:', ctx.from.id);
+            await this.updateAutoBuySlippage(ctx, 10);
         });
 
         this.bot.action('auto_buy_slippage_custom', async (ctx) => {
             await this.showCustomSlippage(ctx, 'auto_buy');
+        });
+
+        this.bot.action('auto_buy_amount_custom', async (ctx) => {
+            await this.showCustomAmount(ctx, 'auto_buy');
         });
 
         // Token interface handlers
@@ -503,7 +547,7 @@ Are you sure you want to continue?`;
                 
                 setTimeout(async () => {
                     await this.showSettings(ctx);
-                }, 1500);
+                }, 800);
             }
             
         } catch (error) {
@@ -572,15 +616,15 @@ Are you sure you want to continue?`;
             const autoBuyAmount = userSettings?.auto_buy_amount || 0.1;
             const autoBuyStatus = autoBuyEnabled ? '🟢' : '🔴';
             
-            const settingsText = `💰 **Buy Settings**
+            const settingsText = `⚡️ *Buy Settings*
 
-*Gas:* **${gasPrice} Gwei** | *Slippage:* **${slippage}%** | *Auto Buy:* **${autoBuyStatus}**
+Gas: ${gasPrice} Gwei | Slippage: ${slippage}% | Auto Buy: ${autoBuyStatus}
 
-_Purchase transaction configuration:_
+Purchase transaction configuration:
 
-• **Gas Price Control** - _Network fee for buy transactions (15-50 Gwei)_
-• **Slippage Tolerance** - _Price variance acceptance for purchases (1-25%)_
-• **Auto Buy System** - _Automated purchasing (${autoBuyAmount} MON)_`;
+• Gas Price Control - Network fee for buy transactions (minimum 50 Gwei)
+• Slippage Tolerance - Price variance acceptance for purchases (no limits)
+• Auto Buy System - Automated purchasing (${autoBuyAmount} MON)`;
 
             const keyboard = Markup.inlineKeyboard([
                 [Markup.button.callback('Set Gas Price', 'buy_gas_settings'), Markup.button.callback('Set Slippage', 'buy_slippage_settings')],
@@ -588,7 +632,7 @@ _Purchase transaction configuration:_
                 [Markup.button.callback('Back to Settings', 'settings')]
             ]);
 
-            await ctx.editMessageText(settingsText, {
+            await ctx.reply(settingsText, {
                 parse_mode: 'Markdown',
                 reply_markup: keyboard.reply_markup
             });
@@ -601,20 +645,22 @@ _Purchase transaction configuration:_
 
     async showBuyGasSettings(ctx) {
         try {
-            await ctx.answerCbQuery();
+            if (ctx.callbackQuery) {
+                await ctx.answerCbQuery();
+            }
             
             const userSettings = await this.database.getUserSettings(ctx.from.id);
             const currentGas = Math.round((userSettings?.gas_price || 50000000000) / 1000000000);
             const currentCost = (currentGas * 0.00025).toFixed(4);
             
-            const settingsText = `⚡ **Gas Settings - Buy**
+            const settingsText = `⛽️ *Gas Settings - Buy*
 
-*Current:* **${currentGas} Gwei** (~${currentCost} MON)
+Current: ${currentGas} Gwei (~${currentCost} MON)
 
-_Network fee for buy transactions:_
+Network fee for buy transactions:
 
-• **Normal (50 Gwei)** - _~0.0125 MON standard fee_
-• **Turbo (100 Gwei)** - _~0.025 MON priority processing_`;
+• Normal (50 Gwei) - ~0.0125 MON standard fee
+• Turbo (100 Gwei) - ~0.025 MON priority processing`;
 
             const keyboard = Markup.inlineKeyboard([
                 [Markup.button.callback('Normal (50 Gwei)', 'set_buy_gas_50')],
@@ -623,7 +669,7 @@ _Network fee for buy transactions:_
                 [Markup.button.callback('Back', 'buy_settings')]
             ]);
 
-            await ctx.editMessageText(settingsText, {
+            await ctx.reply(settingsText, {
                 parse_mode: 'Markdown',
                 reply_markup: keyboard.reply_markup
             });
@@ -636,7 +682,9 @@ _Network fee for buy transactions:_
 
     async showBuySlippageSettings(ctx) {
         try {
-            await ctx.answerCbQuery();
+            if (ctx.callbackQuery) {
+                await ctx.answerCbQuery();
+            }
             
             const userSettings = await this.database.getUserSettings(ctx.from.id);
             const currentSlippage = userSettings?.slippage_tolerance || 5;
@@ -658,7 +706,7 @@ _Set price tolerance for market volatility:_
                 [Markup.button.callback('Back', 'buy_settings')]
             ]);
 
-            await ctx.editMessageText(settingsText, {
+            await ctx.reply(settingsText, {
                 parse_mode: 'Markdown',
                 reply_markup: keyboard.reply_markup
             });
@@ -672,14 +720,35 @@ _Set price tolerance for market volatility:_
     // Auto Buy Methods
     async showAutoBuySettings(ctx) {
         try {
-            await ctx.answerCbQuery();
+            // Only answer callback query if it's actually a callback query
+            if (ctx.callbackQuery) {
+                await ctx.answerCbQuery();
+            }
             
             const userSettings = await this.database.getUserSettings(ctx.from.id);
+            console.log('🔍 Auto Buy Settings Display - Raw user settings:', {
+                auto_buy_enabled: userSettings?.auto_buy_enabled,
+                auto_buy_amount: userSettings?.auto_buy_amount,
+                auto_buy_gas: userSettings?.auto_buy_gas,
+                auto_buy_slippage: userSettings?.auto_buy_slippage,
+                userId: ctx.from.id
+            });
+            
             const autoBuyEnabled = userSettings?.auto_buy_enabled || false;
-            const autoBuyAmount = userSettings?.auto_buy_amount || 0.1;
-            const autoBuyGas = Math.round((userSettings?.auto_buy_gas || userSettings?.gas_price || 50000000000) / 1000000000);
-            const autoBuySlippage = userSettings?.auto_buy_slippage || userSettings?.slippage_tolerance || 5;
+            // Fix NaN issue by ensuring proper number conversion
+            const autoBuyAmount = parseFloat(userSettings?.auto_buy_amount) || 0.1;
+            // Use only auto_buy_gas, not fallback to gas_price
+            const autoBuyGas = Math.round((userSettings?.auto_buy_gas || 50000000000) / 1000000000);
+            // Use only auto_buy_slippage, not fallback to slippage_tolerance
+            const autoBuySlippage = userSettings?.auto_buy_slippage || 5;
             const status = autoBuyEnabled ? '🟢 ON' : '🔴 OFF';
+            
+            console.log('🎯 Auto Buy Settings Display - Processed values:', {
+                status,
+                amount: autoBuyAmount,
+                gas: autoBuyGas,
+                slippage: autoBuySlippage
+            });
             
             const settingsText = `🔄 **Auto Buy Settings**
 
@@ -697,10 +766,32 @@ Configure your automatic buying preferences:`;
                 [Markup.button.callback('Back to Settings', 'settings')]
             ]);
 
-            await ctx.editMessageText(settingsText, {
-                parse_mode: 'Markdown',
-                reply_markup: keyboard.reply_markup
-            });
+            // Send message based on context type
+            if (ctx.callbackQuery) {
+                try {
+                    await ctx.editMessageText(settingsText, {
+                        parse_mode: 'Markdown',
+                        reply_markup: keyboard.reply_markup
+                    });
+                } catch (editError) {
+                    // If message can't be edited, send new message
+                    if (editError.message.includes('message is not modified') || 
+                        editError.message.includes('message can\'t be edited')) {
+                        await ctx.reply(settingsText, {
+                            parse_mode: 'Markdown',
+                            reply_markup: keyboard.reply_markup
+                        });
+                    } else {
+                        throw editError;
+                    }
+                }
+            } else {
+                // For regular messages, always send new message
+                await ctx.reply(settingsText, {
+                    parse_mode: 'Markdown',
+                    reply_markup: keyboard.reply_markup
+                });
+            }
             
         } catch (error) {
             this.monitoring.logError('Auto buy settings failed', error, { userId: ctx.from.id });
@@ -750,7 +841,7 @@ Are you sure you want to enable Auto Buy?`;
                 
                 setTimeout(async () => {
                     await this.showAutoBuySettings(ctx);
-                }, 1500);
+                }, 800);
             }
             
         } catch (error) {
@@ -761,7 +852,9 @@ Are you sure you want to enable Auto Buy?`;
 
     async showAutoBuyAmount(ctx) {
         try {
-            await ctx.answerCbQuery();
+            if (ctx.callbackQuery) {
+                await ctx.answerCbQuery();
+            }
             
             const userSettings = await this.database.getUserSettings(ctx.from.id);
             const currentAmount = userSettings?.auto_buy_amount || 0.1;
@@ -779,11 +872,11 @@ _Select purchase quantity for automated buying:_
             const keyboard = Markup.inlineKeyboard([
                 [Markup.button.callback('0.1 MON', 'set_auto_buy_0.1'), Markup.button.callback('0.5 MON', 'set_auto_buy_0.5')],
                 [Markup.button.callback('1 MON', 'set_auto_buy_1'), Markup.button.callback('2 MON', 'set_auto_buy_2')],
-                [Markup.button.callback('5 MON', 'set_auto_buy_5'), Markup.button.callback('10 MON', 'set_auto_buy_10')],
+                [Markup.button.callback('Custom Amount', 'auto_buy_amount_custom')],
                 [Markup.button.callback('Back', 'auto_buy_settings')]
             ]);
 
-            await ctx.editMessageText(settingsText, {
+            await ctx.reply(settingsText, {
                 parse_mode: 'Markdown',
                 reply_markup: keyboard.reply_markup
             });
@@ -797,7 +890,9 @@ _Select purchase quantity for automated buying:_
     // Sell Settings Methods
     async showSellSettings(ctx) {
         try {
-            await ctx.answerCbQuery();
+            if (ctx.callbackQuery) {
+                await ctx.answerCbQuery();
+            }
             
             const userSettings = await this.database.getUserSettings(ctx.from.id);
             const gasPrice = Math.round((userSettings?.sell_gas_price || userSettings?.gas_price || 50000000000) / 1000000000);
@@ -809,8 +904,8 @@ _Select purchase quantity for automated buying:_
 
 _Sale transaction configuration:_
 
-• **Gas Price Control** - _Network fee for sell transactions (15-50 Gwei)_
-• **Slippage Tolerance** - _Price variance acceptance for sales (1-25%)_`;
+• **Gas Price Control** - _Network fee for sell transactions (minimum 50 Gwei)_
+• **Slippage Tolerance** - _Price variance acceptance for sales (no limits)_`;
 
             const keyboard = Markup.inlineKeyboard([
                 [Markup.button.callback('Gas Settings', 'sell_gas_settings')],
@@ -818,7 +913,7 @@ _Sale transaction configuration:_
                 [Markup.button.callback('Back to Settings', 'settings')]
             ]);
 
-            await ctx.editMessageText(settingsText, {
+            await ctx.reply(settingsText, {
                 parse_mode: 'Markdown',
                 reply_markup: keyboard.reply_markup
             });
@@ -831,7 +926,9 @@ _Sale transaction configuration:_
 
     async showSellGasSettings(ctx) {
         try {
-            await ctx.answerCbQuery();
+            if (ctx.callbackQuery) {
+                await ctx.answerCbQuery();
+            }
             
             const userSettings = await this.database.getUserSettings(ctx.from.id);
             const currentGas = Math.round((userSettings?.sell_gas_price || userSettings?.gas_price || 50000000000) / 1000000000);
@@ -853,7 +950,7 @@ _Network fee for sell transactions:_
                 [Markup.button.callback('Back', 'sell_settings')]
             ]);
 
-            await ctx.editMessageText(settingsText, {
+            await ctx.reply(settingsText, {
                 parse_mode: 'Markdown',
                 reply_markup: keyboard.reply_markup
             });
@@ -866,7 +963,9 @@ _Network fee for sell transactions:_
 
     async showSellSlippageSettings(ctx) {
         try {
-            await ctx.answerCbQuery();
+            if (ctx.callbackQuery) {
+                await ctx.answerCbQuery();
+            }
             
             const userSettings = await this.database.getUserSettings(ctx.from.id);
             const currentSlippage = userSettings?.sell_slippage_tolerance || userSettings?.slippage_tolerance || 5;
@@ -888,7 +987,7 @@ _Price variance tolerance for sell transactions:_
                 [Markup.button.callback('Back', 'sell_settings')]
             ]);
 
-            await ctx.editMessageText(settingsText, {
+            await ctx.reply(settingsText, {
                 parse_mode: 'Markdown',
                 reply_markup: keyboard.reply_markup
             });
@@ -905,13 +1004,35 @@ _Price variance tolerance for sell transactions:_
             await ctx.answerCbQuery();
             
             const userId = ctx.from.id;
-            console.log(`🔧 Updating ${field} to ${value} for user ${userId}`);
+            console.log(`🔧 DEEP DEBUG - updateGasSetting called with:`);
+            console.log(`   - field: ${field}`);
+            console.log(`   - value: ${value} (${Math.round(value / 1000000000)} Gwei)`);
+            console.log(`   - userId: ${userId}`);
+            console.log(`   - returnMenu: ${returnMenu}`);
+            
+            // Check current settings before update
+            const currentSettings = await this.database.getUserSettings(userId);
+            console.log(`📋 Current settings BEFORE update:`, {
+                auto_buy_gas: currentSettings?.auto_buy_gas,
+                gas_price: currentSettings?.gas_price,
+                [field]: currentSettings?.[field]
+            });
             
             // Ensure user settings exist first
+            console.log('🔧 Creating user settings if not exists...');
             await this.database.createUserSettings(userId);
             
+            console.log('🔧 Calling database.updateUserSettings...');
             const result = await this.database.updateUserSettings(userId, { [field]: value });
             console.log('📊 Database update result:', result);
+            
+            // Verify the update worked
+            const verifySettings = await this.database.getUserSettings(userId);
+            console.log(`✅ Settings AFTER update verification:`, {
+                auto_buy_gas: verifySettings?.auto_buy_gas,
+                gas_price: verifySettings?.gas_price,
+                [field]: verifySettings?.[field]
+            });
             
             // Clear cache to ensure fresh data
             if (this.redis) {
@@ -938,7 +1059,7 @@ _Price variance tolerance for sell transactions:_
                 } else if (returnMenu === 'auto_buy_settings') {
                     await this.showAutoBuySettings(ctx);
                 }
-            }, 1500);
+            }, 800);
             
         } catch (error) {
             console.error('❌ Update gas setting failed:', error);
@@ -952,7 +1073,26 @@ _Price variance tolerance for sell transactions:_
             await ctx.answerCbQuery();
             
             const userId = ctx.from.id;
-            await this.database.updateUserSettings(userId, { [field]: value });
+            console.log(`🔧 Updating ${field} to ${value}% for user ${userId}`);
+            
+            // Ensure user settings exist first
+            await this.database.createUserSettings(userId);
+            
+            const result = await this.database.updateUserSettings(userId, { [field]: value });
+            console.log('📊 Database update result:', result);
+            
+            // Clear cache to ensure fresh data
+            if (this.redis) {
+                try {
+                    await Promise.all([
+                        this.redis.del(`settings:${userId}`),
+                        this.redis.del(`user:${userId}`)
+                    ]);
+                    console.log('🗑️ Cleared settings cache for user', userId);
+                } catch (cacheError) {
+                    console.log('⚠️ Cache clear failed:', cacheError.message);
+                }
+            }
             
             await ctx.editMessageText(`✅ Slippage updated to ${value}%`, {
                 parse_mode: 'Markdown'
@@ -966,10 +1106,11 @@ _Price variance tolerance for sell transactions:_
                 } else if (returnMenu === 'auto_buy_settings') {
                     await this.showAutoBuySettings(ctx);
                 }
-            }, 1500);
+            }, 800);
             
         } catch (error) {
-            this.monitoring.logError('Update slippage setting failed', error, { userId: ctx.from.id });
+            console.error('❌ Update slippage setting failed:', error);
+            this.monitoring.logError('Update slippage setting failed', error, { userId: ctx.from.id, field, value });
             await ctx.reply('❌ Error updating slippage settings.');
         }
     }
@@ -979,7 +1120,46 @@ _Price variance tolerance for sell transactions:_
             await ctx.answerCbQuery();
             
             const userId = ctx.from.id;
-            await this.database.updateUserSettings(userId, { auto_buy_amount: amount });
+            console.log(`🔧 DEEP DEBUG - updateAutoBuyAmount called with:`);
+            console.log(`   - amount: ${amount} MON`);
+            console.log(`   - userId: ${userId}`);
+            
+            // Check current settings before update
+            const currentSettings = await this.database.getUserSettings(userId);
+            console.log(`📋 Current settings BEFORE amount update:`, {
+                auto_buy_amount: currentSettings?.auto_buy_amount,
+                auto_buy_gas: currentSettings?.auto_buy_gas,
+                auto_buy_slippage: currentSettings?.auto_buy_slippage
+            });
+            
+            // Ensure user settings exist first
+            console.log('🔧 Creating user settings if not exists...');
+            await this.database.createUserSettings(userId);
+            
+            console.log('🔧 Calling database.updateUserSettings for auto_buy_amount...');
+            const result = await this.database.updateUserSettings(userId, { auto_buy_amount: amount });
+            console.log('📊 Database update result:', result);
+            
+            // Verify the update worked
+            const verifySettings = await this.database.getUserSettings(userId);
+            console.log(`✅ Settings AFTER amount update verification:`, {
+                auto_buy_amount: verifySettings?.auto_buy_amount,
+                auto_buy_gas: verifySettings?.auto_buy_gas,
+                auto_buy_slippage: verifySettings?.auto_buy_slippage
+            });
+            
+            // Clear cache to ensure fresh data
+            if (this.redis) {
+                try {
+                    await Promise.all([
+                        this.redis.del(`settings:${userId}`),
+                        this.redis.del(`user:${userId}`)
+                    ]);
+                    console.log('🗑️ Cleared settings cache for user', userId);
+                } catch (cacheError) {
+                    console.log('⚠️ Cache clear failed:', cacheError.message);
+                }
+            }
             
             await ctx.editMessageText(`✅ Auto buy amount set to ${amount} MON`, {
                 parse_mode: 'Markdown'
@@ -987,11 +1167,137 @@ _Price variance tolerance for sell transactions:_
             
             setTimeout(async () => {
                 await this.showAutoBuySettings(ctx);
-            }, 1500);
+            }, 800);
             
         } catch (error) {
-            this.monitoring.logError('Update auto buy amount failed', error, { userId: ctx.from.id });
+            console.error('❌ Update auto buy amount failed:', error);
+            this.monitoring.logError('Update auto buy amount failed', error, { userId: ctx.from.id, amount });
             await ctx.reply('❌ Error updating auto buy amount.');
+        }
+    }
+
+    async updateAutoBuyGas(ctx, gasGwei) {
+        try {
+            await ctx.answerCbQuery();
+            
+            const userId = ctx.from.id;
+            const gasWei = gasGwei * 1000000000; // Convert Gwei to Wei
+            
+            console.log(`🔧 DEEP DEBUG - updateAutoBuyGas called with:`);
+            console.log(`   - gasGwei: ${gasGwei} Gwei`);
+            console.log(`   - gasWei: ${gasWei} Wei`);
+            console.log(`   - userId: ${userId}`);
+            
+            // Check current settings before update
+            const currentSettings = await this.database.getUserSettings(userId);
+            console.log(`📋 Current settings BEFORE gas update:`, {
+                auto_buy_amount: currentSettings?.auto_buy_amount,
+                auto_buy_gas: currentSettings?.auto_buy_gas,
+                auto_buy_slippage: currentSettings?.auto_buy_slippage
+            });
+            
+            // Ensure user settings exist first
+            console.log('🔧 Creating user settings if not exists...');
+            await this.database.createUserSettings(userId);
+            
+            console.log('🔧 Calling database.updateUserSettings for auto_buy_gas...');
+            const result = await this.database.updateUserSettings(userId, { auto_buy_gas: gasWei });
+            console.log('📊 Database update result:', result);
+            
+            // Verify the update worked
+            const verifySettings = await this.database.getUserSettings(userId);
+            console.log(`✅ Settings AFTER gas update verification:`, {
+                auto_buy_amount: verifySettings?.auto_buy_amount,
+                auto_buy_gas: verifySettings?.auto_buy_gas,
+                auto_buy_slippage: verifySettings?.auto_buy_slippage
+            });
+            
+            // Clear cache to ensure fresh data
+            if (this.redis) {
+                try {
+                    await Promise.all([
+                        this.redis.del(`settings:${userId}`),
+                        this.redis.del(`user:${userId}`)
+                    ]);
+                    console.log('🗑️ Cleared settings cache for user', userId);
+                } catch (cacheError) {
+                    console.log('⚠️ Cache clear failed:', cacheError.message);
+                }
+            }
+            
+            await ctx.editMessageText(`✅ Auto buy gas set to ${gasGwei} Gwei`, {
+                parse_mode: 'Markdown'
+            });
+            
+            setTimeout(async () => {
+                await this.showAutoBuySettings(ctx);
+            }, 800);
+            
+        } catch (error) {
+            console.error('❌ Update auto buy gas failed:', error);
+            this.monitoring.logError('Update auto buy gas failed', error, { userId: ctx.from.id, gasGwei });
+            await ctx.reply('❌ Error updating auto buy gas.');
+        }
+    }
+
+    async updateAutoBuySlippage(ctx, slippage) {
+        try {
+            await ctx.answerCbQuery();
+            
+            const userId = ctx.from.id;
+            console.log(`🔧 DEEP DEBUG - updateAutoBuySlippage called with:`);
+            console.log(`   - slippage: ${slippage}%`);
+            console.log(`   - userId: ${userId}`);
+            
+            // Check current settings before update
+            const currentSettings = await this.database.getUserSettings(userId);
+            console.log(`📋 Current settings BEFORE slippage update:`, {
+                auto_buy_amount: currentSettings?.auto_buy_amount,
+                auto_buy_gas: currentSettings?.auto_buy_gas,
+                auto_buy_slippage: currentSettings?.auto_buy_slippage
+            });
+            
+            // Ensure user settings exist first
+            console.log('🔧 Creating user settings if not exists...');
+            await this.database.createUserSettings(userId);
+            
+            console.log('🔧 Calling database.updateUserSettings for auto_buy_slippage...');
+            const result = await this.database.updateUserSettings(userId, { auto_buy_slippage: slippage });
+            console.log('📊 Database update result:', result);
+            
+            // Verify the update worked
+            const verifySettings = await this.database.getUserSettings(userId);
+            console.log(`✅ Settings AFTER slippage update verification:`, {
+                auto_buy_amount: verifySettings?.auto_buy_amount,
+                auto_buy_gas: verifySettings?.auto_buy_gas,
+                auto_buy_slippage: verifySettings?.auto_buy_slippage
+            });
+            
+            // Clear cache to ensure fresh data
+            if (this.redis) {
+                try {
+                    await Promise.all([
+                        this.redis.del(`settings:${userId}`),
+                        this.redis.del(`user:${userId}`)
+                    ]);
+                    console.log('🗑️ Cleared settings cache for user', userId);
+                } catch (cacheError) {
+                    console.log('⚠️ Cache clear failed:', cacheError.message);
+                }
+            }
+            
+            await ctx.editMessageText(`✅ Auto buy slippage set to ${slippage}%`, {
+                parse_mode: 'Markdown'
+            });
+            
+            setTimeout(async () => {
+                await this.showAutoBuySettings(ctx);
+            }, 800);
+            
+        } catch (error) {
+            console.error('❌ Update auto buy slippage failed:', error);
+            this.monitoring.logError('Update auto buy slippage failed', error, { userId: ctx.from.id, slippage });
+            await ctx.reply('❌ Error updating auto buy slippage.');
         }
     }
 
@@ -1024,11 +1330,11 @@ Click the link above to view token details on the blockchain explorer.`, {
             
             const settingsText = `📝 **Custom Slippage - ${type === 'buy' ? 'Buy' : type === 'sell' ? 'Sell' : 'Auto Buy'}**
 
-*Enter custom slippage percentage (1-50%):*
+*Enter custom slippage percentage (minimum 0.1%):*
 
-_Examples: 2.5, 7, 12.3_
+_Examples: 5, 25, 50, 100_
 
-Please enter a number between 1 and 50.`;
+Enter any percentage up to 100% - unlimited slippage for maximum speed.`;
 
             await ctx.editMessageText(settingsText, {
                 parse_mode: 'Markdown'
@@ -1055,14 +1361,15 @@ Please enter a number between 1 and 50.`;
             
             const settingsText = `📝 **Custom Gas - ${type === 'buy' ? 'Buy' : type === 'sell' ? 'Sell' : 'Auto Buy'}**
 
-*Enter custom gas price (20-200 Gwei):*
+*Enter custom gas price (minimum 50 Gwei):*
 
-_Examples: 75, 120, 150_
+_Examples: 75, 200, 500, 1000_
 
 • **50 Gwei** = ~0.0125 MON
-• **100 Gwei** = ~0.025 MON
+• **200 Gwei** = ~0.05 MON
+• **500 Gwei** = ~0.125 MON
 
-Please enter a number between 20 and 200.`;
+Enter any gas price above 50 Gwei - unlimited for maximum speed.`;
 
             await ctx.editMessageText(settingsText, {
                 parse_mode: 'Markdown'
@@ -1079,16 +1386,60 @@ Please enter a number between 20 and 200.`;
             
         } catch (error) {
             this.monitoring.logError('Show custom gas failed', error, { userId: ctx.from.id });
-            await ctx.reply('❌ Error loading custom gas.');
+            await ctx.reply('❌ Error showing custom gas settings.');
+        }
+    }
+
+    async showCustomAmount(ctx, type) {
+        try {
+            await ctx.answerCbQuery();
+            
+            const settingsText = `📝 **Custom Auto Buy Amount**
+
+*Enter custom amount for automatic purchases (0.01-100 MON):*
+
+_Examples: 0.25, 1.5, 3.0_
+
+• **0.1-1 MON** = Small auto buy positions
+• **1-5 MON** = Medium auto buy positions  
+• **5+ MON** = Large auto buy positions
+
+⚠️ This amount will be used for automatic token purchases when new tokens are detected.
+
+Please enter a number between 0.01 and 100.`;
+
+            await ctx.editMessageText(settingsText, {
+                parse_mode: 'Markdown'
+            });
+
+            // Set user state to await custom amount input
+            const returnMenu = type === 'auto_buy' ? 'auto_buy_amount' : 'buy_amount_settings';
+            
+            await this.database.setUserState(ctx.from.id, `awaiting_custom_amount_${type}`, {
+                returnMenu: returnMenu
+            });
+            
+        } catch (error) {
+            this.monitoring.logError('Show custom amount failed', error, { userId: ctx.from.id });
+            await ctx.reply('❌ Error showing custom amount settings.');
         }
     }
 
     async showAutoBuyGasSettings(ctx) {
         try {
-            await ctx.answerCbQuery();
+            if (ctx.callbackQuery) {
+                await ctx.answerCbQuery();
+            }
             
             const userSettings = await this.database.getUserSettings(ctx.from.id);
-            const currentGas = Math.round((userSettings?.auto_buy_gas || userSettings?.gas_price || 50000000000) / 1000000000);
+            console.log('🔍 Current user settings for gas display:', {
+                auto_buy_gas: userSettings?.auto_buy_gas,
+                gas_price: userSettings?.gas_price,
+                userId: ctx.from.id
+            });
+            
+            // Use auto_buy_gas specifically, with proper default of 50 Gwei
+            const currentGas = Math.round((userSettings?.auto_buy_gas || 50000000000) / 1000000000);
             const currentCost = (currentGas * 0.00025).toFixed(4);
             
             const settingsText = `⚡ **Auto Buy Gas Settings**
@@ -1107,7 +1458,7 @@ _Network fee for automated purchases:_
                 [Markup.button.callback('Back', 'auto_buy_settings')]
             ]);
 
-            await ctx.editMessageText(settingsText, {
+            await ctx.reply(settingsText, {
                 parse_mode: 'Markdown',
                 reply_markup: keyboard.reply_markup
             });
@@ -1120,7 +1471,9 @@ _Network fee for automated purchases:_
 
     async showAutoBuySlippageSettings(ctx) {
         try {
-            await ctx.answerCbQuery();
+            if (ctx.callbackQuery) {
+                await ctx.answerCbQuery();
+            }
             
             const userSettings = await this.database.getUserSettings(ctx.from.id);
             const currentSlippage = userSettings?.auto_buy_slippage || userSettings?.slippage_tolerance || 5;
@@ -1141,7 +1494,7 @@ _Price tolerance for automated purchases:_
                 [Markup.button.callback('Back', 'auto_buy_settings')]
             ]);
 
-            await ctx.editMessageText(settingsText, {
+            await ctx.reply(settingsText, {
                 parse_mode: 'Markdown',
                 reply_markup: keyboard.reply_markup
             });

@@ -92,7 +92,7 @@ class TradingEngine {
             }
 
             // Use effective slippage from priority system
-            let finalSlippage = Math.max(effectiveSlippage, 5); // Minimum 5% slippage
+            let finalSlippage = effectiveSlippage; // No minimum limit for high-risk trading
             console.log(`Using slippage: ${finalSlippage}% (effective: ${effectiveSlippage}%)`);
             
             // Execute swap with priority-based gas and slippage
@@ -519,8 +519,8 @@ Current balance: ${monBalance} MON`;
             errors.push('Amount must be greater than 0');
         }
 
-        if (slippage < 0.1 || slippage > 50) {
-            errors.push('Slippage must be between 0.1% and 50%');
+        if (slippage < 0.1) {
+            errors.push('Slippage must be at least 0.1%');
         }
 
         return {

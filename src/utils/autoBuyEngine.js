@@ -19,6 +19,101 @@ class AutoBuyEngine {
      * Execute auto buy transaction using separate auto buy settings
      * This is completely independent from regular buy/sell settings
      */
+    async executeBuy(telegramId, tokenAddress, buyAmount) {
+        try {
+            console.log(`🤖 Auto Buy executeBuy triggered for user ${telegramId}, token: ${tokenAddress}, amount: ${buyAmount} MON`);
+
+            // Get user wallet
+            const user = await this.database.getUser(telegramId);
+            if (!user) {
+                throw new Error('User not found');
+            }
+
+            // Get auto buy settings (completely separate from regular settings)
+            const autoBuySettings = await this.prioritySystem.getAutoBuySettings(telegramId);
+            console.log(`🎯 Auto Buy Settings: Gas=${Math.round(autoBuySettings.gas/1000000000)} Gwei, Slippage=${autoBuySettings.slippage}%, Amount=${autoBuySettings.amount} MON`);
+
+            // Check if auto buy is enabled
+            const userSettings = await this.database.getUserSettings(telegramId);
+            if (!userSettings?.auto_buy_enabled) {
+                console.log('❌ Auto buy is disabled for this user');
+                return {
+                    success: false,
+                    error: 'Auto buy is disabled'
+                };
+            }
+
+            // Get wallet
+            let wallet;
+            try {
+                wallet = await this.walletManager.getWalletWithProvider(user.encrypted_private_key);
+            } catch (walletError) {
+                console.error('❌ Wallet error:', walletError);
+                return {
+                    success: false,
+                    error: 'Failed to access wallet'
+                };
+            }
+
+            // Execute buy transaction with auto buy settings
+            const result = await this.monorailAPI.buyToken(
+                wallet,
+                tokenAddress,
+                buyAmount,
+                autoBuySettings.slippage,
+                {
+                    gasPrice: autoBuySettings.gas
+                }
+            );
+
+            if (result.success && result.transactionHash) {
+                console.log(`✅ Auto Buy successful: ${result.transactionHash}`);
+                
+                // Log transaction only if we have a valid transaction hash
+                try {
+                    await this.database.addTransaction(telegramId, {
+                        txHash: result.transactionHash,
+                        type: 'auto_buy',
+                        tokenAddress: tokenAddress,
+                        amount: buyAmount,
+                        gasPrice: autoBuySettings.gas,
+                        status: 'pending',
+                        network: 'monad'
+                    });
+                } catch (dbError) {
+                    console.error('❌ Failed to log transaction:', dbError);
+                    // Don't fail the entire operation if logging fails
+                }
+
+                return {
+                    success: true,
+                    transactionHash: result.transactionHash
+                };
+            } else {
+                console.error('❌ Auto Buy failed:', result.error || 'No transaction hash received');
+                console.log('🔍 Full result object:', JSON.stringify(result, null, 2));
+                return {
+                    success: false,
+                    error: result.error || 'Transaction failed - no hash received'
+                };
+            }
+
+        } catch (error) {
+            console.error('❌ Auto Buy executeBuy error:', error);
+            if (this.monitoring) {
+                this.monitoring.logError('Auto buy executeBuy failed', error, { telegramId, tokenAddress, buyAmount });
+            }
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    /**
+     * Execute auto buy transaction using separate auto buy settings
+     * This is completely independent from regular buy/sell settings
+     */
     async executeAutoBuy(telegramId, tokenAddress) {
         try {
             console.log(`🤖 Auto Buy triggered for user ${telegramId}, token: ${tokenAddress}`);

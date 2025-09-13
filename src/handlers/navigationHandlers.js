@@ -1,13 +1,16 @@
 // Navigation and UI Handlers
 const { Markup } = require('telegraf');
+const InterfaceUtils = require('../utils/interfaceUtils');
 
 class NavigationHandlers {
-    constructor(bot, database, monorailAPI, monitoring, redis = null) {
+    constructor(bot, database, monorailAPI, monitoring, redis = null, walletManager = null, mainBot = null) {
         this.bot = bot;
         this.database = database;
         this.monorailAPI = monorailAPI;
         this.monitoring = monitoring;
         this.redis = redis;
+        this.walletManager = walletManager;
+        this.mainBot = mainBot; // Reference to main bot instance
     }
 
     setupHandlers() {
@@ -133,22 +136,8 @@ class NavigationHandlers {
     }
 
     async showWelcomeNewUser(ctx) {
-        const welcomeText = `*🛸 Welcome to Area51!*
-_The main area for real nads!_
-
-To get started, you need to create or import a wallet:`;
-
-        const keyboard = Markup.inlineKeyboard([
-            [Markup.button.callback('🆕 Create New Wallet', 'generate_wallet')],
-            [Markup.button.callback('📥 Import Existing Wallet', 'import_wallet')]
-        ]);
-
-        try {
-            await ctx.replyWithMarkdown(welcomeText, keyboard);
-        } catch (error) {
-            this.monitoring.logError('Welcome new user failed', error, { userId: ctx.from.id });
-            await ctx.reply('❌ Error displaying welcome message.');
-        }
+        const { text, keyboard } = InterfaceUtils.generateNewUserInterface();
+        await ctx.replyWithMarkdown(text, keyboard);
     }
 
     async handleBackToMainWithDebug(ctx) {
@@ -206,48 +195,11 @@ To get started, you need to create or import a wallet:`;
                 }
             }
 
-            const welcomeText = `🛸 *Welcome to Area51!*
-_The main area for real nads!_
+            const { text, keyboard } = InterfaceUtils.generateMainInterface(
+                user, monBalance, monPriceUSD, portfolioValueUSD
+            );
 
-🧾 *Your Wallet Address:*
-\`${user.wallet_address}\`
-
-💼 *Balance:*
-• MON: ${monBalance.toFixed(6)} ~$${monValueUSD.toFixed(2)}
-• Portfolio Value: ${portfolioValueMON.toFixed(6)} MON ~$${portfolioValueUSD.toFixed(2)}
-
-🟣 *Current MON Price:* $${monPriceUSD.toFixed(4)}
-
-▫️*What you can do:*
-• Buy and sell tokens instantly
-• Track your portfolio with real-time P&L
-• Browse trending token categories
-• Manage your wallet securely
-
-💡 Click on the Refresh button to update your current balance.`;
-
-            const keyboard = Markup.inlineKeyboard([
-                [Markup.button.callback('💰 Buy', 'buy')],
-                [Markup.button.callback('👛 Wallet', 'wallet'), Markup.button.callback('📊 Portfolio', 'portfolio')],
-                [Markup.button.callback('📈 Categories', 'token_categories'), Markup.button.callback('⚙️ Settings', 'settings')],
-                [Markup.button.callback('📤 Transfer', 'transfer'), Markup.button.callback('🔄 Refresh', 'refresh')],
-                [Markup.button.callback('❓ Help', 'help')]
-            ]);
-
-            // Try edit first, then fallback to delete+send
-            try {
-                await ctx.editMessageText(welcomeText, {
-                    parse_mode: 'Markdown',
-                    reply_markup: keyboard.reply_markup
-                });
-            } catch (editError) {
-                try {
-                    await ctx.deleteMessage();
-                    await ctx.replyWithMarkdown(welcomeText, keyboard);
-                } catch (deleteError) {
-                    await ctx.replyWithMarkdown(welcomeText, keyboard);
-                }
-            }
+            await ctx.replyWithMarkdown(text, keyboard);
 
         } catch (error) {
             this.monitoring.logError('Back to main failed', error, { userId });
@@ -286,45 +238,21 @@ _The main area for real nads!_
             const portfolioValueMON = monPriceUSD > 0 ? portfolioValueUSD / monPriceUSD : 0;
             const monValueUSD = monBalance * monPriceUSD;
 
-            const welcomeText = `🛸 *Welcome to Area51!*
-_The main area for real nads!_
-
-🧾 *Your Wallet Address:*
-\`${user.wallet_address}\`
-
-💼 *Balance:*
-• MON: ${monBalance.toFixed(6)} ~$${monValueUSD.toFixed(2)}
-• Portfolio Value: ${portfolioValueMON.toFixed(6)} MON ~$${portfolioValueUSD.toFixed(2)}
-
-🟣 *Current MON Price:* $${monPriceUSD.toFixed(4)}
-
-▫️*What you can do:*
-• Buy and sell tokens instantly
-• Track your portfolio with real-time P&L
-• Browse trending token categories
-• Manage your wallet securely
-
-💡 Click on the Refresh button to update your current balance.`;
-
-            const keyboard = Markup.inlineKeyboard([
-                [Markup.button.callback('💰 Buy', 'buy')],
-                [Markup.button.callback('👛 Wallet', 'wallet'), Markup.button.callback('📊 Portfolio', 'portfolio')],
-                [Markup.button.callback('📈 Categories', 'token_categories'), Markup.button.callback('⚙️ Settings', 'settings')],
-                [Markup.button.callback('📤 Transfer', 'transfer'), Markup.button.callback('🔄 Refresh', 'refresh')],
-                [Markup.button.callback('❓ Help', 'help')]
-            ]);
+            const { text, keyboard } = InterfaceUtils.generateMainInterface(
+                user, monBalance, monPriceUSD, portfolioValueUSD
+            );
 
             try {
                 if (ctx.callbackQuery) {
-                    await ctx.editMessageText(welcomeText, {
+                    await ctx.editMessageText(text, {
                         parse_mode: 'Markdown',
                         reply_markup: keyboard.reply_markup
                     });
                 } else {
-                    await ctx.replyWithMarkdown(welcomeText, keyboard);
+                    await ctx.replyWithMarkdown(text, keyboard);
                 }
             } catch (error) {
-                await ctx.replyWithMarkdown(welcomeText, keyboard);
+                await ctx.replyWithMarkdown(text, keyboard);
             }
         } catch (error) {
             this.monitoring.logError('Welcome display failed', error, { userId });
@@ -544,55 +472,158 @@ Configure your trading preferences:
         const userId = ctx.from.id;
         const userState = await this.database.getUserState(userId);
         
-        // Check if message contains a token address (anywhere in the text)
+        // First check if user has a specific state that needs processing
+        if (userState && userState.state) {
+            // Process based on current user state first
+            switch (userState.state) {
+                case 'importing_wallet':
+                    await this.processWalletImport(ctx, ctx.message.text);
+                    return;
+                case 'awaiting_token_address':
+                    await this.processTokenAddress(ctx, ctx.message.text);
+                    return;
+                case 'custom_buy':
+                case 'awaiting_buy_amount':
+                    await this.processCustomBuyAmount(ctx, ctx.message.text);
+                    return;
+                case 'awaiting_transfer_details':
+                    await this.processTransferDetails(ctx, ctx.message.text);
+                    return;
+                case 'awaiting_custom_gas_buy':
+                    await this.processCustomGas(ctx, ctx.message.text, 'buy');
+                    return;
+                case 'awaiting_custom_gas_sell':
+                    await this.processCustomGas(ctx, ctx.message.text, 'sell');
+                    return;
+                case 'awaiting_custom_gas_auto_buy':
+                    await this.processCustomGas(ctx, ctx.message.text, 'auto_buy');
+                    return;
+                case 'awaiting_custom_slippage_buy':
+                    await this.processCustomSlippage(ctx, ctx.message.text, 'buy');
+                    return;
+                case 'awaiting_custom_slippage_sell':
+                    await this.processCustomSlippage(ctx, ctx.message.text, 'sell');
+                    return;
+                case 'awaiting_custom_slippage_auto_buy':
+                    await this.processCustomSlippage(ctx, ctx.message.text, 'auto_buy');
+                    return;
+                case 'awaiting_custom_amount_auto_buy':
+                    await this.processCustomAutoBuyAmount(ctx, ctx.message.text);
+                    return;
+            }
+        }
+        
+        // Only check for token addresses if user is not in a specific state
         const messageText = ctx.message.text.trim();
         const tokenAddressMatch = messageText.match(/0x[a-fA-F0-9]{40}/);
         if (tokenAddressMatch) {
-            await this.processTokenAddress(ctx, tokenAddressMatch[0]);
-            return;
+            const tokenAddress = tokenAddressMatch[0];
+            
+            // Check if auto buy is enabled
+            const user = await this.database.getUser(userId);
+            const userSettings = await this.database.getUserSettings(userId);
+            
+            if (userSettings && userSettings.auto_buy_enabled) {
+                // Execute instant auto buy
+                await this.executeInstantAutoBuy(ctx, tokenAddress, user, userSettings);
+                return;
+            } else {
+                // Normal token address processing (show buy menu)
+                await this.processTokenAddress(ctx, tokenAddress);
+                return;
+            }
         }
 
-        if (!userState || userState.state === null) {
-            await ctx.reply('Please use the menu buttons to interact with the bot.');
-            return;
-        }
+        // Default response for no state or unrecognized input
+        await ctx.reply('Please use the menu buttons to interact with the bot.');
+    }
 
-        switch (userState.state) {
-            case 'importing_wallet':
-                await this.processWalletImport(ctx, ctx.message.text);
-                break;
-            case 'awaiting_token_address':
-                await this.processTokenAddress(ctx, ctx.message.text);
-                break;
-            case 'custom_buy':
-                await this.processCustomBuyAmount(ctx, ctx.message.text);
-                break;
-            case 'awaiting_buy_amount':
-                await this.processCustomBuyAmount(ctx, ctx.message.text);
-                break;
-            case 'awaiting_custom_gas_buy':
-                await this.processCustomGas(ctx, ctx.message.text, 'buy');
-                break;
-            case 'awaiting_custom_gas_sell':
-                await this.processCustomGas(ctx, ctx.message.text, 'sell');
-                break;
-            case 'awaiting_custom_gas_auto_buy':
-                await this.processCustomGas(ctx, ctx.message.text, 'auto_buy');
-                break;
-            case 'awaiting_custom_slippage_buy':
-                await this.processCustomSlippage(ctx, ctx.message.text, 'buy');
-                break;
-            case 'awaiting_custom_slippage_sell':
-                await this.processCustomSlippage(ctx, ctx.message.text, 'sell');
-                break;
-            case 'awaiting_custom_slippage_auto_buy':
-                await this.processCustomSlippage(ctx, ctx.message.text, 'auto_buy');
-                break;
-            case 'awaiting_custom_auto_buy_amount':
-                await this.processCustomAutoBuyAmount(ctx, ctx.message.text);
-                break;
-            default:
-                await ctx.reply('Please use the menu buttons to interact with the bot.');
+    async processTransferDetails(ctx, transferText) {
+        const userId = ctx.from.id;
+        
+        try {
+            // Parse transfer details: "address amount"
+            const parts = transferText.trim().split(/\s+/);
+            if (parts.length !== 2) {
+                await ctx.reply('❌ Invalid format. Please use: address amount\nExample: 0x1234...5678 1.5');
+                return;
+            }
+
+            const [address, amountStr] = parts;
+            const amount = parseFloat(amountStr);
+
+            // Validate address format
+            if (!address.startsWith('0x') || address.length !== 42) {
+                await ctx.reply('❌ Invalid address format. Address must be 42 characters starting with 0x');
+                return;
+            }
+
+            // Validate amount
+            if (isNaN(amount) || amount <= 0) {
+                await ctx.reply('❌ Invalid amount. Please enter a positive number.');
+                return;
+            }
+
+            // Get user data
+            const user = await this.database.getUserByTelegramId(userId);
+            if (!user) {
+                await ctx.reply('❌ User not found. Please start the bot with /start');
+                return;
+            }
+
+            // Check balance
+            const balance = await this.walletManager.getBalance(user.wallet_address);
+            const currentBalance = parseFloat(balance);
+            
+            if (currentBalance < amount) {
+                await ctx.reply(`❌ Insufficient balance. You have ${currentBalance.toFixed(6)} MON, trying to send ${amount} MON`);
+                return;
+            }
+
+            // Clear user state
+            await this.database.clearUserState(userId);
+
+            // Execute transfer using wallet manager
+            const result = await this.walletManager.sendMON(
+                user.encrypted_private_key,
+                address,
+                amount.toString()
+            );
+
+            if (result.success) {
+                // Clear cache after successful transfer
+                if (this.redis) {
+                    await Promise.all([
+                        this.redis.del(`balance:${userId}`),
+                        this.redis.del(`user:${userId}`),
+                        this.redis.del(`main_menu:${userId}`)
+                    ]);
+                }
+
+                const explorerUrl = `https://testnet.monadexplorer.com/tx/${result.transactionHash}`;
+                
+                await ctx.reply(`✅ *Transfer Successful!*
+
+📤 **Sent:** ${amount} MON
+📍 **To:** \`${address}\`
+🔗 **Transaction Hash:** \`${result.transactionHash}\`
+
+[View on Explorer](${explorerUrl})
+
+Your MON has been sent successfully!`, {
+                    parse_mode: 'Markdown'
+                });
+            } else {
+                await ctx.reply(`❌ *Transfer Failed*
+
+Error: ${result.error}
+
+Please try again or check your wallet balance.`);
+            }
+
+        } catch (error) {
+            this.monitoring.logError('Transfer processing failed', error, { userId, transferText });
+            await ctx.reply('❌ Error processing transfer. Please try again.');
         }
     }
 
@@ -604,8 +635,8 @@ Configure your trading preferences:
             const gasPrice = parseInt(gasValue);
             
             // Validate gas price range
-            if (isNaN(gasPrice) || gasPrice < 20 || gasPrice > 200) {
-                await ctx.reply('❌ Please enter a gas price between 20 and 200 Gwei.');
+            if (isNaN(gasPrice) || gasPrice < 50) {
+                await ctx.reply('❌ Please enter a gas price of at least 50 Gwei.');
                 return;
             }
             
@@ -643,23 +674,20 @@ Configure your trading preferences:
             
             await ctx.reply(`✅ ${type.charAt(0).toUpperCase() + type.slice(1)} gas price set to ${gasPrice} Gwei`);
             
-            // Return to appropriate menu
-            const userState = await this.database.getUserState(userId);
-            const returnMenu = userState?.data?.returnMenu || 'settings';
-            
-            if (returnMenu === 'buy_settings') {
-                // Return to buy settings menu - this would be handled by buy handler
-                await ctx.reply('Returning to buy settings...');
-            } else if (returnMenu === 'sell_settings') {
-                // Return to sell settings menu - this would be handled by sell handler
-                await ctx.reply('Returning to sell settings...');
-            } else if (returnMenu === 'auto_buy_settings') {
-                // Return to auto buy settings menu - this would be handled by auto buy handler
-                await ctx.reply('Returning to auto buy settings...');
-            } else {
-                // Return to main settings
-                await ctx.reply('Use /start to return to main menu');
-            }
+            // Return to appropriate menu automatically
+            setTimeout(async () => {
+                try {
+                    if (type === 'buy') {
+                        await this.mainBot.showBuyGasSettings(ctx);
+                    } else if (type === 'sell') {
+                        await this.mainBot.showSellGasSettings(ctx);
+                    } else if (type === 'auto_buy') {
+                        await this.mainBot.showAutoBuyGasSettings(ctx);
+                    }
+                } catch (error) {
+                    // Navigation error handled silently
+                }
+            }, 800);
             
         } catch (error) {
             this.monitoring.logError('Custom gas processing failed', error, { userId, gasValue, type });
@@ -674,8 +702,8 @@ Configure your trading preferences:
             const slippage = parseFloat(slippageValue);
             
             // Validate slippage range
-            if (isNaN(slippage) || slippage < 0.1 || slippage > 50) {
-                await ctx.reply('❌ Please enter a slippage between 0.1% and 50%.');
+            if (isNaN(slippage) || slippage < 0.1 || slippage > 100) {
+                await ctx.reply('❌ Please enter a slippage between 0.1% and 100%.');
                 return;
             }
             
@@ -710,19 +738,20 @@ Configure your trading preferences:
             
             await ctx.reply(`✅ ${type.charAt(0).toUpperCase() + type.slice(1)} slippage set to ${slippage}%`);
             
-            // Return to appropriate menu
-            const userState = await this.database.getUserState(userId);
-            const returnMenu = userState?.data?.returnMenu || 'settings';
-            
-            if (returnMenu === 'buy_settings') {
-                await ctx.reply('Returning to buy settings...');
-            } else if (returnMenu === 'sell_settings') {
-                await ctx.reply('Returning to sell settings...');
-            } else if (returnMenu === 'auto_buy_settings') {
-                await ctx.reply('Returning to auto buy settings...');
-            } else {
-                await ctx.reply('Use /start to return to main menu');
-            }
+            // Return to appropriate menu automatically
+            setTimeout(async () => {
+                try {
+                    if (type === 'buy') {
+                        await this.mainBot.showBuySlippageSettings(ctx);
+                    } else if (type === 'sell') {
+                        await this.mainBot.showSellSlippageSettings(ctx);
+                    } else if (type === 'auto_buy') {
+                        await this.mainBot.showAutoBuySlippageSettings(ctx);
+                    }
+                } catch (error) {
+                    // Navigation error handled silently
+                }
+            }, 800);
             
         } catch (error) {
             this.monitoring.logError('Custom slippage processing failed', error, { userId, slippageValue, type });
@@ -742,8 +771,10 @@ Configure your trading preferences:
                 return;
             }
             
-            // Update database
-            await this.database.updateUserSettings(userId, { auto_buy_amount: amount });
+            // Update database with timestamp tracking
+            const GasSlippagePriority = require('../utils/gasSlippagePriority');
+            const prioritySystem = new GasSlippagePriority(this.database);
+            await prioritySystem.updateAutoBuyAmount(userId, amount);
             
             // Clear user state
             await this.database.clearUserState(userId);
@@ -754,7 +785,15 @@ Configure your trading preferences:
             }
             
             await ctx.reply(`✅ Auto buy amount set to ${amount} MON`);
-            await ctx.reply('Returning to auto buy settings...');
+            
+            // Return to auto buy amount settings automatically
+            setTimeout(async () => {
+                try {
+                    await this.mainBot.showAutoBuyAmount(ctx);
+                } catch (error) {
+                    // Navigation error handled silently
+                }
+            }, 800);
             
         } catch (error) {
             this.monitoring.logError('Custom auto buy amount processing failed', error, { userId, amountValue });
@@ -762,7 +801,115 @@ Configure your trading preferences:
         }
     }
 
-    // Placeholder methods that will be implemented in other handlers
+    async executeInstantAutoBuy(ctx, tokenAddress, user, userSettings) {
+        const userId = ctx.from.id;
+        
+        try {
+            // Send immediate feedback to user
+            await ctx.reply('🔄 *Auto Buy Triggered!*\nProcessing your transaction...');
+            
+            // Initialize AutoBuyEngine with correct parameters
+            const AutoBuyEngine = require('../utils/autoBuyEngine');
+            const autoBuyEngine = new AutoBuyEngine(this.database, this.monorailAPI, this.walletManager, this.monitoring);
+            
+            // Validate token address format
+            if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) {
+                await ctx.reply('❌ Invalid token address format. Please check and try again.');
+                return;
+            }
+            
+            // Get token info from Monorail API
+            const tokenInfo = await this.monorailAPI.getTokenInfo(tokenAddress);
+            if (!tokenInfo.success) {
+                await ctx.reply(`❌ Token not found or not supported.\n📍 Address: \`${tokenAddress}\`\nPlease check the address and try again.`);
+                return;
+            }
+            
+            // Check user wallet and balance
+            if (!user.wallet_address) {
+                await ctx.reply('❌ No wallet found. Please import your wallet first using /start');
+                return;
+            }
+            
+            const monBalanceData = await this.monorailAPI.getMONBalance(user.wallet_address);
+            const monBalance = parseFloat(monBalanceData.balance || '0');
+            
+            // Get auto buy amount from settings - fix NaN issue
+            const buyAmount = parseFloat(userSettings.auto_buy_amount) || 0.1; // Default 0.1 MON
+            
+            // Check if user has sufficient balance
+            if (monBalance < buyAmount) {
+                await ctx.reply(`❌ *Insufficient Balance*
+                
+💰 Required: ${buyAmount} MON
+💼 Available: ${monBalance.toFixed(6)} MON
+📈 Needed: ${(buyAmount - monBalance).toFixed(6)} MON more`);
+                return;
+            }
+            
+            // Execute auto buy transaction using AutoBuyEngine
+            const result = await autoBuyEngine.executeBuy(userId, tokenAddress, buyAmount);
+            
+            if (result.success) {
+                // Clear cache after successful transaction
+                if (this.redis) {
+                    await Promise.all([
+                        this.redis.del(`user:${userId}`),
+                        this.redis.del(`balance:${userId}`),
+                        this.redis.del(`portfolio:${userId}`),
+                        this.redis.del(`main_menu:${userId}`)
+                    ]);
+                }
+                
+                // Get token details for success message
+                const tokenSymbol = tokenInfo.token?.symbol || 'Unknown';
+                const tokenName = tokenInfo.token?.name || 'Unknown Token';
+                
+                const explorerUrl = `https://testnet.monadexplorer.com/tx/${result.transactionHash}`;
+                
+                await ctx.reply(`✅ *Auto Buy Successful!*
+
+🎯 *Token:* ${tokenSymbol} | ${tokenName}
+📍 *Address:* \`${tokenAddress}\`
+💰 *Amount:* ${buyAmount} MON
+⛽ *Gas Used:* ${userSettings.auto_buy_gas ? (userSettings.auto_buy_gas / 1000000000).toFixed(0) : '50'} Gwei
+📊 *Slippage:* ${userSettings.auto_buy_slippage || 5}%
+
+🔗 *Transaction Hash:*
+\`${result.transactionHash}\`
+
+[View on Explorer](${explorerUrl})
+
+💡 *Auto Buy Settings Applied Automatically*`, {
+                    parse_mode: 'Markdown'
+                });
+                
+                // Auto buy transaction completed successfully
+                
+            } else {
+                await ctx.reply(`❌ *Auto Buy Failed*
+
+🚫 Error: ${result.error}
+📍 Token: \`${tokenAddress}\`
+💰 Amount: ${buyAmount} MON
+
+Please try again or check your settings.`);
+                
+                // Log failed auto buy
+                console.error(`❌ Auto Buy Failed - User: ${userId}, Token: ${tokenAddress}, Error: ${result.error}`);
+            }
+            
+        } catch (error) {
+            this.monitoring.logError('Instant auto buy failed', error, { userId, tokenAddress });
+            await ctx.reply(`❌ *Auto Buy System Error*
+
+An unexpected error occurred during auto buy execution.
+Please try again or contact support if the issue persists.
+
+📍 Token: \`${tokenAddress}\``);
+        }
+    }
+
     async processTokenAddress(ctx, tokenAddress) {
         const userId = ctx.from.id;
         
@@ -859,7 +1006,16 @@ ${tokenAddress}
                 try {
                     wallet = await walletManager.importFromMnemonic(input.trim());
                 } catch (mnemonicError) {
-                    await ctx.reply('❌ Invalid private key or mnemonic phrase. Please try again.');
+                    // Edit the existing message to show error
+                    try {
+                        await ctx.editMessageText('❌ Invalid private key or mnemonic phrase. Please try again.', {
+                            reply_markup: Markup.inlineKeyboard([
+                                [Markup.button.callback('🔙 Back to Wallet', 'wallet')]
+                            ]).reply_markup
+                        });
+                    } catch (editError) {
+                        await ctx.reply('❌ Invalid private key or mnemonic phrase. Please try again.');
+                    }
                     return;
                 }
             }
@@ -867,21 +1023,30 @@ ${tokenAddress}
             // Update user in database
             await this.database.updateUserWallet(userId, wallet.address, wallet.encryptedPrivateKey);
             
+            // Get the import message ID from user state before clearing it
+            const userState = await this.database.getUserState(userId);
+            const importMessageId = userState?.data?.importMessageId;
+            
             // Clear user state
             await this.database.clearUserState(userId);
             
-            await ctx.reply(`✅ *Wallet Imported Successfully!*
-
-🏠 *Address:* \`${wallet.address}\`
-
-Your wallet has been imported and encrypted securely.`, {
-                parse_mode: 'Markdown'
-            });
+            // Delete all previous messages and send only the success message
+            if (importMessageId) {
+                try {
+                    await ctx.telegram.deleteMessage(ctx.chat.id, importMessageId);
+                    // Import instruction message deleted
+                } catch (deleteError) {
+                    // Failed to delete import message
+                }
+            }
             
-            // Show main menu
-            setTimeout(async () => {
-                await this.showMainMenu(ctx);
-            }, 2000);
+            // Send success message
+            const { text, keyboard } = InterfaceUtils.generateWalletSuccessInterface(wallet.address, 'imported');
+            
+            await ctx.reply(text, {
+                parse_mode: 'Markdown',
+                reply_markup: keyboard.reply_markup
+            });
             
         } catch (error) {
             this.monitoring.logError('Wallet import failed', error, { userId });
@@ -941,6 +1106,8 @@ Proceed with this purchase?`, {
     async handleConfirmTurboEnable(ctx) {
         // Will be implemented in settings handlers
     }
+
+
 }
 
 module.exports = NavigationHandlers;

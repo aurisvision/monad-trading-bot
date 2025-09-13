@@ -132,6 +132,8 @@ class GasSlippagePriority {
 
             if (type === 'sell') {
                 update.sell_gas_price = gasPrice;
+            } else if (type === 'auto_buy') {
+                update.auto_buy_gas = gasPrice;
             } else {
                 update.gas_price = gasPrice;
             }
@@ -154,6 +156,8 @@ class GasSlippagePriority {
 
             if (type === 'sell') {
                 update.sell_slippage_tolerance = slippage;
+            } else if (type === 'auto_buy') {
+                update.auto_buy_slippage = slippage;
             } else {
                 update.slippage_tolerance = slippage;
             }
@@ -161,6 +165,22 @@ class GasSlippagePriority {
             await this.database.updateUserSettings(userId, update);
         } catch (error) {
             console.error('Error updating slippage settings:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Update auto buy amount
+     */
+    async updateAutoBuyAmount(userId, amount) {
+        try {
+            const update = {
+                auto_buy_amount: amount
+            };
+
+            await this.database.updateUserSettings(userId, update);
+        } catch (error) {
+            console.error('Error updating auto buy amount:', error);
             throw error;
         }
     }

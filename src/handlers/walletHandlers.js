@@ -1,5 +1,6 @@
 // Wallet Management Handlers
 const { Markup } = require('telegraf');
+const InterfaceUtils = require('../utils/interfaceUtils');
 
 class WalletHandlers {
     constructor(bot, database, walletManager, monitoring) {
@@ -83,13 +84,16 @@ Manage your wallet securely:`;
             await ctx.answerCbQuery();
             const userId = ctx.from.id;
             
+            // Ensure user exists in database before wallet generation
+            await this.database.createUser(ctx.from.id, ctx.from.username || 'Unknown');
+            
             // Import required modules
             const WalletManager = require('../wallet');
             const walletManager = new WalletManager();
             
             const wallet = await walletManager.generateWallet();
             
-            await this.database.createUser(userId, wallet.address, wallet.encryptedPrivateKey, wallet.mnemonic, ctx.from.username);
+            await this.database.updateUserWallet(userId, wallet.address, wallet.encryptedPrivateKey, wallet.mnemonic);
             
             // Now store the welcome message ID after user is created
             try {
@@ -106,43 +110,16 @@ Manage your wallet securely:`;
                     parse_mode: 'Markdown'
                 });
 
-                // Store the welcome message ID for this user
-                await this.database.setUserWelcomeMessageId(userId, sentMessage.message_id);
+                // Note: Welcome message ID storage removed as function doesn't exist
             } catch (editError) {
-                // If edit fails, send new message
-                const sentMessage = await ctx.reply(`✅ *Wallet Created Successfully!*
-
-🏠 *Address:* \`${wallet.address}\`
-
-⚠️ *IMPORTANT SECURITY NOTICE:*
-• Your wallet is encrypted and stored securely
-• Keep your private key safe - we cannot recover it
-• Never share your private key with anyone
-
-🚀 You're ready to start trading!`, {
-                    parse_mode: 'Markdown'
+                // If edit fails, send new message with wallet success interface
+                const { text, keyboard } = InterfaceUtils.generateWalletSuccessInterface(wallet.address, 'created');
+                
+                await ctx.reply(text, {
+                    parse_mode: 'Markdown',
+                    reply_markup: keyboard.reply_markup
                 });
-
-                await this.database.setUserWelcomeMessageId(userId, sentMessage.message_id);
             }
-
-            // Show main interface after wallet creation
-            const startKeyboard = Markup.inlineKeyboard([
-                [Markup.button.callback('🚀 Start Trading', 'back_to_main')]
-            ]);
-
-            const sentMessage = await ctx.reply('🎉 Welcome to Area51! Your wallet is ready.', {
-                reply_markup: startKeyboard.reply_markup
-            });
-            
-            // Auto-delete after 30 seconds
-            setTimeout(async () => {
-                try {
-                    await ctx.deleteMessage(sentMessage.message_id);
-                } catch (error) {
-                    // Silent error handling
-                }
-            }, 30000);
             
         } catch (error) {
             this.monitoring.logError('Wallet generation failed', error, { userId: ctx.from.id });
@@ -153,6 +130,9 @@ Manage your wallet securely:`;
     async handleImportWallet(ctx) {
         try {
             await ctx.answerCbQuery();
+            
+            // Ensure user exists in database before setting state
+            await this.database.createUser(ctx.from.id, ctx.from.username || 'Unknown');
             
             const importText = `🔑 *Import Existing Wallet*
 
@@ -172,8 +152,10 @@ Send your private key or mnemonic phrase to import your wallet.
                 ]).reply_markup
             });
 
-            // Set user state for import
-            await this.database.setUserState(ctx.from.id, 'importing_wallet', {});
+            // Set user state for import and store message ID for later deletion
+            await this.database.setUserState(ctx.from.id, 'importing_wallet', {
+                importMessageId: ctx.callbackQuery.message.message_id
+            });
             
         } catch (error) {
             this.monitoring.logError('Import wallet failed', error, { userId: ctx.from.id });
