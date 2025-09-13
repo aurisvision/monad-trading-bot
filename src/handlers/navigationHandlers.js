@@ -483,7 +483,7 @@ Configure your trading preferences:
                     await this.processTokenAddress(ctx, ctx.message.text);
                     return;
                 case 'custom_buy':
-                case 'awaiting_buy_amount':
+                case 'token_selected':
                     await this.processCustomBuyAmount(ctx, ctx.message.text);
                     return;
                 case 'awaiting_transfer_details':
@@ -514,23 +514,26 @@ Configure your trading preferences:
         }
         
         // Only check for token addresses if user is not in a specific state
-        const messageText = ctx.message.text.trim();
-        const tokenAddressMatch = messageText.match(/0x[a-fA-F0-9]{40}/);
-        if (tokenAddressMatch) {
-            const tokenAddress = tokenAddressMatch[0];
-            
-            // Check if auto buy is enabled
-            const user = await this.database.getUser(userId);
-            const userSettings = await this.database.getUserSettings(userId);
-            
-            if (userSettings && userSettings.auto_buy_enabled) {
-                // Execute instant auto buy
-                await this.executeInstantAutoBuy(ctx, tokenAddress, user, userSettings);
-                return;
-            } else {
-                // Normal token address processing (show buy menu)
-                await this.processTokenAddress(ctx, tokenAddress);
-                return;
+        // Skip token address processing if user is in token_selected state to avoid conflicts
+        if (!userState || userState.state !== 'token_selected') {
+            const messageText = ctx.message.text.trim();
+            const tokenAddressMatch = messageText.match(/0x[a-fA-F0-9]{40}/);
+            if (tokenAddressMatch) {
+                const tokenAddress = tokenAddressMatch[0];
+                
+                // Check if auto buy is enabled
+                const user = await this.database.getUser(userId);
+                const userSettings = await this.database.getUserSettings(userId);
+                
+                if (userSettings && userSettings.auto_buy_enabled) {
+                    // Execute instant auto buy
+                    await this.executeInstantAutoBuy(ctx, tokenAddress, user, userSettings);
+                    return;
+                } else {
+                    // Normal token address processing (show buy menu)
+                    await this.processTokenAddress(ctx, tokenAddress);
+                    return;
+                }
             }
         }
 
@@ -927,8 +930,9 @@ Please try again or contact support if the issue persists.
                 return;
             }
             
-            // Store token info in user state
-            await this.database.setUserState(userId, 'awaiting_buy_amount', {
+            // Clear any existing user state and store token info for buy actions
+            await this.database.clearUserState(userId);
+            await this.database.setUserState(userId, 'token_selected', {
                 tokenAddress: tokenAddress,
                 tokenSymbol: tokenInfo.token.symbol || 'Unknown',
                 tokenName: tokenInfo.token.name || 'Unknown Token'
@@ -969,9 +973,26 @@ ${tokenAddress}
 
 *💡 Select amount of MON to spend:*`;
 
+            // Get user's custom buy amounts
+            const userSettings = await this.database.getUserSettings(userId);
+            let customAmounts = userSettings?.custom_buy_amounts || '0.1,0.5,1,5';
+            
+            // Handle case where custom_buy_amounts might be null or not a string
+            if (!customAmounts || typeof customAmounts !== 'string') {
+                customAmounts = '0.1,0.5,1,5';
+            }
+            
+            const amountsArray = customAmounts.split(',');
+
             const keyboard = Markup.inlineKeyboard([
-                [Markup.button.callback('0.1 MON', 'buy_amount_0.1'), Markup.button.callback('0.5 MON', 'buy_amount_0.5')],
-                [Markup.button.callback('1 MON', 'buy_amount_1'), Markup.button.callback('5 MON', 'buy_amount_5')],
+                [
+                    Markup.button.callback(`${amountsArray[0]?.trim() || '0.1'} MON`, `buy_amount_${amountsArray[0]?.trim() || '0.1'}`), 
+                    Markup.button.callback(`${amountsArray[1]?.trim() || '0.5'} MON`, `buy_amount_${amountsArray[1]?.trim() || '0.5'}`)
+                ],
+                [
+                    Markup.button.callback(`${amountsArray[2]?.trim() || '1'} MON`, `buy_amount_${amountsArray[2]?.trim() || '1'}`), 
+                    Markup.button.callback(`${amountsArray[3]?.trim() || '5'} MON`, `buy_amount_${amountsArray[3]?.trim() || '5'}`)
+                ],
                 [Markup.button.callback('📝 Custom Amount', 'buy_amount_custom'), Markup.button.callback('🔍 View on Explorer', `view_explorer_${tokenAddress}`)],
                 [Markup.button.callback('🏠 Back to Main', 'back_to_main'), Markup.button.callback('🔄 Refresh Data', `refresh_token_${tokenAddress}`)]
             ]);
@@ -1058,6 +1079,14 @@ ${tokenAddress}
         const userId = ctx.from.id;
         
         try {
+            // First check if the input is a token address (user sent another token)
+            const tokenAddressMatch = amountText.trim().match(/0x[a-fA-F0-9]{40}/);
+            if (tokenAddressMatch) {
+                // User sent a new token address, process it instead of treating as amount
+                await this.processTokenAddress(ctx, tokenAddressMatch[0]);
+                return;
+            }
+            
             const amount = parseFloat(amountText);
             if (isNaN(amount) || amount <= 0) {
                 await ctx.reply('❌ Please enter a valid amount greater than 0.');

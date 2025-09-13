@@ -391,6 +391,15 @@ class Area51BotModularSimple {
             await this.showCustomAmount(ctx, 'auto_buy');
         });
 
+        // Custom amounts handlers
+        this.bot.action('custom_buy_amounts', async (ctx) => {
+            await this.showCustomBuyAmounts(ctx);
+        });
+
+        this.bot.action('custom_sell_percentages', async (ctx) => {
+            await this.showCustomSellPercentages(ctx);
+        });
+
         // Token interface handlers
         this.bot.action(/^refresh_token_(.+)$/, async (ctx) => {
             const tokenAddress = ctx.match[1];
@@ -404,7 +413,7 @@ class Area51BotModularSimple {
 
         // Turbo Mode handlers
         this.bot.action('toggle_turbo_mode', async (ctx) => {
-            console.log('🚀 Turbo Mode button clicked by user:', ctx.from.id);
+            console.log('� handleToggleTurboMode called for user:', ctx.from.id);
             try {
                 await this.handleToggleTurboMode(ctx);
             } catch (error) {
@@ -421,24 +430,63 @@ class Area51BotModularSimple {
             await this.handleConfirmAutoBuyEnable(ctx);
         });
 
+        // Edit individual buy amounts handlers
+        this.bot.action(/^edit_buy_amount_(\d+)$/, async (ctx) => {
+            const buttonIndex = parseInt(ctx.match[1]);
+            await this.showEditBuyAmount(ctx, buttonIndex);
+        });
+
+        // Edit individual sell percentages handlers
+        this.bot.action(/^edit_sell_percentage_(\d+)$/, async (ctx) => {
+            const buttonIndex = parseInt(ctx.match[1]);
+            await this.showEditSellPercentage(ctx, buttonIndex);
+        });
+
+        // Reset custom amounts handlers
+        this.bot.action('reset_custom_buy_amounts', async (ctx) => {
+            await this.resetCustomBuyAmounts(ctx);
+        });
+
+        this.bot.action('reset_custom_sell_percentages', async (ctx) => {
+            await this.resetCustomSellPercentages(ctx);
+        });
+
         // Refresh handler
         this.bot.action('refresh', async (ctx) => {
             await ctx.answerCbQuery('🔄 Refreshing...');
             
-            const userId = ctx.from.id;
-            if (this.redis) {
-                try {
-                    await Promise.all([
-                        this.redis.del(`main_menu:${userId}`),
-                        this.redis.del(`balance:${userId}`),
-                        this.redis.del(`portfolio:${userId}`)
-                    ]);
-                } catch (error) {
-                    this.monitoring.logError('Cache clear failed during refresh', error, { userId });
-                }
-            }
-            
             await this.navigationHandlers.handleBackToMainWithDebug(ctx);
+        });
+
+        // Start command handler
+        this.bot.start(async (ctx) => {
+            console.log('🚀 /start command received from user:', ctx.from.id);
+            await this.navigationHandlers.handleStart(ctx);
+        });
+
+        // Text message handler for custom input
+        this.bot.on('text', async (ctx) => {
+            console.log('📝 Text message received from user:', ctx.from.id, 'Message:', ctx.message.text);
+            
+            const userState = await this.database.getUserState(ctx.from.id);
+            console.log('🔍 User state:', userState);
+            
+            if (userState?.state === 'awaiting_custom_buy_amounts') {
+                await this.handleCustomBuyAmountsInput(ctx);
+            } else if (userState?.state === 'awaiting_custom_sell_percentages') {
+                await this.handleCustomSellPercentagesInput(ctx);
+            } else if (userState?.state === 'awaiting_transfer_details') {
+                await this.navigationHandlers.processTransferDetails(ctx, ctx.message.text);
+            } else if (userState?.state?.startsWith('awaiting_edit_buy_amount_')) {
+                const buttonIndex = parseInt(userState.state.split('_').pop());
+                await this.handleEditBuyAmountInput(ctx, buttonIndex);
+            } else if (userState?.state?.startsWith('awaiting_edit_sell_percentage_')) {
+                const buttonIndex = parseInt(userState.state.split('_').pop());
+                await this.handleEditSellPercentageInput(ctx, buttonIndex);
+            } else {
+                // Delegate to navigationHandlers for all other states
+                await this.navigationHandlers.handleTextMessage(ctx);
+            }
         });
     }
 
@@ -485,6 +533,7 @@ class Area51BotModularSimple {
             
             // Start the bot
             await this.bot.launch();
+            console.log('🚀 Bot launched successfully!');
             this.monitoring.logInfo('🚀 Modular Area51 Bot started successfully');
             
             // Enable graceful stop
@@ -615,6 +664,7 @@ Are you sure you want to continue?`;
             const autoBuyEnabled = userSettings?.auto_buy_enabled || false;
             const autoBuyAmount = userSettings?.auto_buy_amount || 0.1;
             const autoBuyStatus = autoBuyEnabled ? '🟢' : '🔴';
+            const customAmounts = userSettings?.custom_buy_amounts || '0.1,0.5,1,5';
             
             const settingsText = `⚡️ *Buy Settings*
 
@@ -624,11 +674,13 @@ Purchase transaction configuration:
 
 • Gas Price Control - Network fee for buy transactions (minimum 50 Gwei)
 • Slippage Tolerance - Price variance acceptance for purchases (no limits)
-• Auto Buy System - Automated purchasing (${autoBuyAmount} MON)`;
+• Auto Buy System - Automated purchasing (${autoBuyAmount} MON)
+• Custom Amounts - Quick buy buttons (${customAmounts} MON)`;
 
             const keyboard = Markup.inlineKeyboard([
                 [Markup.button.callback('Set Gas Price', 'buy_gas_settings'), Markup.button.callback('Set Slippage', 'buy_slippage_settings')],
                 [Markup.button.callback('🔄 Auto Buy Settings', 'auto_buy_settings')],
+                [Markup.button.callback('⚙️ Custom Amounts', 'custom_buy_amounts')],
                 [Markup.button.callback('Back to Settings', 'settings')]
             ]);
 
@@ -898,6 +950,8 @@ _Select purchase quantity for automated buying:_
             const gasPrice = Math.round((userSettings?.sell_gas_price || userSettings?.gas_price || 50000000000) / 1000000000);
             const slippage = userSettings?.sell_slippage_tolerance || userSettings?.slippage_tolerance || 5;
             
+            const customPercentages = userSettings?.custom_sell_percentages || '25,50,75,100';
+            
             const settingsText = `💸 **Sell Settings**
 
 *Gas Price:* **${gasPrice} Gwei** | *Slippage:* **${slippage}%**
@@ -905,11 +959,13 @@ _Select purchase quantity for automated buying:_
 _Sale transaction configuration:_
 
 • **Gas Price Control** - _Network fee for sell transactions (minimum 50 Gwei)_
-• **Slippage Tolerance** - _Price variance acceptance for sales (no limits)_`;
+• **Slippage Tolerance** - _Price variance acceptance for sales (no limits)_
+• **Custom Percentages** - _Quick sell buttons (${customPercentages}%)_`;
 
             const keyboard = Markup.inlineKeyboard([
                 [Markup.button.callback('Gas Settings', 'sell_gas_settings')],
                 [Markup.button.callback('Slippage', 'sell_slippage_settings')],
+                [Markup.button.callback('⚙️ Custom Percentages', 'custom_sell_percentages')],
                 [Markup.button.callback('Back to Settings', 'settings')]
             ]);
 
@@ -1425,6 +1481,327 @@ Please enter a number between 0.01 and 100.`;
         }
     }
 
+    async showCustomBuyAmounts(ctx) {
+        try {
+            if (ctx.callbackQuery) {
+                await ctx.answerCbQuery();
+            }
+            
+            const userSettings = await this.database.getUserSettings(ctx.from.id);
+            let currentAmounts = userSettings?.custom_buy_amounts || '0.1,0.5,1,5';
+            
+            // Ensure currentAmounts is a string
+            if (typeof currentAmounts !== 'string') {
+                currentAmounts = '0.1,0.5,1,5';
+            }
+            
+            const amountsArray = currentAmounts.split(',');
+            
+            const settingsText = `⚙️ ***Custom Buy Amounts***
+
+💰 **Current Buy Buttons:**
+${amountsArray.map((amount, index) => `**Button ${index + 1}:** *${amount.trim()} MON*`).join('\n')}
+
+**Click a button to edit its value:**`;
+
+            const keyboard = Markup.inlineKeyboard([
+                [
+                    Markup.button.callback(`Edit: ${amountsArray[0]?.trim() || '0.1'}`, `edit_buy_amount_0`),
+                    Markup.button.callback(`Edit: ${amountsArray[1]?.trim() || '0.5'}`, `edit_buy_amount_1`)
+                ],
+                [
+                    Markup.button.callback(`Edit: ${amountsArray[2]?.trim() || '1'}`, `edit_buy_amount_2`),
+                    Markup.button.callback(`Edit: ${amountsArray[3]?.trim() || '5'}`, `edit_buy_amount_3`)
+                ],
+                [Markup.button.callback('🔄 Reset to Default', 'reset_custom_buy_amounts')],
+                [Markup.button.callback('🔙 Back to Buy Settings', 'buy_settings')]
+            ]);
+
+            try {
+                await ctx.editMessageText(settingsText, {
+                    parse_mode: 'Markdown',
+                    reply_markup: keyboard.reply_markup
+                });
+            } catch (editError) {
+                // If edit fails, send new message
+                await ctx.reply(settingsText, {
+                    parse_mode: 'Markdown',
+                    reply_markup: keyboard.reply_markup
+                });
+            }
+            
+        } catch (error) {
+            console.error('Error showing custom buy amounts:', error);
+            console.error('Full error details:', error.stack || error);
+            console.error('Context details:', {
+                userId: ctx.from?.id,
+                messageId: ctx.message?.message_id,
+                callbackQuery: !!ctx.callbackQuery
+            });
+            // Always send reply on error
+            await ctx.reply('❌ Error loading custom buy amounts settings. Please try again.');
+        }
+    }
+
+    async showCustomSellPercentages(ctx) {
+        try {
+            if (ctx.callbackQuery) {
+                await ctx.answerCbQuery();
+            }
+            
+            const userSettings = await this.database.getUserSettings(ctx.from.id);
+            const currentPercentages = userSettings?.custom_sell_percentages || '25,50,75,100';
+            const percentagesArray = currentPercentages.split(',');
+            
+            const settingsText = `⚙️ ***Custom Sell Percentages***
+
+📊 **Current Sell Buttons:**
+${percentagesArray.map((percentage, index) => `**Button ${index + 1}:** *${percentage.trim()}%*`).join('\n')}
+
+**Click a button to edit its value:**`;
+
+            const keyboard = Markup.inlineKeyboard([
+                [
+                    Markup.button.callback(`Edit: ${percentagesArray[0]?.trim() || '25'}%`, `edit_sell_percentage_0`),
+                    Markup.button.callback(`Edit: ${percentagesArray[1]?.trim() || '50'}%`, `edit_sell_percentage_1`)
+                ],
+                [
+                    Markup.button.callback(`Edit: ${percentagesArray[2]?.trim() || '75'}%`, `edit_sell_percentage_2`),
+                    Markup.button.callback(`Edit: ${percentagesArray[3]?.trim() || '100'}%`, `edit_sell_percentage_3`)
+                ],
+                [Markup.button.callback('🔄 Reset to Default', 'reset_custom_sell_percentages')],
+                [Markup.button.callback('🔙 Back to Sell Settings', 'sell_settings')]
+            ]);
+
+            try {
+                await ctx.editMessageText(settingsText, {
+                    parse_mode: 'Markdown',
+                    reply_markup: keyboard.reply_markup
+                });
+            } catch (editError) {
+                // If edit fails, send new message
+                await ctx.reply(settingsText, {
+                    parse_mode: 'Markdown',
+                    reply_markup: keyboard.reply_markup
+                });
+            }
+            
+        } catch (error) {
+            console.error('Error showing custom sell percentages:', error);
+            try {
+                await ctx.reply('❌ Error loading custom sell percentages settings.');
+            } catch (replyError) {
+                console.error('Failed to send error message:', replyError);
+            }
+        }
+    }
+
+    async showEditBuyAmount(ctx, buttonIndex) {
+        try {
+            if (ctx.callbackQuery) {
+                await ctx.answerCbQuery();
+            }
+            
+            const userSettings = await this.database.getUserSettings(ctx.from.id);
+            let currentAmounts = userSettings?.custom_buy_amounts || '0.1,0.5,1,5';
+            
+            // Ensure currentAmounts is a string
+            if (typeof currentAmounts !== 'string') {
+                currentAmounts = '0.1,0.5,1,5';
+            }
+            
+            const amountsArray = currentAmounts.split(',');
+            const currentValue = amountsArray[buttonIndex]?.trim() || '0.1';
+            
+            const settingsText = `✏️ ***Edit Buy Amount - Button ${buttonIndex + 1}***
+
+**Current Value:** *${currentValue} MON*
+
+Send the new amount for this button:
+*Example: 2.5*
+
+**Limits:** Between 0.01 and 1000 MON`;
+
+            const keyboard = Markup.inlineKeyboard([
+                [Markup.button.callback('🔙 Back to Custom Buy Amounts', 'custom_buy_amounts')]
+            ]);
+
+            try {
+                await ctx.editMessageText(settingsText, {
+                    parse_mode: 'Markdown',
+                    reply_markup: keyboard.reply_markup
+                });
+            } catch (editError) {
+                // If edit fails, send new message
+                await ctx.reply(settingsText, {
+                    parse_mode: 'Markdown',
+                    reply_markup: keyboard.reply_markup
+                });
+            }
+            
+            // Set user state to expect input for this specific button
+            await this.database.setUserState(ctx.from.id, `awaiting_edit_buy_amount_${buttonIndex}`);
+            
+        } catch (error) {
+            console.error('Error showing edit buy amount:', error);
+            console.error('Full error details:', error.stack || error);
+            console.error('Context details:', {
+                userId: ctx.from?.id,
+                buttonIndex: buttonIndex,
+                callbackQuery: !!ctx.callbackQuery
+            });
+            await ctx.reply('❌ Error loading edit interface. Please try again.');
+        }
+    }
+
+    async showEditSellPercentage(ctx, buttonIndex) {
+        try {
+            if (ctx.callbackQuery) {
+                await ctx.answerCbQuery();
+            }
+            
+            const userSettings = await this.database.getUserSettings(ctx.from.id);
+            const currentPercentages = userSettings?.custom_sell_percentages || '25,50,75,100';
+            const percentagesArray = currentPercentages.split(',');
+            const currentValue = percentagesArray[buttonIndex]?.trim() || '25';
+            
+            const settingsText = `✏️ ***Edit Sell Percentage - Button ${buttonIndex + 1}***
+
+**Current Value:** *${currentValue}%*
+
+Send the new percentage for this button:
+*Example: 30*
+
+**Limits:** Between 1 and 100%`;
+
+            const keyboard = Markup.inlineKeyboard([
+                [Markup.button.callback('🔙 Back to Custom Sell Percentages', 'custom_sell_percentages')]
+            ]);
+
+            try {
+                await ctx.editMessageText(settingsText, {
+                    parse_mode: 'Markdown',
+                    reply_markup: keyboard.reply_markup
+                });
+            } catch (editError) {
+                // If edit fails, send new message
+                await ctx.reply(settingsText, {
+                    parse_mode: 'Markdown',
+                    reply_markup: keyboard.reply_markup
+                });
+            }
+            
+            // Set user state to expect input for this specific button
+            await this.database.setUserState(ctx.from.id, `awaiting_edit_sell_percentage_${buttonIndex}`);
+            
+        } catch (error) {
+            console.error('Error showing edit sell percentage:', error);
+            await ctx.reply('❌ Error loading edit interface.');
+        }
+    }
+
+    async handleEditBuyAmountInput(ctx, buttonIndex) {
+        try {
+            const input = ctx.message.text.trim();
+            const amount = parseFloat(input);
+            
+            // Validate input
+            if (isNaN(amount) || amount < 0.01 || amount > 1000) {
+                await ctx.reply('❌ Invalid amount. Please enter a value between 0.01 and 1000 MON.');
+                return;
+            }
+            
+            // Get current settings
+            const userSettings = await this.database.getUserSettings(ctx.from.id);
+            let currentAmounts = userSettings?.custom_buy_amounts || '0.1,0.5,1,5';
+            
+            // Ensure currentAmounts is a string
+            if (typeof currentAmounts !== 'string') {
+                currentAmounts = '0.1,0.5,1,5';
+            }
+            
+            const amountsArray = currentAmounts.split(',');
+            
+            // Update the specific button
+            amountsArray[buttonIndex] = amount.toString();
+            const newAmounts = amountsArray.join(',');
+            
+            // Save to database
+            await this.database.updateUserSettings(ctx.from.id, { custom_buy_amounts: newAmounts });
+            
+            // Clear cache
+            if (this.redis) {
+                await this.redis.del(`settings:${ctx.from.id}`);
+            }
+            
+            // Clear user state
+            await this.database.clearUserState(ctx.from.id);
+            
+            await ctx.reply(`✅ Button ${buttonIndex + 1} updated to ${amount} MON`);
+            
+            // Show updated custom buy amounts after short delay
+            setTimeout(async () => {
+                try {
+                    await this.showCustomBuyAmounts(ctx);
+                } catch (error) {
+                    console.error('Error showing updated custom buy amounts:', error);
+                }
+            }, 800);
+            
+        } catch (error) {
+            console.error('Error handling edit buy amount input:', error);
+            await ctx.reply('❌ Error updating buy amount.');
+        }
+    }
+
+    async handleEditSellPercentageInput(ctx, buttonIndex) {
+        try {
+            const input = ctx.message.text.trim();
+            const percentage = parseFloat(input);
+            
+            // Validate input
+            if (isNaN(percentage) || percentage < 1 || percentage > 100) {
+                await ctx.reply('❌ Invalid percentage. Please enter a value between 1 and 100.');
+                return;
+            }
+            
+            // Get current settings
+            const userSettings = await this.database.getUserSettings(ctx.from.id);
+            const currentPercentages = userSettings?.custom_sell_percentages || '25,50,75,100';
+            const percentagesArray = currentPercentages.split(',');
+            
+            // Update the specific button
+            percentagesArray[buttonIndex] = percentage.toString();
+            const newPercentages = percentagesArray.join(',');
+            
+            // Save to database
+            await this.database.updateUserSettings(ctx.from.id, { custom_sell_percentages: newPercentages });
+            
+            // Clear cache
+            if (this.redis) {
+                await this.redis.del(`settings:${ctx.from.id}`);
+            }
+            
+            // Clear user state
+            await this.database.clearUserState(ctx.from.id);
+            
+            await ctx.reply(`✅ Button ${buttonIndex + 1} updated to ${percentage}%`);
+            
+            // Show updated custom sell percentages after short delay
+            setTimeout(async () => {
+                try {
+                    await this.showCustomSellPercentages(ctx);
+                } catch (error) {
+                    console.error('Error showing updated custom sell percentages:', error);
+                }
+            }, 800);
+            
+        } catch (error) {
+            console.error('Error handling edit sell percentage input:', error);
+            await ctx.reply('❌ Error updating sell percentage.');
+        }
+    }
+
     async showAutoBuyGasSettings(ctx) {
         try {
             if (ctx.callbackQuery) {
@@ -1502,6 +1879,145 @@ _Price tolerance for automated purchases:_
         } catch (error) {
             this.monitoring.logError('Auto buy slippage settings failed', error, { userId: ctx.from.id });
             await ctx.reply('❌ Error loading auto buy slippage settings.');
+        }
+    }
+
+    // Custom amounts input handlers
+    async handleCustomBuyAmountsInput(ctx) {
+        try {
+            const input = ctx.message.text.trim();
+            
+            // Validate format
+            const amounts = input.split(',').map(a => parseFloat(a.trim()));
+            
+            // Validation checks
+            if (amounts.length > 6) {
+                return await ctx.reply('❌ Maximum 6 amounts allowed. Please try again.');
+            }
+            
+            if (amounts.some(a => isNaN(a) || a < 0.01 || a > 1000)) {
+                return await ctx.reply('❌ All amounts must be between 0.01 and 1000 MON. Please try again.');
+            }
+            
+            // Update database
+            await this.database.updateUserSettings(ctx.from.id, { 
+                custom_buy_amounts: amounts.join(',') 
+            });
+            
+            // Clear user state
+            await this.database.clearUserState(ctx.from.id);
+            
+            await ctx.reply(`✅ Custom buy amounts updated: **${amounts.join(', ')} MON**`, {
+                parse_mode: 'Markdown'
+            });
+            
+            // Return to buy settings after delay
+            setTimeout(async () => {
+                try {
+                    await this.showBuySettings(ctx);
+                } catch (error) {
+                    console.error('Error returning to buy settings:', error);
+                }
+            }, 1000);
+            
+        } catch (error) {
+            console.error('Error handling custom buy amounts input:', error);
+            await ctx.reply('❌ Invalid format. Use comma-separated numbers (e.g., 0.1,0.5,1,5)');
+        }
+    }
+
+    async handleCustomSellPercentagesInput(ctx) {
+        try {
+            const input = ctx.message.text.trim();
+            
+            // Validate format
+            const percentages = input.split(',').map(p => parseInt(p.trim()));
+            
+            // Validation checks
+            if (percentages.length > 6) {
+                return await ctx.reply('❌ Maximum 6 percentages allowed. Please try again.');
+            }
+            
+            if (percentages.some(p => isNaN(p) || p < 1 || p > 100)) {
+                return await ctx.reply('❌ All percentages must be between 1 and 100. Please try again.');
+            }
+            
+            // Update database
+            await this.database.updateUserSettings(ctx.from.id, { 
+                custom_sell_percentages: percentages.join(',') 
+            });
+            
+            // Clear user state
+            await this.database.clearUserState(ctx.from.id);
+            
+            await ctx.reply(`✅ Custom sell percentages updated: **${percentages.join(', ')}%**`, {
+                parse_mode: 'Markdown'
+            });
+            
+            // Return to sell settings after delay
+            setTimeout(async () => {
+                try {
+                    await this.showSellSettings(ctx);
+                } catch (error) {
+                    console.error('Error returning to sell settings:', error);
+                }
+            }, 1000);
+            
+        } catch (error) {
+            console.error('Error handling custom sell percentages input:', error);
+            await ctx.reply('❌ Invalid format. Use comma-separated numbers (e.g., 25,50,75,100)');
+        }
+    }
+
+    async resetCustomBuyAmounts(ctx) {
+        try {
+            await ctx.answerCbQuery();
+            
+            await this.database.updateUserSettings(ctx.from.id, { 
+                custom_buy_amounts: '0.1,0.5,1,5' 
+            });
+            
+            await ctx.reply('✅ Custom buy amounts reset to default: **0.1, 0.5, 1, 5 MON**', {
+                parse_mode: 'Markdown'
+            });
+            
+            setTimeout(async () => {
+                try {
+                    await this.showBuySettings(ctx);
+                } catch (error) {
+                    console.error('Error returning to buy settings after reset:', error);
+                }
+            }, 1000);
+            
+        } catch (error) {
+            console.error('Error resetting custom buy amounts:', error);
+            await ctx.reply('❌ Error resetting custom buy amounts.');
+        }
+    }
+
+    async resetCustomSellPercentages(ctx) {
+        try {
+            await ctx.answerCbQuery();
+            
+            await this.database.updateUserSettings(ctx.from.id, { 
+                custom_sell_percentages: '25,50,75,100' 
+            });
+            
+            await ctx.reply('✅ Custom sell percentages reset to default: **25, 50, 75, 100%**', {
+                parse_mode: 'Markdown'
+            });
+            
+            setTimeout(async () => {
+                try {
+                    await this.showSellSettings(ctx);
+                } catch (error) {
+                    console.error('Error returning to sell settings after reset:', error);
+                }
+            }, 1000);
+            
+        } catch (error) {
+            console.error('Error resetting custom sell percentages:', error);
+            await ctx.reply('❌ Error resetting custom sell percentages.');
         }
     }
 

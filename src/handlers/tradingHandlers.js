@@ -42,7 +42,7 @@ Please enter the token contract address you want to buy:`;
             // Get user state to find the selected token
             const userState = await this.database.getUserState(ctx.from.id);
             
-            if ((userState?.state !== 'awaiting_buy_amount' && userState?.state !== 'buy_token') || !userState?.data?.tokenAddress) {
+            if ((userState?.state !== 'token_selected' && userState?.state !== 'buy_token') || !userState?.data?.tokenAddress) {
                 return ctx.reply('❌ Token selection expired. Please try again.');
             }
             
@@ -110,7 +110,7 @@ _Proceed with the purchase?_`;
         const userId = ctx.from.id;
         const currentState = await this.database.getUserState(userId);
         
-        if (currentState && currentState.state === 'awaiting_buy_amount' && currentState.data) {
+        if (currentState && currentState.state === 'token_selected' && currentState.data) {
             await ctx.reply('🟣 *Enter the amount of MON you want to spend:*', { parse_mode: 'Markdown' });
         } else {
             await ctx.reply('🟣 *Enter the amount of MON you want to spend:*', { parse_mode: 'Markdown' });
@@ -212,8 +212,8 @@ Please enter the token contract address you want to buy:`;
         const userId = ctx.from.id;
         const currentState = await this.database.getUserState(userId);
         
-        // If we have token data from awaiting_buy_amount state, preserve it
-        if (currentState && currentState.state === 'awaiting_buy_amount' && currentState.data) {
+        // If we have token data from token_selected state, preserve it
+        if (currentState && currentState.state === 'token_selected' && currentState.data) {
             await ctx.reply('🟣 *Enter the amount of MON you want to spend:*', { parse_mode: 'Markdown' });
             // Keep the same state but user can now input custom amount
             // Don't change the state, just let processCustomBuyAmount handle it
@@ -241,8 +241,9 @@ Please enter the token contract address you want to buy:`;
                 return ctx.reply('❌ Token not found. Please try again.');
             }
             
-            // Store token info in user state for later use
-            await this.database.setUserState(ctx.from.id, 'awaiting_buy_amount', {
+            // Clear any existing state and store token info for buy actions
+            await this.database.clearUserState(ctx.from.id);
+            await this.database.setUserState(ctx.from.id, 'token_selected', {
                 tokenAddress: tokenAddress,
                 tokenSymbol: tokenInfo.token.symbol || 'Unknown',
                 tokenName: tokenInfo.token.name || 'Unknown Token'
@@ -361,12 +362,47 @@ Please try again or contact support.`, {
         try {
             await ctx.answerCbQuery();
             
-            const transferText = `📤 *Transfer MON*
+            // Get user's MON balance
+            const userId = ctx.from.id;
+            const user = await this.database.getUserByTelegramId(userId);
+            
+            if (!user) {
+                await ctx.reply('❌ Please create a wallet first.');
+                return;
+            }
+
+            // Get MON balance from cached data (Monorail API)
+            let balance = 0;
+            try {
+                const balanceResult = await this.monorailAPI.getMONBalance(user.wallet_address, true); // Force refresh
+                if (balanceResult && balanceResult.success) {
+                    balance = parseFloat(balanceResult.balanceFormatted || balanceResult.balance || 0);
+                } else {
+                    // Fallback to direct RPC call
+                    const rpcBalance = await this.walletManager.getBalance(user.wallet_address);
+                    balance = parseFloat(rpcBalance || 0);
+                }
+            } catch (error) {
+                console.log('Error getting balance:', error);
+                // Final fallback
+                try {
+                    const rpcBalance = await this.walletManager.getBalance(user.wallet_address);
+                    balance = parseFloat(rpcBalance || 0);
+                } catch (fallbackError) {
+                    console.log('Fallback balance fetch failed:', fallbackError);
+                }
+            }
+
+            const transferText = `📤 ***Transfer MON***
+
+💰 **Your Balance:** *${balance.toFixed(4)} MON*
 
 Enter the recipient address and amount:
 
-Format: \`address amount\`
-Example: \`0x1234...5678 1.5\``;
+**Format:** \`address amount\`
+**Example:** \`0x1234...5678 1.5\`
+
+⚠️ **Note:** Make sure you have enough MON for gas fees (~0.001 MON)`;
 
             const keyboard = Markup.inlineKeyboard([
                 [Markup.button.callback('🔙 Back to Main', 'back_to_main')]
@@ -484,14 +520,25 @@ Please check the address and try again.`, {
 
 *Choose sell percentage:*`;
 
+            // Get user's custom sell percentages
+            const userSettings = await this.database.getUserSettings(ctx.from.id);
+            let customPercentages = userSettings?.custom_sell_percentages || '25,50,75,100';
+            
+            // Handle case where custom_sell_percentages might be null or not a string
+            if (!customPercentages || typeof customPercentages !== 'string') {
+                customPercentages = '25,50,75,100';
+            }
+            
+            const percentagesArray = customPercentages.split(',');
+
             const keyboard = Markup.inlineKeyboard([
                 [
-                    Markup.button.callback('25%', `sell_percentage_${tokenSymbol}_25`),
-                    Markup.button.callback('50%', `sell_percentage_${tokenSymbol}_50`)
+                    Markup.button.callback(`${percentagesArray[0]?.trim() || '25'}%`, `sell_percentage_${tokenSymbol}_${percentagesArray[0]?.trim() || '25'}`),
+                    Markup.button.callback(`${percentagesArray[1]?.trim() || '50'}%`, `sell_percentage_${tokenSymbol}_${percentagesArray[1]?.trim() || '50'}`)
                 ],
                 [
-                    Markup.button.callback('75%', `sell_percentage_${tokenSymbol}_75`),
-                    Markup.button.callback('100%', `sell_percentage_${tokenSymbol}_100`)
+                    Markup.button.callback(`${percentagesArray[2]?.trim() || '75'}%`, `sell_percentage_${tokenSymbol}_${percentagesArray[2]?.trim() || '75'}`),
+                    Markup.button.callback(`${percentagesArray[3]?.trim() || '100'}%`, `sell_percentage_${tokenSymbol}_${percentagesArray[3]?.trim() || '100'}`)
                 ],
                 [Markup.button.callback('📝 Custom %', `sell_custom_${tokenSymbol}`)],
                 [Markup.button.callback('🔙 Back to Portfolio', 'portfolio')]
