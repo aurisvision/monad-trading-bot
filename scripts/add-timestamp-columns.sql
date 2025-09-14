@@ -1,4 +1,4 @@
--- Add timestamp tracking columns for gas and slippage priority system
+ىحة -- Add timestamp tracking columns for gas and slippage priority system
 -- This allows tracking which setting was updated last: turbo mode or custom values
 
 -- Add timestamp columns if they don't exist

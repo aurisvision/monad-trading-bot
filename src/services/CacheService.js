@@ -166,6 +166,33 @@ class CacheService {
                 return true;
             }
             
+            // Check if redis client has pipeline method
+            if (!this.redis || typeof this.redis.pipeline !== 'function') {
+                // Fallback to individual deletions
+                const deletePromises = operations.map(async ({ type, identifier }) => {
+                    const key = this.getKey(type, identifier);
+                    try {
+                        await this.redis.del(key);
+                        return { success: true, key };
+                    } catch (error) {
+                        return { success: false, key, error };
+                    }
+                });
+                
+                const results = await Promise.all(deletePromises);
+                const successCount = results.filter(r => r.success).length;
+                
+                if (this.monitoring) {
+                    this.monitoring.logInfo('Batch delete completed (fallback mode)', {
+                        total: operations.length,
+                        successful: successCount,
+                        failed: operations.length - successCount
+                    });
+                }
+                
+                return successCount === operations.length;
+            }
+            
             const pipeline = this.redis.pipeline();
             const keys = [];
             

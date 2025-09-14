@@ -181,7 +181,11 @@ class MonitoringSystem {
         } : meta;
         
         this.logger.error(message, errorMeta);
-        this.metrics.errorsTotal.inc({ type: 'general' });
+        
+        // Increment error counter if metrics are available
+        if (this.metrics && this.metrics.errors) {
+            this.metrics.errors.inc({ type: 'general', severity: 'error' });
+        }
     }
 
     logWarning(message, meta = {}) {
@@ -190,7 +194,11 @@ class MonitoringSystem {
 
     logWarn(message, meta = {}) {
         this.logger.warn(message, meta);
-        this.metrics.errors.inc({ type: 'application', severity: 'warning' });
+        
+        // Increment error counter if metrics are available
+        if (this.metrics && this.metrics.errors) {
+            this.metrics.errors.inc({ type: 'application', severity: 'warning' });
+        }
     }
 
     logDebug(message, meta = {}) {

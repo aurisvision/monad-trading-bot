@@ -145,6 +145,15 @@ class PortfolioHandlers {
                 return;
             }
 
+            // Clear cache first to ensure fresh data
+            if (this.cacheService) {
+                try {
+                    await this.cacheService.invalidateAfterBuy(userId, user.wallet_address);
+                } catch (cacheError) {
+                    this.monitoring.logError('Cache clear failed during refresh', cacheError, { userId });
+                }
+            }
+
             // Force refresh of all cached data using new API endpoints
             const [monBalanceData, portfolioValueData, monPriceData] = await Promise.all([
                 this.monorailAPI.getMONBalance(user.wallet_address, true), // Force refresh
@@ -191,6 +200,15 @@ class PortfolioHandlers {
             if (!user) {
                 await ctx.answerCbQuery('⚠️ User not found');
                 return;
+            }
+
+            // Clear cache first to ensure fresh data
+            if (this.cacheService) {
+                try {
+                    await this.cacheService.invalidateAfterBuy(userId, user.wallet_address);
+                } catch (cacheError) {
+                    this.monitoring.logError('Cache clear failed during refresh', cacheError, { userId });
+                }
             }
 
             // Force refresh of all cached data using new API endpoints

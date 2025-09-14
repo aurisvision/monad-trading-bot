@@ -342,9 +342,22 @@ Select amount of MON to spend:`;
                 
                 const explorerUrl = `https://testnet.monadexplorer.com/tx/${result.txHash}`;
                 
+                // Show success message first
                 await ctx.editMessageText(`[✅ Purchase Successful!](${explorerUrl})`, {
                     parse_mode: 'Markdown'
                 });
+                
+                // Force refresh main menu data immediately after successful buy
+                setTimeout(async () => {
+                    try {
+                        const navigationHandlers = this.bot.context.navigationHandlers;
+                        if (navigationHandlers) {
+                            await navigationHandlers.showWelcome(ctx, false, true); // Force refresh = true
+                        }
+                    } catch (refreshError) {
+                        this.monitoring.logError('Auto refresh after buy failed', refreshError, { userId });
+                    }
+                }, 2000); // 2 second delay to allow transaction to propagate
             } else {
                 await ctx.editMessageText(`❌ *Purchase Failed*
 
@@ -668,8 +681,11 @@ Please check the address and try again.`, {
             const result = await this.tradingEngine.executeSell(userId, tokenAddress, sellAmount);
             
             if (result.success) {
+                // Get user data for wallet address
+                const user = await this.database.getUser(userId);
+                
                 // Clear cache after successful sell using CacheService
-                if (this.cacheService) {
+                if (this.cacheService && user) {
                     try {
                         await this.cacheService.invalidateAfterSell(userId, user.wallet_address);
                         this.monitoring.logInfo('Cache cleared after successful sell transaction', { userId });
@@ -694,6 +710,18 @@ Please check the address and try again.`, {
                 await ctx.editMessageText(`[✅ Sale Completed!](${explorerUrl})`, {
                     parse_mode: 'Markdown'
                 });
+                
+                // Force refresh main menu data immediately after successful sell
+                setTimeout(async () => {
+                    try {
+                        const navigationHandlers = this.bot.context.navigationHandlers;
+                        if (navigationHandlers) {
+                            await navigationHandlers.showWelcome(ctx, false, true); // Force refresh = true
+                        }
+                    } catch (refreshError) {
+                        this.monitoring.logError('Auto refresh after sell failed', refreshError, { userId });
+                    }
+                }, 2000); // 2 second delay to allow transaction to propagate
             } else {
                 await ctx.editMessageText(`❌ *Sale Failed*\n\n${result.error}\n\nPlease try again.`, {
                     parse_mode: 'Markdown'

@@ -146,15 +146,15 @@ class NavigationHandlers {
         await ctx.replyWithMarkdown(text, keyboard);
     }
 
-    async handleBackToMainWithDebug(ctx) {
+    async showWelcome(ctx, fromCache = false, forceRefresh = false) {
         const userId = ctx.from.id;
         
         try {
-            // Check for cached main menu data first (15 seconds TTL)
+            // Check for cached main menu data first (15 seconds TTL) - skip if forceRefresh
             const cacheKey = `main_menu:${userId}`;
             let cachedData = null;
             
-            if (this.redis) {
+            if (this.redis && !forceRefresh) {
                 try {
                     const cached = await this.redis.get(cacheKey);
                     if (cached) {
@@ -167,7 +167,7 @@ class NavigationHandlers {
 
             let monBalance, monPriceUSD, portfolioValueUSD, portfolioValueMON, monValueUSD, user;
 
-            if (cachedData) {
+            if (cachedData && !forceRefresh) {
                 // Use cached data
                 ({ monBalance, monPriceUSD, portfolioValueUSD, portfolioValueMON, monValueUSD, user } = cachedData);
             } else {
@@ -179,8 +179,8 @@ class NavigationHandlers {
                 }
 
                 const [monBalanceData, portfolioValueData, monPriceData] = await Promise.all([
-                    this.monorailAPI.getMONBalance(user.wallet_address, false),
-                    this.monorailAPI.getPortfolioValue(user.wallet_address, false),
+                    this.monorailAPI.getMONBalance(user.wallet_address, true), // Force fresh data
+                    this.monorailAPI.getPortfolioValue(user.wallet_address, true), // Force fresh data
                     this.monorailAPI.getMONPriceUSD(false)
                 ]);
 
@@ -190,8 +190,8 @@ class NavigationHandlers {
                 portfolioValueMON = monPriceUSD > 0 ? portfolioValueUSD / monPriceUSD : 0;
                 monValueUSD = monBalance * monPriceUSD;
 
-                // Cache the data for 15 seconds
-                if (this.redis) {
+                // Cache the data for 15 seconds (only if not forced refresh)
+                if (this.redis && !forceRefresh) {
                     try {
                         const dataToCache = { monBalance, monPriceUSD, portfolioValueUSD, portfolioValueMON, monValueUSD, user };
                         await this.redis.setEx(cacheKey, 15, JSON.stringify(dataToCache));
@@ -213,23 +213,17 @@ class NavigationHandlers {
         }
     }
 
-    async showWelcome(ctx, fromCache = false) {
+    async handleBackToMainWithDebug(ctx) {
         const userId = ctx.from.id;
         
         try {
             let user;
             
-            if (fromCache) {
-                const cachedUser = await this.redis.get(`user:${userId}`);
-                user = cachedUser ? JSON.parse(cachedUser) : null;
-            }
-            
+            // Get user data
+            user = await this.database.getUserByTelegramId(userId);
             if (!user) {
-                user = await this.database.getUserByTelegramId(userId);
-                if (!user) {
-                    await this.showWelcomeNewUser(ctx);
-                    return;
-                }
+                await this.showWelcomeNewUser(ctx);
+                return;
             }
 
             const [monBalanceData, portfolioValueData, monPriceData] = await Promise.all([
@@ -261,8 +255,8 @@ class NavigationHandlers {
                 await ctx.replyWithMarkdown(text, keyboard);
             }
         } catch (error) {
-            this.monitoring.logError('Welcome display failed', error, { userId });
-            await ctx.reply('❌ Error loading data. Please try again.');
+            this.monitoring.logError('Back to main failed', error, { userId });
+            await ctx.reply('❌ Error loading main menu. Please try again.');
         }
     }
 
@@ -478,10 +472,12 @@ Configure your trading preferences:
         const userId = ctx.from.id;
         const userState = await this.database.getUserState(userId);
         
-        // Check for token addresses FIRST before processing user states
+        // Check for token addresses ONLY if user is NOT in importing_wallet state
         const messageText = ctx.message.text.trim();
         const tokenAddressMatch = messageText.match(/0x[a-fA-F0-9]{40}/);
-        if (tokenAddressMatch) {
+        
+        // Skip token detection if user is importing wallet (private keys also start with 0x)
+        if (tokenAddressMatch && (!userState || userState.state !== 'importing_wallet')) {
             const tokenAddress = tokenAddressMatch[0];
             
             // Check if auto buy is enabled
@@ -589,9 +585,6 @@ Configure your trading preferences:
                 return;
             }
 
-            // Clear user state
-            await this.database.clearUserState(userId);
-
             // Execute transfer using wallet manager
             const result = await this.walletManager.sendMON(
                 user.encrypted_private_key,
@@ -599,9 +592,19 @@ Configure your trading preferences:
                 amount.toString()
             );
 
+            // Clear user state after transfer attempt (success or failure)
+            await this.database.clearUserState(userId);
+
             if (result.success) {
-                // Clear cache after successful transfer
-                if (this.redis) {
+                // Clear cache after successful transfer using CacheService
+                if (this.cacheService) {
+                    try {
+                        await this.cacheService.invalidateAfterTransfer(userId, recipientId, user.wallet_address, recipientWallet);
+                    } catch (cacheError) {
+                        this.monitoring.logError('Cache clear failed after transfer', cacheError, { userId });
+                    }
+                } else if (this.redis) {
+                    // Fallback to legacy cache clearing
                     await Promise.all([
                         this.redis.del(`balance:${userId}`),
                         this.redis.del(`user:${userId}`),
@@ -865,8 +868,15 @@ Please try again or check your wallet balance.`);
             const result = await autoBuyEngine.executeBuy(userId, tokenAddress, buyAmount);
             
             if (result.success) {
-                // Clear cache after successful transaction
-                if (this.redis) {
+                // Clear cache after successful transaction using CacheService
+                if (this.cacheService) {
+                    try {
+                        await this.cacheService.invalidateAfterBuy(userId, user.wallet_address);
+                    } catch (cacheError) {
+                        this.monitoring.logError('Cache clear failed after auto buy', cacheError, { userId });
+                    }
+                } else if (this.redis) {
+                    // Fallback to legacy cache clearing
                     await Promise.all([
                         this.redis.del(`user:${userId}`),
                         this.redis.del(`balance:${userId}`),
@@ -900,6 +910,15 @@ Please try again or check your wallet balance.`);
 💡 *Auto Buy Settings Applied Automatically*`,
                     { parse_mode: 'Markdown' }
                 );
+                
+                // Force refresh main menu data immediately after successful auto buy
+                setTimeout(async () => {
+                    try {
+                        await this.showWelcome(ctx, false, true); // Force refresh = true
+                    } catch (refreshError) {
+                        this.monitoring.logError('Auto refresh after auto buy failed', refreshError, { userId });
+                    }
+                }, 2000); // 2 second delay to allow transaction to propagate
                 
             } else {
                 // Edit the original message with failure info
