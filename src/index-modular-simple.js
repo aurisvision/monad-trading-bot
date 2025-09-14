@@ -12,6 +12,12 @@ const HealthCheckServer = require('./healthCheck');
 // const { RateLimiter, SecurityEnhancements, SessionManager, MemoryRateLimiter, MemorySessionManager } = require('./rateLimiter');
 const Redis = require('redis');
 
+// Import Redis caching services
+const CacheService = require('./services/CacheService');
+const RedisMetrics = require('./services/RedisMetrics');
+const RedisFallbackManager = require('./services/RedisFallbackManager');
+const BackgroundRefreshService = require('./services/BackgroundRefreshService');
+
 // Import handler modules
 const WalletHandlers = require('./handlers/walletHandlers');
 const TradingHandlers = require('./handlers/tradingHandlers');
@@ -47,13 +53,13 @@ class Area51BotModularSimple {
         try {
             this.redis = Redis.createClient({
                 host: process.env.REDIS_HOST || 'localhost',
-                port: process.env.REDIS_PORT || 6379,
+                port: parseInt(process.env.REDIS_PORT) || 6379,
                 password: process.env.REDIS_PASSWORD || undefined,
                 retry_unfulfilled_commands: true,
-                retry_delay_on_failover: 100,
+                retry_delay_on_failover: parseInt(process.env.REDIS_RETRY_DELAY) || 100,
                 socket: {
-                    connectTimeout: 5000,
-                    commandTimeout: 5000,
+                    connectTimeout: parseInt(process.env.REDIS_CONNECTION_TIMEOUT) || 5000,
+                    commandTimeout: parseInt(process.env.REDIS_COMMAND_TIMEOUT) || 5000,
                     reconnectStrategy: (retries) => Math.min(retries * 50, 500)
                 }
             });
@@ -65,13 +71,26 @@ class Area51BotModularSimple {
 
             await Promise.race([connectPromise, timeoutPromise]);
             this.monitoring.logInfo('Redis connected successfully');
+            
+            // Initialize Redis services
+            this.redisMetrics = new RedisMetrics(this.monitoring);
+            this.redisFallbackManager = new RedisFallbackManager(this.redis, this.monitoring);
+            this.cacheService = new CacheService(this.redis, this.monitoring);
+            
+            // Start periodic cleanup for fallback manager
+            this.redisFallbackManager.startPeriodicCleanup();
+            
         } catch (error) {
-
+            this.monitoring.logError('Redis connection failed, running without cache', error);
             this.redis = null;
+            this.redisMetrics = null;
+            this.redisFallbackManager = null;
+            this.cacheService = null;
         }
 
-        // Initialize database
+        // Initialize database with CacheService
         this.database = new Database(this.monitoring, this.redis);
+        this.database.cacheService = this.cacheService; // Add CacheService to database
         await this.database.initialize();
         await this.database.startHealthMonitoring();
         
@@ -81,6 +100,20 @@ class Area51BotModularSimple {
         this.tradingEngine = new TradingEngine(this.database, this.monorailAPI, this.walletManager, this.monitoring);
         // this.portfolioManager = new PortfolioManager(this.monorailAPI, this.database, this.redis); // Removed - using portfolioService instead
         this.portfolioService = new (require('./portfolioService'))(this.monorailAPI, this.redis, this.monitoring);
+        
+        // Initialize background refresh service if Redis is available
+        if (this.redis && this.cacheService) {
+            this.backgroundRefreshService = new BackgroundRefreshService(
+                this.cacheService,
+                this.database,
+                this.monorailAPI,
+                this.monitoring
+            );
+            
+            // Start background refresh service
+            this.backgroundRefreshService.start();
+            this.monitoring.logInfo('Background refresh service started');
+        }
         
         // Initialize security and rate limiting - DISABLED
         // if (this.redis) {
@@ -103,7 +136,8 @@ class Area51BotModularSimple {
             this.database, 
             this.walletManager, 
             this.monitoring, 
-            this.redis
+            this.redis,
+            this.cacheService
         );
         
         this.tradingHandlers = new TradingHandlers(
@@ -114,14 +148,16 @@ class Area51BotModularSimple {
             this.monitoring, 
             this.walletManager, 
             this.portfolioService,
-            this.redis
+            this.redis,
+            this.cacheService
         );
         
         this.portfolioHandlers = new PortfolioHandlers(
             this.bot, 
             this.database, 
             this.portfolioService,
-            this.monitoring
+            this.monitoring,
+            this.cacheService
         );
         
         this.navigationHandlers = new NavigationHandlers(
@@ -131,7 +167,8 @@ class Area51BotModularSimple {
             this.monitoring, 
             this.redis,
             this.walletManager,
-            this // Pass main bot instance
+            this, // Pass main bot instance
+            this.cacheService
         );
         
         this.monitoring.logInfo('All components initialized successfully');

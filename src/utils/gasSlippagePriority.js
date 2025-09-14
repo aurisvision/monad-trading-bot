@@ -5,8 +5,9 @@
  */
 
 class GasSlippagePriority {
-    constructor(database) {
+    constructor(database, cacheService = null) {
         this.database = database;
+        this.cacheService = cacheService;
     }
 
     /**
@@ -139,6 +140,12 @@ class GasSlippagePriority {
             }
 
             await this.database.updateUserSettings(userId, update);
+            
+            // Force immediate cache invalidation
+            if (this.cacheService) {
+                await this.cacheService.invalidateUserSettings(userId);
+                console.log(`✅ Gas settings updated and cache cleared for user ${userId}`);
+            }
         } catch (error) {
             console.error('Error updating gas settings:', error);
             throw error;
@@ -163,6 +170,12 @@ class GasSlippagePriority {
             }
 
             await this.database.updateUserSettings(userId, update);
+            
+            // Force immediate cache invalidation
+            if (this.cacheService) {
+                await this.cacheService.invalidateUserSettings(userId);
+                console.log(`✅ Slippage settings updated and cache cleared for user ${userId}`);
+            }
         } catch (error) {
             console.error('Error updating slippage settings:', error);
             throw error;
@@ -179,6 +192,12 @@ class GasSlippagePriority {
             };
 
             await this.database.updateUserSettings(userId, update);
+            
+            // Force immediate cache invalidation for user settings
+            if (this.cacheService) {
+                await this.cacheService.invalidateUserSettings(userId);
+                console.log(`✅ Auto buy amount updated and cache cleared for user ${userId}`);
+            }
         } catch (error) {
             console.error('Error updating auto buy amount:', error);
             throw error;

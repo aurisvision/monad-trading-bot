@@ -3,11 +3,12 @@ const { Markup } = require('telegraf');
 const InterfaceUtils = require('../utils/interfaceUtils');
 
 class PortfolioHandlers {
-    constructor(bot, database, portfolioService, monitoring) {
+    constructor(bot, database, portfolioService, monitoring, cacheService = null) {
         this.bot = bot;
         this.database = database;
         this.portfolioService = portfolioService;
         this.monitoring = monitoring;
+        this.cacheService = cacheService;
     }
 
     setupHandlers() {

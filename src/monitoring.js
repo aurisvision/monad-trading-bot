@@ -181,7 +181,11 @@ class MonitoringSystem {
         } : meta;
         
         this.logger.error(message, errorMeta);
-        this.metrics.errors.inc({ type: 'application', severity: 'error' });
+        this.metrics.errorsTotal.inc({ type: 'general' });
+    }
+
+    logWarning(message, meta = {}) {
+        this.logger.warn(message, meta);
     }
 
     logWarn(message, meta = {}) {

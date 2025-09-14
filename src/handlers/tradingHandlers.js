@@ -3,7 +3,7 @@ const { Markup } = require('telegraf');
 const { parseCustomAmounts } = require('../utils');
 
 class TradingHandlers {
-    constructor(bot, database, tradingEngine, monorailAPI, monitoring, walletManager, portfolioService, redis) {
+    constructor(bot, database, tradingEngine, monorailAPI, monitoring, walletManager, portfolioService, redis, cacheService = null) {
         this.bot = bot;
         this.database = database;
         this.tradingEngine = tradingEngine;
@@ -12,6 +12,7 @@ class TradingHandlers {
         this.walletManager = walletManager;
         this.portfolioService = portfolioService;
         this.redis = redis;
+        this.cacheService = cacheService;
     }
 
     async handleBuyInterface(ctx) {
@@ -315,8 +316,16 @@ Select amount of MON to spend:`;
                 // Clear user state and cache after successful buy
                 await this.database.clearUserState(userId);
                 
-                // Clear all relevant caches to force fresh data
-                if (this.redis) {
+                // Clear cache after successful transaction using CacheService
+                if (this.cacheService) {
+                    try {
+                        await this.cacheService.invalidateAfterBuy(userId, user.wallet_address);
+                        this.monitoring.logInfo('Cache cleared after successful buy transaction', { userId, txHash: result.txHash });
+                    } catch (cacheError) {
+                        this.monitoring.logError('Cache clear failed after buy', cacheError, { userId });
+                    }
+                } else if (this.redis) {
+                    // Fallback to legacy cache clearing
                     try {
                         await Promise.all([
                             this.redis.del(`user:${userId}`),
@@ -325,9 +334,9 @@ Select amount of MON to spend:`;
                             this.redis.del(`main_menu:${userId}`),
                             this.redis.del(`mon_balance:${user.wallet_address}`)
                         ]);
-                        this.monitoring.logInfo('Cache cleared after successful buy transaction', { userId, txHash: result.txHash });
+                        this.monitoring.logInfo('Cache cleared after successful buy transaction (legacy)', { userId, txHash: result.txHash });
                     } catch (redisError) {
-                        this.monitoring.logError('Cache clear failed after successful buy transaction', redisError, { userId });
+                        this.monitoring.logError('Cache clear failed after buy', redisError, { userId });
                     }
                 }
                 
@@ -441,8 +450,16 @@ Enter the recipient address and amount:
             const result = await this.tradingEngine.transferMON(user.wallet_address, address, amount);
             
             if (result.success) {
-                // Clear cache after successful transfer
-                if (this.redis) {
+                // Clear cache after successful transfer using CacheService
+                if (this.cacheService) {
+                    try {
+                        await this.cacheService.invalidateAfterTransfer(userId, null, user.wallet_address, null);
+                        this.monitoring.logInfo('Cache cleared after successful transfer', { userId });
+                    } catch (cacheError) {
+                        this.monitoring.logError('Cache clear failed after transfer', cacheError, { userId });
+                    }
+                } else if (this.redis) {
+                    // Fallback to legacy cache clearing
                     try {
                         await Promise.all([
                             this.redis.del(`user:${userId}`),
@@ -651,9 +668,16 @@ Please check the address and try again.`, {
             const result = await this.tradingEngine.executeSell(userId, tokenAddress, sellAmount);
             
             if (result.success) {
-                // Clear cache after successful transaction
-                await this.portfolioService.clearUserPortfolioCache(userId);
-                if (this.redis) {
+                // Clear cache after successful sell using CacheService
+                if (this.cacheService) {
+                    try {
+                        await this.cacheService.invalidateAfterSell(userId, user.wallet_address);
+                        this.monitoring.logInfo('Cache cleared after successful sell transaction', { userId });
+                    } catch (cacheError) {
+                        this.monitoring.logError('Cache clear failed after sell', cacheError, { userId });
+                    }
+                } else if (this.redis) {
+                    // Fallback to legacy cache clearing
                     try {
                         await Promise.all([
                             this.redis.del(`balance:${userId}`),
@@ -710,7 +734,16 @@ Please check the address and try again.`, {
                 if (result.success) {
                     // Clear cache after successful turbo transaction
                     await this.portfolioService.clearUserPortfolioCache(userId);
-                    if (this.redis) {
+                    // Clear cache after successful turbo buy using CacheService
+                    if (this.cacheService) {
+                        try {
+                            await this.cacheService.invalidateAfterBuy(userId, user.wallet_address);
+                            this.monitoring.logInfo('Cache cleared after successful turbo buy', { userId });
+                        } catch (cacheError) {
+                            this.monitoring.logError('Cache clear failed after turbo buy', cacheError, { userId });
+                        }
+                    } else if (this.redis) {
+                        // Fallback to legacy cache clearing
                         try {
                             await Promise.all([
                                 this.redis.del(`balance:${userId}`),
@@ -767,29 +800,35 @@ Please check the address and try again.`, {
                 return;
             }
 
-            // Execute buy transaction with normal slippage
-            const result = await this.tradingEngine.executeBuy(userId, tokenAddress, parseFloat(amount), 5);
+            // Execute the buy transaction
+            const result = await this.tradingEngine.executeBuy(userId, tokenAddress, parseFloat(amount));
             
             if (result.success) {
-                // Clear cache to force fresh data after successful transaction
-                await this.portfolioService.clearUserPortfolioCache(userId);
-                if (this.redis) {
+                // Clear cache after successful transaction using CacheService
+                if (this.cacheService) {
+                    try {
+                        await this.cacheService.invalidateAfterBuy(userId, user.wallet_address);
+                        this.monitoring.logInfo('Cache cleared after successful buy transaction', { userId, txHash: result.txHash });
+                    } catch (cacheError) {
+                        this.monitoring.logError('Cache clear failed after buy', cacheError, { userId });
+                    }
+                } else if (this.redis) {
+                    // Fallback to legacy cache clearing
                     try {
                         await Promise.all([
                             this.redis.del(`balance:${userId}`),
                             this.redis.del(`portfolio:${userId}`),
-                            this.redis.del(`user:${userId}`), // Clear user cache to refresh main menu balance
-                            this.redis.del(`main_menu:${userId}`), // Clear main menu cache to refresh balance and portfolio data
-                            this.redis.del(`mon_balance:${user.wallet_address}`) // Clear MON balance cache by wallet address
+                            this.redis.del(`user:${userId}`),
+                            this.redis.del(`main_menu:${userId}`),
+                            this.redis.del(`mon_balance:${user.wallet_address}`)
                         ]);
-                        this.monitoring.logInfo('Cache cleared after successful buy transaction', { userId, txHash: result.txHash });
+                        this.monitoring.logInfo('Cache cleared after successful buy transaction (legacy)', { userId, txHash: result.txHash });
                     } catch (redisError) {
-                        this.monitoring.logError('Cache clear failed after buy transaction', redisError, { userId });
+                        this.monitoring.logError('Cache clear failed after buy', redisError, { userId });
                     }
                 }
-                    
-                const explorerUrl = `https://testnet.monadexplorer.com/tx/${result.txHash}`;
                 
+                const explorerUrl = `https://testnet.monadexplorer.com/tx/${result.txHash}`;
                 await ctx.editMessageText(`[✅ Purchase Successful!](${explorerUrl})`, {
                     parse_mode: 'Markdown'
                 });

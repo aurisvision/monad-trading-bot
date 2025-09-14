@@ -3,11 +3,13 @@ const { Markup } = require('telegraf');
 const InterfaceUtils = require('../utils/interfaceUtils');
 
 class WalletHandlers {
-    constructor(bot, database, walletManager, monitoring) {
+    constructor(bot, database, walletManager, monitoring, redis = null, cacheService = null) {
         this.bot = bot;
         this.database = database;
         this.walletManager = walletManager;
         this.monitoring = monitoring;
+        this.redis = redis;
+        this.cacheService = cacheService;
     }
 
     setupHandlers() {

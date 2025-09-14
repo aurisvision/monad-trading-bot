@@ -491,6 +491,19 @@ class DatabasePostgreSQL {
     }
 
     async getUserSettings(telegramId) {
+        // Try Redis cache first if available
+        if (this.cacheService) {
+            try {
+                const cachedSettings = await this.cacheService.get('user_settings', telegramId);
+                if (cachedSettings) {
+                    return cachedSettings;
+                }
+            } catch (cacheError) {
+                console.error('Cache read error for user settings:', cacheError);
+            }
+        }
+        
+        // Fallback to legacy cache
         const cacheKey = `${this.staticCacheKeys.settings}${telegramId}`;
         let settings = await this.getFromCache(cacheKey);
         
@@ -503,7 +516,14 @@ class DatabasePostgreSQL {
             }
             
             if (settings) {
-                // Cache without TTL (static cache)
+                // Cache in both systems
+                if (this.cacheService) {
+                    try {
+                        await this.cacheService.set('user_settings', telegramId, settings);
+                    } catch (cacheError) {
+                        console.error('Cache set error for user settings:', cacheError);
+                    }
+                }
                 await this.setStaticCache(cacheKey, settings);
             }
         }
@@ -526,6 +546,17 @@ class DatabasePostgreSQL {
         
         // Event-driven cache update (invalidate then set new data)
         if (result) {
+            // Update Redis cache first if available
+            if (this.cacheService) {
+                try {
+                    await this.cacheService.set('user_settings', telegramId, result);
+                    console.log(`✅ User settings updated in Redis cache for user ${telegramId}`);
+                } catch (cacheError) {
+                    console.error('Cache update error for user settings:', cacheError);
+                }
+            }
+            
+            // Update legacy cache
             await this.invalidateStaticCache(telegramId, 'settings');
             const settingsCacheKey = `${this.staticCacheKeys.settings}${telegramId}`;
             await this.setStaticCache(settingsCacheKey, result);

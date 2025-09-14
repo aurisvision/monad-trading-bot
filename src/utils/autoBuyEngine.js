@@ -75,6 +75,7 @@ class AutoBuyEngine {
                         type: 'auto_buy',
                         tokenAddress: tokenAddress,
                         amount: buyAmount,
+                        totalValue: buyAmount, // Add totalValue to prevent constraint violation
                         gasPrice: autoBuySettings.gas,
                         status: 'pending',
                         network: 'monad'

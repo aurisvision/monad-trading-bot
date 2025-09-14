@@ -3,7 +3,7 @@ const { Markup } = require('telegraf');
 const InterfaceUtils = require('../utils/interfaceUtils');
 
 class NavigationHandlers {
-    constructor(bot, database, monorailAPI, monitoring, redis = null, walletManager = null, mainBot = null) {
+    constructor(bot, database, monorailAPI, monitoring, redis = null, walletManager = null, mainBot = null, cacheService = null) {
         this.bot = bot;
         this.database = database;
         this.monorailAPI = monorailAPI;
@@ -11,6 +11,7 @@ class NavigationHandlers {
         this.redis = redis;
         this.walletManager = walletManager;
         this.mainBot = mainBot; // Reference to main bot instance
+        this.cacheService = cacheService;
     }
 
     setupHandlers() {
@@ -65,6 +66,11 @@ class NavigationHandlers {
 
         this.bot.action('confirm_turbo_enable', async (ctx) => {
             await this.handleConfirmTurboEnable(ctx);
+        });
+
+        // Manual refresh handler
+        this.bot.action('refresh', async (ctx) => {
+            await this.handleManualRefresh(ctx);
         });
 
         // Help handler
@@ -472,9 +478,33 @@ Configure your trading preferences:
         const userId = ctx.from.id;
         const userState = await this.database.getUserState(userId);
         
-        // First check if user has a specific state that needs processing
+        // Check for token addresses FIRST before processing user states
+        const messageText = ctx.message.text.trim();
+        const tokenAddressMatch = messageText.match(/0x[a-fA-F0-9]{40}/);
+        if (tokenAddressMatch) {
+            const tokenAddress = tokenAddressMatch[0];
+            
+            // Check if auto buy is enabled
+            const user = await this.database.getUser(userId);
+            const userSettings = await this.database.getUserSettings(userId);
+            
+            console.log(`🔍 Token address detected: ${tokenAddress}`);
+            console.log(`🔍 Auto buy enabled: ${userSettings?.auto_buy_enabled}`);
+            
+            if (userSettings && userSettings.auto_buy_enabled) {
+                // Execute instant auto buy
+                await this.executeInstantAutoBuy(ctx, tokenAddress, user, userSettings);
+                return;
+            } else {
+                // Normal token address processing (show buy menu)
+                await this.processTokenAddress(ctx, tokenAddress);
+                return;
+            }
+        }
+
+        // Then check if user has a specific state that needs processing
         if (userState && userState.state) {
-            // Process based on current user state first
+            // Process based on current user state
             switch (userState.state) {
                 case 'importing_wallet':
                     await this.processWalletImport(ctx, ctx.message.text);
@@ -510,30 +540,6 @@ Configure your trading preferences:
                 case 'awaiting_custom_amount_auto_buy':
                     await this.processCustomAutoBuyAmount(ctx, ctx.message.text);
                     return;
-            }
-        }
-        
-        // Only check for token addresses if user is not in a specific state
-        // Skip token address processing if user is in token_selected state to avoid conflicts
-        if (!userState || userState.state !== 'token_selected') {
-            const messageText = ctx.message.text.trim();
-            const tokenAddressMatch = messageText.match(/0x[a-fA-F0-9]{40}/);
-            if (tokenAddressMatch) {
-                const tokenAddress = tokenAddressMatch[0];
-                
-                // Check if auto buy is enabled
-                const user = await this.database.getUser(userId);
-                const userSettings = await this.database.getUserSettings(userId);
-                
-                if (userSettings && userSettings.auto_buy_enabled) {
-                    // Execute instant auto buy
-                    await this.executeInstantAutoBuy(ctx, tokenAddress, user, userSettings);
-                    return;
-                } else {
-                    // Normal token address processing (show buy menu)
-                    await this.processTokenAddress(ctx, tokenAddress);
-                    return;
-                }
             }
         }
 
@@ -664,15 +670,16 @@ Please try again or check your wallet balance.`);
             
             // Update database with timestamp tracking
             const GasSlippagePriority = require('../utils/gasSlippagePriority');
-            const prioritySystem = new GasSlippagePriority(this.database);
+            const prioritySystem = new GasSlippagePriority(this.database, this.cacheService);
             await prioritySystem.updateGasSettings(userId, gasPriceWei, type);
             
             // Clear user state
             await this.database.clearUserState(userId);
             
-            // Invalidate cache
-            if (this.redis) {
-                await this.redis.del(`user:${userId}`);
+            // Force immediate cache refresh using CacheService
+            if (this.cacheService) {
+                await this.cacheService.invalidateUserSettings(userId);
+                await this.cacheService.invalidateMainMenu(userId);
             }
             
             await ctx.reply(`✅ ${type.charAt(0).toUpperCase() + type.slice(1)} gas price set to ${gasPrice} Gwei`);
@@ -728,15 +735,16 @@ Please try again or check your wallet balance.`);
             
             // Update database with timestamp tracking
             const GasSlippagePriority = require('../utils/gasSlippagePriority');
-            const prioritySystem = new GasSlippagePriority(this.database);
+            const prioritySystem = new GasSlippagePriority(this.database, this.cacheService);
             await prioritySystem.updateSlippageSettings(userId, slippage, type);
             
             // Clear user state
             await this.database.clearUserState(userId);
             
-            // Invalidate cache
-            if (this.redis) {
-                await this.redis.del(`user:${userId}`);
+            // Force immediate cache refresh using CacheService
+            if (this.cacheService) {
+                await this.cacheService.invalidateUserSettings(userId);
+                await this.cacheService.invalidateMainMenu(userId);
             }
             
             await ctx.reply(`✅ ${type.charAt(0).toUpperCase() + type.slice(1)} slippage set to ${slippage}%`);
@@ -776,15 +784,16 @@ Please try again or check your wallet balance.`);
             
             // Update database with timestamp tracking
             const GasSlippagePriority = require('../utils/gasSlippagePriority');
-            const prioritySystem = new GasSlippagePriority(this.database);
+            const prioritySystem = new GasSlippagePriority(this.database, this.cacheService);
             await prioritySystem.updateAutoBuyAmount(userId, amount);
             
             // Clear user state
             await this.database.clearUserState(userId);
             
-            // Invalidate cache
-            if (this.redis) {
-                await this.redis.del(`user:${userId}`);
+            // Force immediate cache refresh using CacheService
+            if (this.cacheService) {
+                await this.cacheService.invalidateUserSettings(userId);
+                await this.cacheService.invalidateMainMenu(userId);
             }
             
             await ctx.reply(`✅ Auto buy amount set to ${amount} MON`);
@@ -808,8 +817,10 @@ Please try again or check your wallet balance.`);
         const userId = ctx.from.id;
         
         try {
-            // Send immediate feedback to user
-            await ctx.reply('🔄 *Auto Buy Triggered!*\nProcessing your transaction...');
+            // Send immediate feedback to user with proper markdown formatting
+            const message = await ctx.reply(`🚀 *Auto Buy Activated*
+
+🔄 *Processing transaction...*`, { parse_mode: 'Markdown' });
             
             // Initialize AutoBuyEngine with correct parameters
             const AutoBuyEngine = require('../utils/autoBuyEngine');
@@ -866,13 +877,16 @@ Please try again or check your wallet balance.`);
                 
                 // Get token details for success message
                 const tokenSymbol = tokenInfo.token?.symbol || 'Unknown';
-                const tokenName = tokenInfo.token?.name || 'Unknown Token';
-                
                 const explorerUrl = `https://testnet.monadexplorer.com/tx/${result.transactionHash}`;
                 
-                await ctx.reply(`✅ *Auto Buy Successful!*
+                // Edit the original message with detailed success info
+                await ctx.telegram.editMessageText(
+                    ctx.chat.id,
+                    message.message_id,
+                    null,
+                    `✅ *Auto Buy Successful!*
 
-🎯 *Token:* ${tokenSymbol} | ${tokenName}
+🎯 *Token:* ${tokenSymbol} | ${tokenInfo.token?.name || 'Unknown Token'}
 📍 *Address:* \`${tokenAddress}\`
 💰 *Amount:* ${buyAmount} MON
 ⛽ *Gas Used:* ${userSettings.auto_buy_gas ? (userSettings.auto_buy_gas / 1000000000).toFixed(0) : '50'} Gwei
@@ -883,20 +897,23 @@ Please try again or check your wallet balance.`);
 
 [View on Explorer](${explorerUrl})
 
-💡 *Auto Buy Settings Applied Automatically*`, {
-                    parse_mode: 'Markdown'
-                });
-                
-                // Auto buy transaction completed successfully
+💡 *Auto Buy Settings Applied Automatically*`,
+                    { parse_mode: 'Markdown' }
+                );
                 
             } else {
-                await ctx.reply(`❌ *Auto Buy Failed*
+                // Edit the original message with failure info
+                await ctx.telegram.editMessageText(
+                    ctx.chat.id,
+                    message.message_id,
+                    null,
+                    `🚀 _Auto Buy Activated_
 
-🚫 Error: ${result.error}
-📍 Token: \`${tokenAddress}\`
-💰 Amount: ${buyAmount} MON
+❌ *Transaction Failed*
 
-Please try again or check your settings.`);
+Error: ${result.error}`,
+                    { parse_mode: 'Markdown' }
+                );
                 
                 // Log failed auto buy
                 console.error(`❌ Auto Buy Failed - User: ${userId}, Token: ${tokenAddress}, Error: ${result.error}`);
@@ -1125,6 +1142,84 @@ Proceed with this purchase?`, {
         } catch (error) {
             this.monitoring.logError('Process custom buy amount failed', error, { userId });
             await ctx.reply('❌ Error processing amount. Please try again.');
+        }
+    }
+
+    async handleManualRefresh(ctx) {
+        const userId = ctx.from.id;
+        
+        try {
+            await ctx.answerCbQuery('🔄 Refreshing data...');
+            
+            // Get user data
+            const user = await this.database.getUserByTelegramId(userId);
+            if (!user) {
+                await ctx.reply('❌ Please start the bot first with /start');
+                return;
+            }
+            
+            // Clear cache for manual refresh (force refresh despite TTL)
+            if (this.cacheService) {
+                try {
+                    await this.cacheService.invalidateAfterManualRefresh(userId, user.wallet_address);
+                    this.monitoring.logInfo('Manual refresh cache cleared', { userId, walletAddress: user.wallet_address });
+                } catch (cacheError) {
+                    this.monitoring.logError('Manual refresh cache clear failed', cacheError, { userId });
+                }
+            } else if (this.redis) {
+                // Fallback to legacy cache clearing
+                try {
+                    await Promise.all([
+                        this.redis.del(`portfolio:${userId}`),
+                        this.redis.del(`wallet_balance:${user.wallet_address}`),
+                        this.redis.del(`main_menu:${userId}`),
+                        this.redis.del(`mon_balance:${user.wallet_address}`) // Legacy support
+                    ]);
+                    
+                    this.monitoring.logInfo('Manual refresh cache cleared (legacy)', { userId, walletAddress: user.wallet_address });
+                } catch (redisError) {
+                    this.monitoring.logError('Manual refresh cache clear failed', redisError, { userId });
+                }
+            }
+            
+            // Fetch fresh data
+            const [monBalanceData, portfolioValueData, monPriceData] = await Promise.all([
+                this.monorailAPI.getMONBalance(user.wallet_address, false),
+                this.monorailAPI.getPortfolioValue(user.wallet_address, false),
+                this.monorailAPI.getMONPriceUSD(false)
+            ]);
+
+            const monBalance = parseFloat(monBalanceData.balance || '0');
+            const monPriceUSD = parseFloat(monPriceData.price || '0');
+            const portfolioValueUSD = parseFloat(portfolioValueData.value || '0');
+            const monValueUSD = monBalance * monPriceUSD;
+
+            // Generate fresh interface
+            const { text, keyboard } = InterfaceUtils.generateMainInterface(
+                user, monBalance, monPriceUSD, portfolioValueUSD
+            );
+
+            // Update the message
+            try {
+                await ctx.editMessageText(text, {
+                    parse_mode: 'Markdown',
+                    reply_markup: keyboard.reply_markup
+                });
+            } catch (editError) {
+                // Fallback to new message if edit fails
+                await ctx.replyWithMarkdown(text, keyboard);
+            }
+            
+            this.monitoring.logInfo('Manual refresh completed', { 
+                userId, 
+                monBalance, 
+                portfolioValueUSD,
+                monPriceUSD 
+            });
+            
+        } catch (error) {
+            this.monitoring.logError('Manual refresh failed', error, { userId });
+            await ctx.reply('❌ Error refreshing data. Please try again.');
         }
     }
 

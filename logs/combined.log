@@ -600,3 +600,331 @@
 {"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-13T17:05:12.502Z","ttl":"24h","userId":6920475855}
 {"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-13T17:05:13.284Z","userId":6920475855}
 {"level":"info","message":"Cache cleared after successful buy transaction","service":"area51-bot","timestamp":"2025-09-13T17:05:31.744Z","txHash":"0xe532b33940d6ec69edd5b2240c248c3fb8d2dce24ff865eea146ffdab7822d0c","userId":6920475855}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-13T20:56:42.058Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-13T20:56:42.105Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-13T20:56:42.106Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-13T20:56:42.189Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-13T20:56:42.197Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-13T20:57:06.464Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-13T20:57:07.980Z","userId":6920475855}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-13T20:57:10.127Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-13T20:57:10.646Z","userId":6920475855}
+{"level":"info","message":"Fetching portfolio from API","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-13T21:00:10.789Z","walletAddress":"0x77ce5F98045d41591eaDd9aDCB35177D9259c05e"}
+{"level":"info","message":"Portfolio cached in Redis","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-13T21:00:11.224Z","tokenCount":15}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-13T21:03:59.244Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-13T21:04:00.215Z","userId":6920475855}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-13T21:04:16.313Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-13T21:04:16.835Z","userId":6920475855}
+{"level":"info","message":"Wallet deleted","service":"area51-bot","timestamp":"2025-09-13T21:04:21.666Z","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-13T21:04:24.451Z","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-13T21:05:33.019Z","userId":1800071101}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-13T21:08:33.292Z","ttl":"24h","userId":1800071101}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-13T21:08:34.142Z","userId":1800071101}
+{"level":"info","message":"Fetching portfolio from API","service":"area51-bot","telegramId":1800071101,"timestamp":"2025-09-13T21:13:06.204Z","walletAddress":"0x9DA4B0a0D5D4adf34f83f4E024A680469E5CDF83"}
+{"level":"info","message":"Portfolio cached in Redis","service":"area51-bot","telegramId":1800071101,"timestamp":"2025-09-13T21:13:07.040Z","tokenCount":4}
+{"level":"info","message":"Fetching portfolio from API","service":"area51-bot","telegramId":1800071101,"timestamp":"2025-09-13T21:19:25.055Z","walletAddress":"0x9DA4B0a0D5D4adf34f83f4E024A680469E5CDF83"}
+{"level":"info","message":"Portfolio cached in Redis","service":"area51-bot","telegramId":1800071101,"timestamp":"2025-09-13T21:19:25.499Z","tokenCount":4}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-14T00:50:22.761Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-14T00:50:22.807Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-14T00:50:22.808Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-14T00:50:22.837Z"}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-14T00:51:05.403Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-14T00:51:05.551Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-14T00:51:05.552Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-14T00:51:05.583Z"}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-14T00:51:39.061Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-14T00:51:39.108Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-14T00:51:39.109Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-14T00:51:39.142Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T00:51:39.146Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T00:51:39.147Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-14T00:51:39.153Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T00:51:46.637Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T00:51:47.295Z","userId":6920475855}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T00:51:51.837Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T00:51:52.192Z","userId":6920475855}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T00:51:53.272Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T00:51:53.577Z","userId":6920475855}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T00:51:56.127Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T00:51:56.454Z","userId":6920475855}
+{"level":"info","message":"Fetching portfolio from API","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-14T00:51:58.007Z","walletAddress":"0x77ce5F98045d41591eaDd9aDCB35177D9259c05e"}
+{"level":"info","message":"Portfolio cached in Redis","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-14T00:51:58.244Z","tokenCount":14}
+{"level":"info","message":"Portfolio loaded from cache","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-14T00:52:01.001Z"}
+{"level":"info","message":"Portfolio loaded from cache","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-14T00:52:03.383Z"}
+{"level":"info","message":"Portfolio loaded from cache","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-14T00:52:05.937Z"}
+{"level":"info","message":"Portfolio loaded from cache","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-14T00:52:20.756Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T00:52:38.787Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T00:52:39.136Z","userId":6920475855}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T00:52:53.471Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T00:52:53.811Z","userId":6920475855}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T00:53:24.498Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T00:53:24.820Z","userId":6920475855}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-14T00:53:39.154Z"}
+{"error":"this.redis.setex is not a function","identifier":"global","level":"error","message":"Cache set error","service":"area51-bot","stack":"TypeError: this.redis.setex is not a function\n    at CacheService.set (C:\\Users\\user\\Monad Area\\area51-bot\\src\\services\\CacheService.js:113:34)\n    at BackgroundRefreshService._refreshGlobalPrices (C:\\Users\\user\\Monad Area\\area51-bot\\src\\services\\BackgroundRefreshService.js:170:34)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2025-09-14T00:53:39.362Z","type":"mon_price_usd"}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-14T00:54:33.690Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-14T00:54:33.738Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-14T00:54:33.739Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-14T00:54:33.768Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T00:54:33.771Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T00:54:33.771Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-14T00:54:33.776Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T00:54:36.441Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T00:54:36.878Z","userId":6920475855}
+{"level":"info","message":"Fetching portfolio from API","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-14T00:54:37.986Z","walletAddress":"0x77ce5F98045d41591eaDd9aDCB35177D9259c05e"}
+{"level":"info","message":"Portfolio cached in Redis","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-14T00:54:38.212Z","tokenCount":14}
+{"level":"info","message":"Portfolio loaded from cache","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-14T00:54:40.570Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T00:54:52.647Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T00:54:52.980Z","userId":6920475855}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T00:55:46.660Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T00:55:47.037Z","userId":6920475855}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T00:56:33.220Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T00:56:33.706Z","userId":6920475855}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-14T00:56:33.778Z"}
+{"error":"this.redis.setex is not a function","identifier":"global","level":"error","message":"Cache set error","service":"area51-bot","stack":"TypeError: this.redis.setex is not a function\n    at CacheService.set (C:\\Users\\user\\Monad Area\\area51-bot\\src\\services\\CacheService.js:113:34)\n    at BackgroundRefreshService._refreshGlobalPrices (C:\\Users\\user\\Monad Area\\area51-bot\\src\\services\\BackgroundRefreshService.js:170:34)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2025-09-14T00:56:33.972Z","type":"mon_price_usd"}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-14T00:57:34.490Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-14T00:57:34.530Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-14T00:57:34.531Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-14T00:57:34.563Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T00:57:34.566Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T00:57:34.567Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-14T00:57:34.573Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T00:59:09.026Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T00:59:09.554Z","userId":6920475855}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T00:59:11.586Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T00:59:11.939Z","userId":6920475855}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-14T00:59:34.567Z"}
+{"error":"this.redis.setex is not a function","identifier":"global","level":"error","message":"Cache set error","service":"area51-bot","stack":"TypeError: this.redis.setex is not a function\n    at CacheService.set (C:\\Users\\user\\Monad Area\\area51-bot\\src\\services\\CacheService.js:113:34)\n    at BackgroundRefreshService._refreshGlobalPrices (C:\\Users\\user\\Monad Area\\area51-bot\\src\\services\\BackgroundRefreshService.js:170:34)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2025-09-14T00:59:34.784Z","type":"mon_price_usd"}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-14T01:01:34.572Z"}
+{"error":"this.redis.setex is not a function","identifier":"global","level":"error","message":"Cache set error","service":"area51-bot","stack":"TypeError: this.redis.setex is not a function\n    at CacheService.set (C:\\Users\\user\\Monad Area\\area51-bot\\src\\services\\CacheService.js:113:34)\n    at BackgroundRefreshService._refreshGlobalPrices (C:\\Users\\user\\Monad Area\\area51-bot\\src\\services\\BackgroundRefreshService.js:170:34)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2025-09-14T01:01:34.803Z","type":"mon_price_usd"}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-14T01:03:32.594Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-14T01:03:32.649Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-14T01:03:32.650Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-14T01:03:32.714Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T01:03:32.718Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T01:03:32.719Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-14T01:03:32.730Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T01:03:57.367Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T01:03:57.797Z","userId":6920475855}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T01:04:37.806Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T01:04:38.271Z","userId":6920475855}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T01:04:43.739Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T01:04:44.225Z","userId":6920475855}
+{"level":"info","message":"Wallet deleted","service":"area51-bot","timestamp":"2025-09-14T01:04:47.579Z","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T01:04:49.006Z","userId":6920475855}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-14T01:05:32.722Z"}
+{"identifier":"global","key":"area51:mon_price_usd:global","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-14T01:05:32.917Z","ttl":120,"type":"mon_price_usd"}
+{"level":"info","message":"Wallet deleted","service":"area51-bot","timestamp":"2025-09-14T01:06:08.022Z","userId":6920475855}
+{"duration":0.011,"endpoint":"telegram","level":"warn","message":"API request failed","service":"area51-bot","status":500,"timestamp":"2025-09-14T01:06:09.720Z"}
+{"error":"insert or update on table \"user_settings\" violates foreign key constraint \"user_settings_telegram_id_fkey\"","level":"error","message":"Bot error occurred","service":"area51-bot","stack":"error: insert or update on table \"user_settings\" violates foreign key constraint \"user_settings_telegram_id_fkey\"\n    at C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async DatabasePostgreSQL.query (C:\\Users\\user\\Monad Area\\area51-bot\\src\\database-postgresql.js:299:28)\n    at async DatabasePostgreSQL.getOne (C:\\Users\\user\\Monad Area\\area51-bot\\src\\database-postgresql.js:315:24)\n    at async DatabasePostgreSQL.createUserSettings (C:\\Users\\user\\Monad Area\\area51-bot\\src\\database-postgresql.js:490:16)\n    at async DatabasePostgreSQL.getUserSettings (C:\\Users\\user\\Monad Area\\area51-bot\\src\\database-postgresql.js:502:28)\n    at async NavigationHandlers.handleTextMessage (C:\\Users\\user\\Monad Area\\area51-bot\\src\\handlers\\navigationHandlers.js:532:38)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\src\\index-modular-simple.js:523:17\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:519:21","timestamp":"2025-09-14T01:06:09.720Z","updateType":"message","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T01:06:11.110Z","userId":6920475855}
+{"level":"info","message":"Fetching portfolio from API","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-14T01:06:18.127Z","walletAddress":"0x439ff8bc262Db1DBa4C7bE41abA7a11f1072ebD6"}
+{"level":"info","message":"Portfolio cached in Redis","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-14T01:06:18.361Z","tokenCount":0}
+{"level":"info","message":"Fetching portfolio from API","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-14T01:06:20.833Z","walletAddress":"0x439ff8bc262Db1DBa4C7bE41abA7a11f1072ebD6"}
+{"level":"info","message":"Portfolio cached in Redis","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-14T01:06:21.034Z","tokenCount":0}
+{"error":"400: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message","level":"error","message":"Portfolio refresh failed","service":"area51-bot","stack":"Error: 400: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message\n    at Telegram.callApi (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\core\\network\\client.js:315:19)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async PortfolioHandlers.handlePortfolioRefresh (C:\\Users\\user\\Monad Area\\area51-bot\\src\\handlers\\portfolioHandlers.js:122:13)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\src\\handlers\\portfolioHandlers.js:27:13\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:519:21\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:519:21\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:519:21","timestamp":"2025-09-14T01:06:21.175Z","userId":6920475855}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-14T01:07:02.952Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-14T01:07:03.002Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-14T01:07:03.003Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-14T01:07:03.048Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T01:07:03.051Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T01:07:03.051Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-14T01:07:03.058Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T01:07:15.690Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T01:07:16.066Z","userId":6920475855}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-14T01:09:03.056Z"}
+{"identifier":"global","key":"area51:mon_price_usd:global","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-14T01:09:03.272Z","ttl":120,"type":"mon_price_usd"}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-14T01:11:03.064Z"}
+{"identifier":"global","key":"area51:mon_price_usd:global","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-14T01:11:03.511Z","ttl":120,"type":"mon_price_usd"}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-14T01:14:14.042Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-14T01:14:14.094Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-14T01:14:14.095Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-14T01:14:14.121Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T01:14:14.124Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T01:14:14.124Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-14T01:14:14.130Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T01:14:24.212Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T01:14:24.738Z","userId":6920475855}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T01:14:50.442Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T01:14:50.743Z","userId":6920475855}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-14T01:16:14.129Z"}
+{"identifier":"global","key":"area51:mon_price_usd:global","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-14T01:16:14.415Z","ttl":120,"type":"mon_price_usd"}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-14T01:18:04.442Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-14T01:18:04.503Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-14T01:18:04.504Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-14T01:18:04.541Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T01:18:04.546Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T01:18:04.547Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-14T01:18:04.558Z"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-14T01:18:09.798Z","ttl":21600,"type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:18:10.953Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:18:12.083Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-14T01:18:13.313Z","ttl":21600,"type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:18:15.501Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:18:16.300Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:18:21.630Z","type":"user_settings"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T01:19:50.470Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T01:19:50.836Z","userId":6920475855}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:19:52.834Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:19:53.932Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:19:55.739Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:19:56.779Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-14T01:19:56.782Z","ttl":21600,"type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:19:57.772Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:19:58.135Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-14T01:19:59.465Z","ttl":21600,"type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:20:01.882Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:20:02.409Z","type":"user_settings"}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-14T01:20:04.550Z"}
+{"identifier":"global","key":"area51:mon_price_usd:global","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-14T01:20:04.801Z","ttl":120,"type":"mon_price_usd"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T01:20:07.164Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T01:20:07.492Z","userId":6920475855}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-14T01:20:21.985Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-14T01:20:22.093Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-14T01:20:22.095Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-14T01:20:22.145Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T01:20:22.150Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T01:20:22.151Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-14T01:20:22.160Z"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:20:28.017Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:20:29.104Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:20:32.282Z","type":"user_settings"}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-14T01:23:35.222Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-14T01:23:35.268Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-14T01:23:35.270Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-14T01:23:35.302Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T01:23:35.305Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T01:23:35.305Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-14T01:23:35.312Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T01:23:40.896Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T01:23:41.368Z","userId":6920475855}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:23:42.659Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:23:45.015Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:23:47.857Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:23:48.919Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:23:50.400Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:23:51.780Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-14T01:23:51.795Z","ttl":21600,"type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:23:53.072Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:23:55.321Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-14T01:23:57.186Z","ttl":21600,"type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:23:59.359Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:24:05.157Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:24:10.645Z","type":"user_settings"}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-14T01:27:13.904Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-14T01:27:13.951Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-14T01:27:13.951Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-14T01:27:13.978Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T01:27:13.981Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T01:27:13.981Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-14T01:27:13.987Z"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:27:19.250Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:27:20.788Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:27:23.714Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:27:24.693Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-14T01:27:24.705Z","ttl":21600,"type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:27:25.433Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:27:26.021Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:27:27.702Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-14T01:27:28.663Z","ttl":21600,"type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:27:30.924Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:27:34.243Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:27:34.565Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:27:34.566Z","type":"user_settings"}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-14T01:29:13.981Z"}
+{"identifier":"global","key":"area51:mon_price_usd:global","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-14T01:29:14.285Z","ttl":120,"type":"mon_price_usd"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T01:29:55.134Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T01:29:55.723Z","userId":6920475855}
+{"level":"info","message":"Fetching portfolio from API","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-14T01:30:00.291Z","walletAddress":"0x439ff8bc262Db1DBa4C7bE41abA7a11f1072ebD6"}
+{"level":"info","message":"Portfolio cached in Redis","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-14T01:30:00.494Z","tokenCount":1}
+{"level":"info","message":"Fetching portfolio from API","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-14T01:30:03.306Z","walletAddress":"0x439ff8bc262Db1DBa4C7bE41abA7a11f1072ebD6"}
+{"level":"info","message":"Portfolio cached in Redis","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-14T01:30:03.550Z","tokenCount":1}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:30:03.552Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:30:05.906Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:30:05.908Z","type":"user_settings"}
+{"error":"user is not defined","level":"error","message":"Cache clear failed after sell","service":"area51-bot","stack":"ReferenceError: user is not defined\n    at TradingHandlers.handleConfirmPortfolioSell (C:\\Users\\user\\Monad Area\\area51-bot\\src\\handlers\\tradingHandlers.js:674:77)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\src\\handlers\\tradingHandlers.js:170:13\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:519:21\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:519:21\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:519:21\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)","timestamp":"2025-09-14T01:30:12.203Z","userId":6920475855}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T01:30:18.542Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T01:30:18.924Z","userId":6920475855}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-14T01:30:28.386Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-14T01:30:28.531Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-14T01:30:28.532Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-14T01:30:28.557Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T01:30:28.559Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T01:30:28.560Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-14T01:30:28.564Z"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:30:37.906Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:30:38.278Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:30:38.279Z","type":"user_settings"}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-14T01:32:28.572Z"}
+{"identifier":"global","key":"area51:mon_price_usd:global","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-14T01:32:33.593Z","ttl":120,"type":"mon_price_usd"}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-14T01:34:28.580Z"}
+{"identifier":"global","key":"area51:mon_price_usd:global","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-14T01:34:28.907Z","ttl":120,"type":"mon_price_usd"}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-14T01:41:13.867Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-14T01:41:13.912Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-14T01:41:13.913Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-14T01:41:13.946Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T01:41:13.952Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T01:41:13.952Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-14T01:41:13.959Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T01:41:22.403Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T01:41:22.992Z","userId":6920475855}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:41:26.077Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:41:26.375Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:41:26.376Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:41:40.706Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:41:41.044Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:41:41.044Z","type":"user_settings"}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-14T01:43:05.820Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-14T01:43:05.868Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-14T01:43:05.870Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-14T01:43:05.924Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T01:43:05.927Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T01:43:05.928Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-14T01:43:05.936Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T01:43:11.158Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T01:43:11.717Z","userId":6920475855}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:43:16.026Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:43:16.327Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:43:16.330Z","type":"user_settings"}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-14T01:45:05.943Z"}
+{"identifier":"global","key":"area51:mon_price_usd:global","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-14T01:45:06.163Z","ttl":120,"type":"mon_price_usd"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T01:46:12.164Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T01:46:12.532Z","userId":6920475855}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:46:13.834Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:46:15.917Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:46:17.571Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:46:18.469Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-14T01:46:18.477Z","ttl":21600,"type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:46:19.692Z","type":"user_settings"}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-14T01:47:05.951Z"}
+{"identifier":"global","key":"area51:mon_price_usd:global","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-14T01:47:06.390Z","ttl":120,"type":"mon_price_usd"}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-14T01:48:17.385Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-14T01:48:17.425Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-14T01:48:17.426Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-14T01:48:17.453Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T01:48:17.455Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T01:48:17.456Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-14T01:48:17.461Z"}
+{"level":"info","message":"User data cached in Redis","service":"area51-bot","timestamp":"2025-09-14T01:49:37.718Z","ttl":"24h","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-14T01:49:38.116Z","userId":6920475855}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:49:39.728Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:49:41.399Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:49:45.163Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:49:45.366Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:49:47.831Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:49:50.507Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-14T01:49:51.942Z","ttl":null,"type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:49:53.770Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:49:54.116Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:49:54.221Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-14T01:49:54.222Z","type":"user_settings"}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-14T01:50:17.466Z"}
+{"identifier":"global","key":"area51:mon_price_usd:global","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-14T01:50:17.682Z","ttl":120,"type":"mon_price_usd"}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-14T01:52:17.469Z"}
+{"identifier":"global","key":"area51:mon_price_usd:global","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-14T01:52:17.762Z","ttl":120,"type":"mon_price_usd"}
+{"level":"info","message":"Redis connected successfully","service":"area51-bot","timestamp":"2025-09-14T01:55:56.234Z"}
+{"level":"info","message":"PostgreSQL connected successfully","service":"area51-bot","timestamp":"2025-09-14T01:55:56.288Z"}
+{"level":"info","message":"Redis cache available for database operations","service":"area51-bot","timestamp":"2025-09-14T01:55:56.290Z"}
+{"level":"info","message":"Database health monitoring started","service":"area51-bot","timestamp":"2025-09-14T01:55:56.327Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T01:55:56.330Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-14T01:55:56.330Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-14T01:55:56.337Z"}
