@@ -8,12 +8,19 @@
     "dev": "nodemon src/index-modular-simple.js",
     "migrate": "node scripts/migrate-to-postgresql.js",
     "test-migration": "node scripts/test-migration.js",
-    "backup": "node backup/database-backup.js",
+    "backup": "node scripts/backup-system.js",
+    "backup:manual": "node -e \"const BackupSystem = require('./scripts/backup-system'); const bs = new BackupSystem(); bs.initialize().then(() => bs.performFullBackup()).then(id => console.log('Backup completed:', id)).catch(console.error);\"",
+    "backup:list": "node -e \"const BackupSystem = require('./scripts/backup-system'); const bs = new BackupSystem(); bs.listBackups().then(backups => console.log(JSON.stringify(backups, null, 2))).catch(console.error);\"",
+    "backup:status": "node -e \"const BackupSystem = require('./scripts/backup-system'); const bs = new BackupSystem(); bs.getStatus().then(status => console.log(JSON.stringify(status, null, 2))).catch(console.error);\"",
     "health": "curl -f http://localhost:3001/health || exit 1",
     "cleanup": "node -e \"require('./src/database-postgresql').cleanup()\"",
     "test": "node scripts/test-migration.js",
     "start:production": "node production-start.js",
-    "start:single": "NODE_ENV=production node src/index-modular-simple.js"
+    "start:single": "NODE_ENV=production node src/index-modular-simple.js",
+    "monitoring:start": "docker-compose -f docker/docker-compose.monitoring.yml up -d",
+    "monitoring:stop": "docker-compose -f docker/docker-compose.monitoring.yml down",
+    "monitoring:logs": "docker-compose -f docker/docker-compose.monitoring.yml logs -f",
+    "monitoring:restart": "npm run monitoring:stop && npm run monitoring:start"
   },
   "keywords": [
     "telegram",

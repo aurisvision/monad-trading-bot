@@ -5,24 +5,31 @@ const { Telegraf, Markup } = require('telegraf');
 const Database = require('./database-postgresql');
 const WalletManager = require('./wallet');
 const TradingEngine = require('./trading');
-// const PortfolioManager = require('./portfolio'); // Removed - using portfolioService instead
 const MonorailAPI = require('./monorail');
+// const PortfolioManager = require('./portfolio'); // Removed - using portfolioService instead
+const CacheService = require('./services/CacheService');
+const MonitoringService = require('./services/MonitoringService');
+const CacheWarmer = require('./utils/cacheWarmer');
+const BackupService = require('./services/BackupService');
 const MonitoringSystem = require('./monitoring');
-const HealthCheckServer = require('./healthCheck');
+const { createBotMiddleware } = require('./middleware/botMiddleware');
 // const { RateLimiter, SecurityEnhancements, SessionManager, MemoryRateLimiter, MemorySessionManager } = require('./rateLimiter');
 const Redis = require('redis');
 
 // Import Redis caching services
-const CacheService = require('./services/CacheService');
 const RedisMetrics = require('./services/RedisMetrics');
 const RedisFallbackManager = require('./services/RedisFallbackManager');
 const BackgroundRefreshService = require('./services/BackgroundRefreshService');
+const TransactionSpeedOptimizer = require('./utils/transactionSpeedOptimizer');
+const CacheMonitor = require('./utils/cacheMonitor');
+const HealthCheck = require('./monitoring/HealthCheck');
 
 // Import handler modules
 const WalletHandlers = require('./handlers/walletHandlers');
 const TradingHandlers = require('./handlers/tradingHandlers');
 const PortfolioHandlers = require('./handlers/portfolioHandlers');
 const NavigationHandlers = require('./handlers/navigationHandlers');
+const TradingCacheOptimizer = require('./utils/tradingCacheOptimizer');
 
 class Area51BotModularSimple {
     constructor() {
@@ -46,8 +53,9 @@ class Area51BotModularSimple {
     }
 
     async initializeComponents() {
-        // Initialize monitoring first
-        this.monitoring = new MonitoringSystem();
+        // Initialize database first
+        this.database = new Database();
+        await this.database.initialize();
         
         // Initialize Redis with fallback
         try {
@@ -70,29 +78,72 @@ class Area51BotModularSimple {
             );
 
             await Promise.race([connectPromise, timeoutPromise]);
-            this.monitoring.logInfo('Redis connected successfully');
+            console.log('✅ Redis connected successfully');
             
-            // Initialize Redis services
+        } catch (error) {
+            console.log('⚠️ Redis connection failed, running without cache:', error.message);
+            this.redis = null;
+        }
+
+        // Initialize monitoring system
+        try {
+            this.monitoring = new MonitoringSystem(this.database, this.redis, console);
+            console.log('✅ Monitoring system initialized successfully');
+        } catch (error) {
+            console.error('❌ Failed to initialize monitoring system:', error.message);
+            // Fallback to mock monitoring
+            this.monitoring = {
+                logInfo: (msg, meta) => console.log(`[INFO] ${msg}`, meta || ''),
+                logError: (msg, error, meta) => console.error(`[ERROR] ${msg}`, error?.message || error, meta || ''),
+                logWarning: (msg, meta) => console.warn(`[WARN] ${msg}`, meta || ''),
+                getTelegramMiddleware: () => (ctx, next) => next(),
+                initializeEndpoints: () => {},
+                setTelegramBot: () => {},
+                recordCacheHit: () => {},
+                recordCacheMiss: () => {},
+                updateActiveUsers: () => {},
+                wrapDatabaseOperation: (op) => op,
+                wrapRedisOperation: (op) => op,
+                wrapTradingOperation: (op) => op,
+                wrapApiCall: (op) => op
+            };
+        }
+        
+        // Initialize Redis services after monitoring
+        if (this.redis) {
             this.redisMetrics = new RedisMetrics(this.monitoring);
             this.redisFallbackManager = new RedisFallbackManager(this.redis, this.monitoring);
             this.cacheService = new CacheService(this.redis, this.monitoring);
-            
+            await this.cacheService.initialize();
+
+            // Initialize cache warmer
+            this.cacheWarmer = new CacheWarmer(this.database, this.cacheService, this.monitoring);
+            this.cacheWarmer.startScheduledWarming();
+
             // Start periodic cleanup for fallback manager
             this.redisFallbackManager.startPeriodicCleanup();
-            
-        } catch (error) {
-            this.monitoring.logError('Redis connection failed, running without cache', error);
-            this.redis = null;
+        } else {
             this.redisMetrics = null;
             this.redisFallbackManager = null;
             this.cacheService = null;
         }
 
-        // Initialize database with CacheService
-        this.database = new Database(this.monitoring, this.redis);
-        this.database.cacheService = this.cacheService; // Add CacheService to database
-        await this.database.initialize();
-        await this.database.startHealthMonitoring();
+        // Initialize backup service after database and redis
+        if (this.database && this.redis) {
+            this.backupService = new BackupService(this.database, this.redis, console, this.monitoring);
+            await this.backupService.initialize();
+            
+            // Add backup service to monitoring
+            if (this.monitoring) {
+                this.monitoring.backupService = this.backupService;
+            }
+        }
+
+        // Add CacheService to database
+        if (this.database) {
+            this.database.cacheService = this.cacheService;
+            await this.database.startHealthMonitoring();
+        }
         
         // Initialize services
         this.monorailAPI = new MonorailAPI(this.redis);
@@ -101,8 +152,25 @@ class Area51BotModularSimple {
         // this.portfolioManager = new PortfolioManager(this.monorailAPI, this.database, this.redis); // Removed - using portfolioService instead
         this.portfolioService = new (require('./portfolioService'))(this.monorailAPI, this.redis, this.monitoring);
         
-        // Initialize background refresh service if Redis is available
+        // Initialize Cache Monitor for performance tracking
+        if (this.redis) {
+            this.cacheMonitor = new CacheMonitor(this.redis, this.monitoring);
+            this.cacheMonitor.interceptConsoleLogs(); // Enable automatic tracking
+            this.monitoring.logInfo('Cache Monitor initialized - tracking performance');
+        }
+        
+        // Initialize Transaction Speed Optimizer for instant settings access
         if (this.redis && this.cacheService) {
+            this.transactionSpeedOptimizer = new TransactionSpeedOptimizer(
+                this.cacheService,
+                this.database,
+                this.monitoring
+            );
+            
+            // Initialize and pre-warm caches
+            await this.transactionSpeedOptimizer.initialize();
+            this.monitoring.logInfo('Transaction Speed Optimizer initialized');
+            
             this.backgroundRefreshService = new BackgroundRefreshService(
                 this.cacheService,
                 this.database,
@@ -125,10 +193,23 @@ class Area51BotModularSimple {
         // }
         // this.security = new SecurityEnhancements(this.monitoring);
         
-        // Initialize health check server
-        this.healthServer = new HealthCheckServer(this.monitoring, 
-            process.env.HEALTH_CHECK_PORT || 3001);
-        this.healthServer.start();
+        // Initialize health check with monitoring endpoints
+        this.healthCheck = new HealthCheck(this.database, this.redis, this.monitoring);
+        
+        // Start health check server if available in monitoring
+        if (this.monitoring && this.monitoring.healthCheck) {
+            this.monitoring.healthCheck.startServer(process.env.HEALTH_CHECK_PORT || 3001);
+        }
+        
+        // Initialize monitoring endpoints on health server (only if real monitoring system)
+        if (this.monitoring.initializeEndpoints) {
+            this.monitoring.initializeEndpoints();
+        }
+        
+        // Set bot instance for admin alerts (only if real monitoring system)
+        if (this.monitoring.setTelegramBot) {
+            this.monitoring.setTelegramBot(this.bot);
+        }
         
         // Initialize handler modules
         this.walletHandlers = new WalletHandlers(
@@ -149,7 +230,8 @@ class Area51BotModularSimple {
             this.walletManager, 
             this.portfolioService,
             this.redis,
-            this.cacheService
+            this.cacheService,
+            this.transactionSpeedOptimizer
         );
         
         this.portfolioHandlers = new PortfolioHandlers(
@@ -169,6 +251,13 @@ class Area51BotModularSimple {
             this.walletManager,
             this, // Pass main bot instance
             this.cacheService
+        );
+        
+        // Initialize TradingCacheOptimizer
+        this.tradingCacheOptimizer = new TradingCacheOptimizer(
+            this.database,
+            this.cacheService,
+            this.monitoring
         );
         
         this.monitoring.logInfo('All components initialized successfully');
@@ -193,21 +282,10 @@ class Area51BotModularSimple {
         //     this.bot.use(this.security.middleware());
         // }
 
-        // Performance monitoring middleware
-        this.bot.use(async (ctx, next) => {
-            const start = Date.now();
-            const userId = ctx.from?.id;
-            
-            try {
-                await next();
-                const duration = (Date.now() - start) / 1000;
-                this.monitoring.recordAPIRequest('telegram', 200, duration);
-            } catch (error) {
-                const duration = (Date.now() - start) / 1000;
-                this.monitoring.recordAPIRequest('telegram', 500, duration);
-                throw error;
-            }
-        });
+        // Use monitoring middleware for Telegram (only if real monitoring system)
+        if (this.monitoring.getTelegramMiddleware) {
+            this.bot.use(this.monitoring.getTelegramMiddleware());
+        }
 
         // User activity tracking
         this.bot.use(async (ctx, next) => {
@@ -488,12 +566,7 @@ class Area51BotModularSimple {
             await this.resetCustomSellPercentages(ctx);
         });
 
-        // Refresh handler
-        this.bot.action('refresh', async (ctx) => {
-            await ctx.answerCbQuery('🔄 Refreshing...');
-            
-            await this.navigationHandlers.handleBackToMainWithDebug(ctx);
-        });
+        // Refresh handler removed - handled by navigationHandlers.js to avoid conflicts
 
         // Start command handler
         this.bot.start(async (ctx) => {
@@ -504,15 +577,17 @@ class Area51BotModularSimple {
         // Text message handler for custom input
         this.bot.on('text', async (ctx) => {
 
-            const userState = await this.database.getUserState(ctx.from.id);
+            const userState = await this.tradingCacheOptimizer.getTradingUserState(ctx.from.id);
             console.log('🔍 User state:', userState);
             
             if (userState?.state === 'awaiting_custom_buy_amounts') {
                 await this.handleCustomBuyAmountsInput(ctx);
             } else if (userState?.state === 'awaiting_custom_sell_percentages') {
                 await this.handleCustomSellPercentagesInput(ctx);
-            } else if (userState?.state === 'awaiting_transfer_details') {
-                await this.navigationHandlers.processTransferDetails(ctx, ctx.message.text);
+            } else if (userState?.state === 'awaiting_transfer_address') {
+                await this.navigationHandlers.processTransferAddress(ctx, ctx.message.text);
+            } else if (userState?.state === 'awaiting_transfer_amount') {
+                await this.navigationHandlers.processTransferAmount(ctx, ctx.message.text, userState.data?.recipientAddress);
             } else if (userState?.state?.startsWith('awaiting_edit_buy_amount_')) {
                 const buttonIndex = parseInt(userState.state.split('_').pop());
                 await this.handleEditBuyAmountInput(ctx, buttonIndex);
@@ -577,7 +652,11 @@ class Area51BotModularSimple {
             process.once('SIGTERM', () => this.stop('SIGTERM'));
             
         } catch (error) {
-            this.monitoring.logError('Bot start failed', error);
+            console.error('Bot start failed:', error);
+            if (this.monitoring) {
+                this.monitoring.logError('Bot start failed', error);
+            }
+            console.log('Failed to start bot:', error);
             throw error;
         }
     }
@@ -702,19 +781,18 @@ Are you sure you want to continue?`;
             
             const settingsText = `⚡️ *Buy Settings*
 
-Gas: ${gasPrice} Gwei | Slippage: ${slippage}% | Auto Buy: ${autoBuyStatus}
+*Gas:* **${gasPrice} Gwei** | *Slippage:* **${slippage}%** | *Auto Buy:* **${autoBuyStatus}**
 
-Purchase transaction configuration:
+_Purchase transaction configuration:_
 
-• Gas Price Control - Network fee for buy transactions (minimum 50 Gwei)
-• Slippage Tolerance - Price variance acceptance for purchases (no limits)
-• Auto Buy System - Automated purchasing (${autoBuyAmount} MON)
-• Custom Amounts - Quick buy buttons (${customAmounts} MON)`;
+• **Gas Price Control** - _(minimum 50 Gwei)_
+• **Slippage Tolerance** - _(no limits)_
+• **Auto Buy System** - _(${autoBuyAmount} MON)_
+• **Custom buy buttons** - _(${customAmounts} MON)_`;
 
             const keyboard = Markup.inlineKeyboard([
                 [Markup.button.callback('Set Gas Price', 'buy_gas_settings'), Markup.button.callback('Set Slippage', 'buy_slippage_settings')],
-                [Markup.button.callback('🔄 Auto Buy Settings', 'auto_buy_settings')],
-                [Markup.button.callback('⚙️ Custom Amounts', 'custom_buy_amounts')],
+                [Markup.button.callback('🔄 Auto Buy Settings', 'auto_buy_settings'), Markup.button.callback('⚙️ Custom Buttons', 'custom_buy_amounts')],
                 [Markup.button.callback('Back to Settings', 'settings')]
             ]);
 
@@ -979,19 +1057,18 @@ _Select purchase quantity for automated buying:_
             
             const customPercentages = userSettings?.custom_sell_percentages || '25,50,75,100';
             
-            const settingsText = `💸 **Sell Settings**
+            const settingsText = `⚡️ *Sell Settings*
 
 *Gas Price:* **${gasPrice} Gwei** | *Slippage:* **${slippage}%**
 
 _Sale transaction configuration:_
 
-• **Gas Price Control** - _Network fee for sell transactions (minimum 50 Gwei)_
-• **Slippage Tolerance** - _Price variance acceptance for sales (no limits)_
-• **Custom Percentages** - _Quick sell buttons (${customPercentages}%)_`;
+• **Gas Price Control** - _(minimum 50 Gwei)_
+• **Slippage Tolerance** - _(no limits)_
+• **Custom Percentages** - _Quick sell buttons_`;
 
             const keyboard = Markup.inlineKeyboard([
-                [Markup.button.callback('Gas Settings', 'sell_gas_settings')],
-                [Markup.button.callback('Slippage', 'sell_slippage_settings')],
+                [Markup.button.callback('Gas Settings', 'sell_gas_settings'), Markup.button.callback('Slippage', 'sell_slippage_settings')],
                 [Markup.button.callback('⚙️ Custom Percentages', 'custom_sell_percentages')],
                 [Markup.button.callback('Back to Settings', 'settings')]
             ]);

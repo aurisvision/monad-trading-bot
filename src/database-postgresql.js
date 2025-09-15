@@ -42,10 +42,10 @@ class DatabasePostgreSQL {
             default: 300    // 5 minutes fallback for other data
         };
         
-        // Cache keys for static data (no TTL)
+        // Cache keys for static data (no TTL) - Match CacheService key structure
         this.staticCacheKeys = {
-            user: 'user:',
-            settings: 'settings:'
+            user: 'area51:user:',
+            settings: 'area51:user_settings:'
         };
     }
 
@@ -531,35 +531,43 @@ class DatabasePostgreSQL {
         return settings;
     }
 
-    async updateUserSettings(telegramId, settingsUpdate) {
-        const fields = Object.keys(settingsUpdate);
-        const values = Object.values(settingsUpdate);
-        const setClause = fields.map((field, index) => `${field} = $${index + 1}`).join(', ');
-        
+    async updateUserSettings(telegramId, settings) {
+        const updateFields = [];
+        const values = [];
+        let paramIndex = 1;
+
+        // Build dynamic query based on provided settings
+        for (const [key, value] of Object.entries(settings)) {
+            updateFields.push(`${key} = $${paramIndex}`);
+            values.push(value);
+            paramIndex++;
+        }
+
+        if (updateFields.length === 0) {
+            return null;
+        }
+
+        values.push(telegramId);
         const query = `
             UPDATE user_settings 
-            SET ${setClause}, updated_at = CURRENT_TIMESTAMP 
-            WHERE telegram_id = $${fields.length + 1}
+            SET ${updateFields.join(', ')}, updated_at = CURRENT_TIMESTAMP
+            WHERE telegram_id = $${paramIndex}
             RETURNING *`;
+
+        const result = await this.getOne(query, values);
         
-        const result = await this.getOne(query, [...values, telegramId]);
-        
-        // Event-driven cache update (invalidate then set new data)
-        if (result) {
-            // Update Redis cache first if available
-            if (this.cacheService) {
-                try {
-                    await this.cacheService.set('user_settings', telegramId, result);
-                    console.log(`✅ User settings updated in Redis cache for user ${telegramId}`);
-                } catch (cacheError) {
-                    console.error('Cache update error for user settings:', cacheError);
-                }
+        // Instant cache update - set new data immediately
+        if (result && this.cacheService) {
+            await this.cacheService.set('user_settings', telegramId, result);
+            if (this.monitoring) {
+                this.monitoring.logInfo('User settings cache updated instantly', { 
+                    telegramId, 
+                    updatedFields: Object.keys(settings)
+                });
             }
-            
-            // Update legacy cache
+        } else {
+            // Fallback: Invalidate settings cache
             await this.invalidateStaticCache(telegramId, 'settings');
-            const settingsCacheKey = `${this.staticCacheKeys.settings}${telegramId}`;
-            await this.setStaticCache(settingsCacheKey, result);
         }
         
         return result;
@@ -915,11 +923,43 @@ class DatabasePostgreSQL {
         throw lastError;
     }
 
+    // Execute single query and return one result
+    async getOne(query, params = []) {
+        const client = await this.pool.connect();
+        try {
+            const result = await client.query(query, params);
+            return result.rows[0] || null;
+        } catch (error) {
+            if (this.monitoring) {
+                this.monitoring.logError('Database getOne error', error, { query, params });
+            }
+            throw error;
+        } finally {
+            client.release();
+        }
+    }
+
+    // Execute query and return all results
+    async getAll(query, params = []) {
+        const client = await this.pool.connect();
+        try {
+            const result = await client.query(query, params);
+            return result.rows || [];
+        } catch (error) {
+            if (this.monitoring) {
+                this.monitoring.logError('Database getAll error', error, { query, params });
+            }
+            throw error;
+        } finally {
+            client.release();
+        }
+    }
+
     // Add missing methods for metrics
     async getUserCount() {
         try {
-            const result = await this.query('SELECT COUNT(*) as count FROM users');
-            return parseInt(result.rows[0].count) || 0;
+            const result = await this.getAll('SELECT COUNT(*) as count FROM users');
+            return parseInt(result[0].count) || 0;
         } catch (error) {
             if (this.monitoring) {
                 this.monitoring.logError('Get user count failed', error);
@@ -930,11 +970,11 @@ class DatabasePostgreSQL {
 
     async getActiveUserCount() {
         try {
-            const result = await this.query(`
+            const result = await this.getAll(`
                 SELECT COUNT(*) as count FROM users 
                 WHERE last_activity > NOW() - INTERVAL '24 hours'
             `);
-            return parseInt(result.rows[0].count) || 0;
+            return parseInt(result[0].count) || 0;
         } catch (error) {
             if (this.monitoring) {
                 this.monitoring.logError('Get active user count failed', error);
@@ -968,12 +1008,28 @@ class DatabasePostgreSQL {
     }
 
     async deleteUser(telegramId) {
+        // Get user data first to find wallet address
+        const userData = await this.getUserByTelegramId(telegramId);
+        
         const query = 'DELETE FROM users WHERE telegram_id = $1';
         const result = await this.query(query, [telegramId]);
         
-        // Invalidate all user-related cache
-        await this.invalidateStaticCache(telegramId, 'user');
-        await this.invalidateStaticCache(telegramId, 'settings');
+        // Use CacheService for comprehensive cache clearing if available
+        if (this.cacheService) {
+            await this.cacheService.clearUserCache(telegramId);
+        } else {
+            // Fallback to legacy cache invalidation
+            await this.invalidateStaticCache(telegramId, 'user');
+            await this.invalidateStaticCache(telegramId, 'settings');
+            
+            // Clear additional cache keys manually
+            if (userData && userData.wallet_address) {
+                await this.deleteCache(`area51:wallet_balance:${userData.wallet_address}`);
+            }
+            await this.deleteCache(`area51:portfolio:${telegramId}`);
+            await this.deleteCache(`area51:main_menu:${telegramId}`);
+            await this.deleteCache(`area51:user_state:${telegramId}`);
+        }
         
         return result;
     }

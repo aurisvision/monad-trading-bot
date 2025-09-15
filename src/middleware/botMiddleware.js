@@ -60,7 +60,7 @@ class BotMiddleware {
                 // Try Redis cache first
                 if (this.redis) {
                     try {
-                        const cachedUser = await this.redis.get(`user:${userId}`);
+                        const cachedUser = await this.redis.get(`area51:user:${userId}`);
                         if (cachedUser) {
                             user = JSON.parse(cachedUser);
                         }

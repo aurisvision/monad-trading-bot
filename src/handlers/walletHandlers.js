@@ -97,22 +97,14 @@ Manage your wallet securely:`;
             
             await this.database.updateUserWallet(userId, wallet.address, wallet.encryptedPrivateKey, wallet.mnemonic);
             
-            // Now store the welcome message ID after user is created
+            // Use wallet success interface with Start Trading button
             try {
-                const sentMessage = await ctx.editMessageText(`✅ *Wallet Created Successfully!*
-
-🏠 *Address:* \`${wallet.address}\`
-
-⚠️ *IMPORTANT SECURITY NOTICE:*
-• Your wallet is encrypted and stored securely
-• Keep your private key safe - we cannot recover it
-• Never share your private key with anyone
-
-🚀 You're ready to start trading!`, {
-                    parse_mode: 'Markdown'
+                const { text, keyboard } = InterfaceUtils.generateWalletSuccessInterface(wallet.address, 'created');
+                
+                await ctx.editMessageText(text, {
+                    parse_mode: 'Markdown',
+                    reply_markup: keyboard.reply_markup
                 });
-
-                // Note: Welcome message ID storage removed as function doesn't exist
             } catch (editError) {
                 // If edit fails, send new message with wallet success interface
                 const { text, keyboard } = InterfaceUtils.generateWalletSuccessInterface(wallet.address, 'created');
@@ -148,10 +140,15 @@ Send your private key or mnemonic phrase to import your wallet.
 📝 Send your private key or mnemonic phrase now:`;
 
             await ctx.editMessageText(importText, {
-                parse_mode: 'Markdown',
-                reply_markup: Markup.inlineKeyboard([
-                    [Markup.button.callback('❌ Cancel', 'wallet')]
-                ]).reply_markup
+                parse_mode: 'Markdown'
+            });
+            
+            // Send force reply as separate message
+            await ctx.reply('📝 Send your private key or mnemonic phrase:', {
+                reply_markup: {
+                    force_reply: true,
+                    input_field_placeholder: "0x123... or 12-word phrase"
+                }
             });
 
             // Set user state for import and store message ID for later deletion
@@ -284,6 +281,11 @@ Are you absolutely sure?`;
             
             // Delete user from database
             await this.database.deleteUser(userId);
+            
+            // Clear all Redis cache for this user
+            if (this.cacheService) {
+                await this.cacheService.clearUserCache(userId);
+            }
             
             await ctx.editMessageText(`🗑️ *Wallet Deleted*
 

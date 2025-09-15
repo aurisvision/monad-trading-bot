@@ -222,7 +222,7 @@ class MonorailAPI {
             // Check Redis cache first unless force refresh
             if (!forceRefresh && this.redis) {
                 try {
-                    const cachedBalance = await this.redis.get(`balance:${walletAddress}`);
+                    const cachedBalance = await this.redis.get(`area51:wallet_balance:${walletAddress}`);
                     if (cachedBalance) {
                         // Balance loaded from cache
                         return JSON.parse(cachedBalance);
@@ -268,7 +268,7 @@ class MonorailAPI {
                 // Cache the balance data in Redis for 1 minute
                 if (this.redis) {
                     try {
-                        await this.redis.setEx(`balance:${walletAddress}`, 60, JSON.stringify(balanceData));
+                        await this.redis.setEx(`area51:wallet_balance:${walletAddress}`, 60, JSON.stringify(balanceData));
                         // Balance cached successfully
                     } catch (redisError) {
                         console.error('Redis cache write failed:', redisError);
@@ -1124,8 +1124,24 @@ class MonorailAPI {
     }
 
 
-    // Get tokens by category
-    async getTokensByCategory(category, address = null) {
+    // Get tokens by category with Redis caching
+    async getTokensByCategory(category, address = null, forceRefresh = false) {
+        const cacheKey = `area51:category:${category}${address ? `:${address}` : ''}`;
+        
+        // Check Redis cache first unless force refresh
+        if (!forceRefresh && this.redis) {
+            try {
+                const cached = await this.redis.get(cacheKey);
+                if (cached) {
+                    console.log(`✅ Category cache HIT for ${category} - Lightning fast response!`);
+                    return JSON.parse(cached);
+                }
+                console.log(`❌ Category cache MISS for ${category} - Fetching from API...`);
+            } catch (error) {
+                console.warn('Redis cache error for category:', error);
+            }
+        }
+        
         try {
             const categoryUrl = new URL(`${this.dataUrl}/tokens/category/${category}`);
             if (address) {
@@ -1137,10 +1153,22 @@ class MonorailAPI {
             });
             
             if (response.data && Array.isArray(response.data)) {
-                return {
+                const result = {
                     success: true,
                     tokens: response.data
                 };
+                
+                // Cache for 15 minutes (900 seconds)
+                if (this.redis) {
+                    try {
+                        await this.redis.set(cacheKey, JSON.stringify(result), 'EX', 900);
+                        console.log(`💾 Category ${category} cached for 15 minutes`);
+                    } catch (error) {
+                        console.warn('Failed to cache category data:', error);
+                    }
+                }
+                
+                return result;
             } else {
                 throw new Error('Invalid response format');
             }

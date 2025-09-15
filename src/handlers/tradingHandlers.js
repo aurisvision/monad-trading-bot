@@ -3,7 +3,7 @@ const { Markup } = require('telegraf');
 const { parseCustomAmounts } = require('../utils');
 
 class TradingHandlers {
-    constructor(bot, database, tradingEngine, monorailAPI, monitoring, walletManager, portfolioService, redis, cacheService = null) {
+    constructor(bot, database, tradingEngine, monorailAPI, monitoring, walletManager, portfolioService, redis, cacheService = null, transactionSpeedOptimizer = null) {
         this.bot = bot;
         this.database = database;
         this.tradingEngine = tradingEngine;
@@ -13,6 +13,7 @@ class TradingHandlers {
         this.portfolioService = portfolioService;
         this.redis = redis;
         this.cacheService = cacheService;
+        this.transactionSpeedOptimizer = transactionSpeedOptimizer;
     }
 
     async handleBuyInterface(ctx) {
@@ -415,28 +416,26 @@ Please try again or contact support.`, {
                 }
             }
 
-            const transferText = `📤 ***Transfer MON***
+            const transferText = `📤 **Transfer MON**
 
 💰 **Your Balance:** *${balance.toFixed(4)} MON*
 
-Enter the recipient address and amount:
+Enter the recipient address:
 
-**Format:** \`address amount\`
-**Example:** \`0x1234...5678 1.5\`
+**Example:** \`0x1234...5678\`
 
 ⚠️ **Note:** Make sure you have enough MON for gas fees (~0.001 MON)`;
 
-            const keyboard = Markup.inlineKeyboard([
-                [Markup.button.callback('🔙 Back to Main', 'back_to_main')]
-            ]);
-
-            await ctx.editMessageText(transferText, {
+            await ctx.reply(transferText, {
                 parse_mode: 'Markdown',
-                reply_markup: keyboard.reply_markup
+                reply_markup: {
+                    force_reply: true,
+                    input_field_placeholder: "0x1234...5678"
+                }
             });
 
-            // Set user state for transfer
-            await this.database.setUserState(ctx.from.id, 'awaiting_transfer_details', {});
+            // Set user state for transfer address input
+            await this.database.setUserState(ctx.from.id, 'awaiting_transfer_address', {});
             
         } catch (error) {
             this.monitoring.logError('Transfer interface failed', error, { userId: ctx.from.id });

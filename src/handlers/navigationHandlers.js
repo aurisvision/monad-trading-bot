@@ -94,7 +94,7 @@ class NavigationHandlers {
             
             if (this.redis) {
                 try {
-                    const cachedUser = await this.redis.get(`user:${userId}`);
+                    const cachedUser = await this.redis.get(`area51:user:${userId}`);
                     if (cachedUser) {
                         user = JSON.parse(cachedUser);
                         fromCache = true;
@@ -112,7 +112,7 @@ class NavigationHandlers {
                 // Cache user data in Redis if available
                 if (user && this.redis) {
                     try {
-                        await this.redis.setEx(`user:${userId}`, 86400, JSON.stringify(user)); // 24 hour TTL
+                        await this.redis.setEx(`area51:user:${userId}`, 86400, JSON.stringify(user)); // 24 hour TTL
                         this.monitoring.logInfo('User data cached in Redis', { userId, ttl: '24h' });
                     } catch (redisError) {
                         this.monitoring.logError('Redis cache write failed', redisError, { userId });
@@ -128,7 +128,25 @@ class NavigationHandlers {
                 });
             }
             
-            if (!user) {
+            // Clear user state when starting the bot to prevent stuck states
+            await this.database.clearUserState(userId);
+            
+            // Also clear user state from cache
+            if (this.cacheService) {
+                try {
+                    await this.cacheService.clearUserState(userId);
+                } catch (cacheError) {
+                    this.monitoring.logError('Failed to clear user state from cache', cacheError, { userId });
+                }
+            } else if (this.redis) {
+                try {
+                    await this.redis.del(`area51:user_state:${userId}`);
+                } catch (redisError) {
+                    this.monitoring.logError('Failed to clear user state from Redis', redisError, { userId });
+                }
+            }
+            
+            if (!user || !user.wallet_address || user.wallet_address === 'pending_wallet_creation') {
                 await this.showWelcomeNewUser(ctx);
             } else {
                 await this.showWelcome(ctx, fromCache);
@@ -151,7 +169,7 @@ class NavigationHandlers {
         
         try {
             // Check for cached main menu data first (15 seconds TTL) - skip if forceRefresh
-            const cacheKey = `main_menu:${userId}`;
+            const cacheKey = `area51:main_menu:${userId}`;
             let cachedData = null;
             
             if (this.redis && !forceRefresh) {
@@ -171,8 +189,15 @@ class NavigationHandlers {
                 // Use cached data
                 ({ monBalance, monPriceUSD, portfolioValueUSD, portfolioValueMON, monValueUSD, user } = cachedData);
             } else {
-                // Fetch fresh data
-                user = await this.database.getUserByTelegramId(userId);
+                // Get user from cache first
+                if (this.cacheService) {
+                    user = await this.cacheService.get('user', userId,
+                        async () => await this.database.getUserByTelegramId(userId)
+                    );
+                } else {
+                    user = await this.database.getUserByTelegramId(userId);
+                }
+                
                 if (!user) {
                     await ctx.reply('❌ Please start the bot first with /start');
                     return;
@@ -194,7 +219,7 @@ class NavigationHandlers {
                 if (this.redis && !forceRefresh) {
                     try {
                         const dataToCache = { monBalance, monPriceUSD, portfolioValueUSD, portfolioValueMON, monValueUSD, user };
-                        await this.redis.setEx(cacheKey, 15, JSON.stringify(dataToCache));
+                        await this.redis.setEx(`area51:main_menu:${userId}`, 15, JSON.stringify(dataToCache));
                     } catch (redisError) {
                         // Cache error, continue without caching
                     }
@@ -299,7 +324,7 @@ Explore and trade tokens in the Monad ecosystem:`;
             const category = match;
             const tokensPerPage = 8;
             
-            // Get real tokens from Monorail API
+            // Get real tokens from Monorail API with caching
             const result = await this.monorailAPI.getTokensByCategory(category);
             
             let tokens = [];
@@ -472,12 +497,13 @@ Configure your trading preferences:
         const userId = ctx.from.id;
         const userState = await this.database.getUserState(userId);
         
+        
         // Check for token addresses ONLY if user is NOT in importing_wallet state
         const messageText = ctx.message.text.trim();
         const tokenAddressMatch = messageText.match(/0x[a-fA-F0-9]{40}/);
         
-        // Skip token detection if user is importing wallet (private keys also start with 0x)
-        if (tokenAddressMatch && (!userState || userState.state !== 'importing_wallet')) {
+        // Skip token detection if user is importing wallet OR in any transfer state (wallet addresses also start with 0x)
+        if (tokenAddressMatch && (!userState || (userState.state !== 'importing_wallet' && userState.state !== 'awaiting_transfer_address' && userState.state !== 'awaiting_transfer_amount' && userState.state !== 'awaiting_transfer_details'))) {
             const tokenAddress = tokenAddressMatch[0];
             
             // Check if auto buy is enabled
@@ -536,6 +562,12 @@ Configure your trading preferences:
                 case 'awaiting_custom_amount_auto_buy':
                     await this.processCustomAutoBuyAmount(ctx, ctx.message.text);
                     return;
+                case 'awaiting_transfer_address':
+                    await this.processTransferAddress(ctx, ctx.message.text);
+                    return;
+                case 'awaiting_transfer_amount':
+                    await this.processTransferAmount(ctx, ctx.message.text, userState.data?.recipientAddress);
+                    return;
             }
         }
 
@@ -543,25 +575,70 @@ Configure your trading preferences:
         await ctx.reply('Please use the menu buttons to interact with the bot.');
     }
 
-    async processTransferDetails(ctx, transferText) {
+    async processTransferAddress(ctx, address) {
         const userId = ctx.from.id;
         
         try {
-            // Parse transfer details: "address amount"
-            const parts = transferText.trim().split(/\s+/);
-            if (parts.length !== 2) {
-                await ctx.reply('❌ Invalid format. Please use: address amount\nExample: 0x1234...5678 1.5');
-                return;
-            }
-
-            const [address, amountStr] = parts;
-            const amount = parseFloat(amountStr);
-
             // Validate address format
-            if (!address.startsWith('0x') || address.length !== 42) {
+            const cleanAddress = address.trim();
+            if (!cleanAddress.startsWith('0x') || cleanAddress.length !== 42) {
                 await ctx.reply('❌ Invalid address format. Address must be 42 characters starting with 0x');
                 return;
             }
+
+            // Get user balance for display
+            const user = await this.database.getUserByTelegramId(userId);
+            if (!user) {
+                await ctx.reply('❌ User not found. Please start the bot with /start');
+                return;
+            }
+
+            const balance = await this.walletManager.getBalance(user.wallet_address);
+            const currentBalance = parseFloat(balance);
+
+            // Ask for amount
+            const amountText = `✅ **Address Confirmed**
+
+📤 **To:** \`${cleanAddress}\`
+💰 **Your Balance:** *${currentBalance.toFixed(4)} MON*
+
+Enter the amount you want to transfer:
+
+**Example:** \`1.5\``;
+
+            await ctx.reply(amountText, {
+                parse_mode: 'Markdown',
+                reply_markup: {
+                    force_reply: true,
+                    input_field_placeholder: "1.5"
+                }
+            });
+
+            // Update user state with address
+            await this.database.setUserState(userId, 'awaiting_transfer_amount', { 
+                recipientAddress: cleanAddress 
+            });
+            
+            // Clear cache to ensure fresh state is loaded
+            await this.cacheService.clearUserState(userId);
+
+        } catch (error) {
+            this.monitoring.logError('Transfer address processing failed', error, { userId });
+            await ctx.reply('❌ Error processing address. Please try again.');
+        }
+    }
+
+    async processTransferAmount(ctx, amountStr, recipientAddress) {
+        const userId = ctx.from.id;
+        
+        try {
+            // Check if input looks like an address (user sent another address instead of amount)
+            if (amountStr.trim().match(/0x[a-fA-F0-9]{40}/)) {
+                await ctx.reply('❌ Please enter the transfer amount, not an address. Example: 0.1');
+                return;
+            }
+
+            const amount = parseFloat(amountStr);
 
             // Validate amount
             if (isNaN(amount) || amount <= 0) {
@@ -588,7 +665,7 @@ Configure your trading preferences:
             // Execute transfer using wallet manager
             const result = await this.walletManager.sendMON(
                 user.encrypted_private_key,
-                address,
+                recipientAddress,
                 amount.toString()
             );
 
@@ -599,16 +676,16 @@ Configure your trading preferences:
                 // Clear cache after successful transfer using CacheService
                 if (this.cacheService) {
                     try {
-                        await this.cacheService.invalidateAfterTransfer(userId, recipientId, user.wallet_address, recipientWallet);
+                        await this.cacheService.invalidateAfterTransfer(userId, null, user.wallet_address, recipientAddress);
                     } catch (cacheError) {
                         this.monitoring.logError('Cache clear failed after transfer', cacheError, { userId });
                     }
                 } else if (this.redis) {
                     // Fallback to legacy cache clearing
                     await Promise.all([
-                        this.redis.del(`balance:${userId}`),
-                        this.redis.del(`user:${userId}`),
-                        this.redis.del(`main_menu:${userId}`)
+                        this.redis.del(`area51:wallet_balance:${user.wallet_address}`),
+                        this.redis.del(`area51:user:${userId}`),
+                        this.redis.del(`area51:main_menu:${userId}`)
                     ]);
                 }
 
@@ -617,7 +694,7 @@ Configure your trading preferences:
                 await ctx.reply(`✅ *Transfer Successful!*
 
 📤 **Sent:** ${amount} MON
-📍 **To:** \`${address}\`
+📍 **To:** \`${recipientAddress}\`
 🔗 **Transaction Hash:** \`${result.transactionHash}\`
 
 [View on Explorer](${explorerUrl})
@@ -878,10 +955,10 @@ Please try again or check your wallet balance.`);
                 } else if (this.redis) {
                     // Fallback to legacy cache clearing
                     await Promise.all([
-                        this.redis.del(`user:${userId}`),
-                        this.redis.del(`balance:${userId}`),
-                        this.redis.del(`portfolio:${userId}`),
-                        this.redis.del(`main_menu:${userId}`)
+                        this.redis.del(`area51:user:${userId}`),
+                        this.redis.del(`area51:wallet_balance:${user.wallet_address}`),
+                        this.redis.del(`area51:portfolio:${userId}`),
+                        this.redis.del(`area51:main_menu:${userId}`)
                     ]);
                 }
                 
@@ -1170,17 +1247,29 @@ Proceed with this purchase?`, {
         try {
             await ctx.answerCbQuery('🔄 Refreshing data...');
             
-            // Get user data
-            const user = await this.database.getUserByTelegramId(userId);
+            // Get user first
+            let user;
+            if (this.cacheService) {
+                user = await this.cacheService.get('user', userId,
+                    async () => await this.database.getUserByTelegramId(userId)
+                );
+            } else {
+                user = await this.database.getUserByTelegramId(userId);
+            }
+            
             if (!user) {
                 await ctx.reply('❌ Please start the bot first with /start');
                 return;
             }
             
-            // Clear cache for manual refresh (force refresh despite TTL)
+            // Clear all relevant cache
             if (this.cacheService) {
                 try {
-                    await this.cacheService.invalidateAfterManualRefresh(userId, user.wallet_address);
+                    await Promise.all([
+                        this.cacheService.delete('portfolio', userId),
+                        this.cacheService.delete('wallet_balance', user.wallet_address),
+                        this.cacheService.delete('main_menu', userId)
+                    ]);
                     this.monitoring.logInfo('Manual refresh cache cleared', { userId, walletAddress: user.wallet_address });
                 } catch (cacheError) {
                     this.monitoring.logError('Manual refresh cache clear failed', cacheError, { userId });
@@ -1189,10 +1278,9 @@ Proceed with this purchase?`, {
                 // Fallback to legacy cache clearing
                 try {
                     await Promise.all([
-                        this.redis.del(`portfolio:${userId}`),
-                        this.redis.del(`wallet_balance:${user.wallet_address}`),
-                        this.redis.del(`main_menu:${userId}`),
-                        this.redis.del(`mon_balance:${user.wallet_address}`) // Legacy support
+                        this.redis.del(`area51:portfolio:${userId}`),
+                        this.redis.del(`area51:wallet_balance:${user.wallet_address}`),
+                        this.redis.del(`area51:main_menu:${userId}`)
                     ]);
                     
                     this.monitoring.logInfo('Manual refresh cache cleared (legacy)', { userId, walletAddress: user.wallet_address });
@@ -1201,11 +1289,11 @@ Proceed with this purchase?`, {
                 }
             }
             
-            // Fetch fresh data
+            // Fetch fresh data with forceRefresh = true
             const [monBalanceData, portfolioValueData, monPriceData] = await Promise.all([
-                this.monorailAPI.getMONBalance(user.wallet_address, false),
-                this.monorailAPI.getPortfolioValue(user.wallet_address, false),
-                this.monorailAPI.getMONPriceUSD(false)
+                this.monorailAPI.getMONBalance(user.wallet_address, true),
+                this.monorailAPI.getPortfolioValue(user.wallet_address, true),
+                this.monorailAPI.getMONPriceUSD(true)
             ]);
 
             const monBalance = parseFloat(monBalanceData.balance || '0');
@@ -1218,15 +1306,23 @@ Proceed with this purchase?`, {
                 user, monBalance, monPriceUSD, portfolioValueUSD
             );
 
-            // Update the message
+            // Update the message - NEVER send new message, only edit existing
             try {
                 await ctx.editMessageText(text, {
                     parse_mode: 'Markdown',
                     reply_markup: keyboard.reply_markup
                 });
+                this.monitoring.logInfo('Manual refresh completed successfully', { userId });
             } catch (editError) {
-                // Fallback to new message if edit fails
-                await ctx.replyWithMarkdown(text, keyboard);
+                // Handle edit errors gracefully without sending new messages
+                if (editError.description && editError.description.includes('message is not modified')) {
+                    // Message content is identical, no need to update
+                    this.monitoring.logInfo('Manual refresh - no changes detected', { userId });
+                } else {
+                    // Log error but DO NOT send new message - this is the critical fix
+                    this.monitoring.logError('Message edit failed - refresh aborted to prevent new message', editError, { userId });
+                    // Just acknowledge the callback without sending new message
+                }
             }
             
             this.monitoring.logInfo('Manual refresh completed', { 

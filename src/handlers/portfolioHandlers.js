@@ -27,9 +27,7 @@ class PortfolioHandlers {
             await this.handlePortfolioRefresh(ctx);
         });
 
-        this.bot.action('refresh', async (ctx) => {
-            await this.handleRefreshWithWelcome(ctx);
-        });
+        // Refresh handler removed - handled by navigationHandlers.js to avoid conflicts
 
         this.bot.action('refresh_balance', async (ctx) => {
             await this.handleRefresh(ctx);
