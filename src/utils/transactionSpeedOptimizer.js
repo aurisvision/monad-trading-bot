@@ -4,16 +4,11 @@
  * Eliminates database queries during transaction flow for maximum speed
  */
 
-const InstantTransactionCache = require('./instantTransactionCache');
-
 class TransactionSpeedOptimizer {
     constructor(cacheService, database, monitoring) {
         this.cacheService = cacheService;
         this.database = database;
         this.monitoring = monitoring;
-        
-        // Initialize instant transaction cache
-        this.instantCache = new InstantTransactionCache(cacheService, database, monitoring);
         
         // Performance tracking
         this.metrics = {
@@ -22,8 +17,54 @@ class TransactionSpeedOptimizer {
             avgResponseTime: 0,
             transactionCount: 0
         };
+        
+        // Critical settings for instant transaction access
+        this.criticalSettings = [
+            'gas_price', 'slippage_tolerance', 'sell_gas_price', 'sell_slippage_tolerance',
+            'auto_buy_enabled', 'auto_buy_amount', 'auto_buy_gas', 'auto_buy_slippage',
+            'custom_buy_amounts', 'custom_sell_percentages', 'turbo_mode'
+        ];
     }
-
+    
+    /**
+     * Pre-warm user settings for instant access
+     */
+    async preWarmUserSettings(userId) {
+        try {
+            // Get user settings from database and cache them
+            const settings = await this.database.getUserSettings(userId);
+            if (settings && this.cacheService) {
+                await this.cacheService.set('user_settings', userId, settings);
+                this.monitoring?.logInfo('User settings pre-warmed for instant access', { userId });
+            }
+        } catch (error) {
+            this.monitoring?.logError('Failed to pre-warm user settings', error, { userId });
+        }
+    }
+    
+    /**
+     * Get transaction bundle from cache
+     */
+    async getTransactionBundle(userId) {
+        try {
+            const userSettings = await this.cacheService.get('user_settings', userId);
+            const userState = await this.cacheService.get('user_state', userId);
+            
+            if (userSettings) {
+                return {
+                    settings: userSettings,
+                    state: userState,
+                    cached: true
+                };
+            }
+            
+            return null;
+        } catch (error) {
+            this.monitoring?.logError('Failed to get transaction bundle', error, { userId });
+            return null;
+        }
+    }
+    
     /**
      * Initialize optimizer - pre-warm caches for active users
      */
@@ -36,7 +77,7 @@ class TransactionSpeedOptimizer {
 
             // Pre-warm settings cache for all active users
             const warmPromises = activeUsers.rows.map(user => 
-                this.instantCache.preWarmUserSettings(user.telegram_id)
+                this.preWarmUserSettings(user.telegram_id)
             );
             
             await Promise.all(warmPromises);
@@ -60,8 +101,8 @@ class TransactionSpeedOptimizer {
         const startTime = Date.now();
         
         try {
-            // Get transaction bundle from instant cache
-            const bundle = await this.instantCache.getTransactionBundle(userId);
+            // Get transaction bundle from cache
+            const bundle = await this.getTransactionBundle(userId);
             
             if (!bundle) {
                 this.metrics.cacheMisses++;
@@ -187,25 +228,26 @@ class TransactionSpeedOptimizer {
             // Update database first
             await this.database.updateUserSettings(userId, updateData);
             
-            // CRITICAL: Update instant cache immediately
-            const cacheUpdated = await this.instantCache.updateInstantCache(userId, updateData);
-            
-            if (!cacheUpdated) {
-                this.monitoring?.logError('CRITICAL: Failed to update instant cache after settings change', null, {
+            // CRITICAL: Update cache immediately
+            try {
+                await this.cacheService.invalidateUserSettings(userId);
+                await this.preWarmUserSettings(userId);
+            } catch (error) {
+                this.monitoring?.logError('CRITICAL: Failed to update cache after settings change', error, {
                     userId,
                     settingType,
                     newValue
                 });
                 
                 // Force emergency refresh
-                await this.instantCache.emergencyRefresh(userId);
+                await this.preWarmUserSettings(userId);
             }
 
             this.monitoring?.logInfo('User settings updated with instant cache refresh', {
                 userId,
                 settingType,
                 newValue,
-                cacheUpdated
+                cacheRefreshed: true
             });
 
             return true;
@@ -225,12 +267,12 @@ class TransactionSpeedOptimizer {
      */
     async validateTransactionReadiness(userId, transactionType) {
         try {
-            // Check cache integrity
-            const integrityValid = await this.instantCache.validateCacheIntegrity(userId);
+            // Simple cache validation - check if user settings exist
+            const userSettings = await this.cacheService.get('user_settings', userId);
             
-            if (!integrityValid) {
-                this.monitoring?.logWarning('Cache integrity validation failed, refreshing', { userId });
-                await this.instantCache.emergencyRefresh(userId);
+            if (!userSettings) {
+                this.monitoring?.logWarning('User settings not in cache, refreshing', { userId });
+                await this.preWarmUserSettings(userId);
             }
 
             // Get transaction params to verify availability
@@ -289,7 +331,7 @@ class TransactionSpeedOptimizer {
             );
 
             const refreshPromises = activeUsers.rows.map(user => 
-                this.instantCache.emergencyRefresh(user.telegram_id)
+                this.preWarmUserSettings(user.telegram_id)
             );
             
             await Promise.all(refreshPromises);

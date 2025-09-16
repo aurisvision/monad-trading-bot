@@ -8,11 +8,13 @@ const TradingEngine = require('./trading');
 const MonorailAPI = require('./monorail');
 // const PortfolioManager = require('./portfolio'); // Removed - using portfolioService instead
 const CacheService = require('./services/CacheService');
-const MonitoringService = require('./services/MonitoringService');
+const UnifiedCacheSystem = require('./services/UnifiedCacheSystem');
+const CacheTransitionAdapter = require('./services/CacheTransitionAdapter');
 const CacheWarmer = require('./utils/cacheWarmer');
 const BackupService = require('./services/BackupService');
-const MonitoringSystem = require('./monitoring');
+const UnifiedMonitoringSystem = require('./monitoring/UnifiedMonitoringSystem');
 const { createBotMiddleware } = require('./middleware/botMiddleware');
+const UnifiedErrorHandler = require('./middleware/UnifiedErrorHandler');
 // const { RateLimiter, SecurityEnhancements, SessionManager, MemoryRateLimiter, MemorySessionManager } = require('./rateLimiter');
 const Redis = require('redis');
 
@@ -21,8 +23,6 @@ const RedisMetrics = require('./services/RedisMetrics');
 const RedisFallbackManager = require('./services/RedisFallbackManager');
 const BackgroundRefreshService = require('./services/BackgroundRefreshService');
 const TransactionSpeedOptimizer = require('./utils/transactionSpeedOptimizer');
-const CacheMonitor = require('./utils/cacheMonitor');
-const HealthCheck = require('./monitoring/HealthCheck');
 
 // Import handler modules
 const WalletHandlers = require('./handlers/walletHandlers');
@@ -85,10 +85,12 @@ class Area51BotModularSimple {
             this.redis = null;
         }
 
-        // Initialize monitoring system
+        // Initialize unified monitoring system
         try {
-            this.monitoring = new MonitoringSystem(this.database, this.redis, console);
-            // Monitoring system initialized - no need to log to itself
+            this.monitoring = new UnifiedMonitoringSystem(this.database, this.redis, console);
+            // Initialize unified error handler
+            this.errorHandler = new UnifiedErrorHandler(this.monitoring);
+            // Unified monitoring system initialized - no need to log to itself
         } catch (error) {
             console.error('❌ Failed to initialize monitoring system:', error.message);
             // Fallback to mock monitoring
@@ -113,8 +115,23 @@ class Area51BotModularSimple {
         if (this.redis) {
             this.redisMetrics = new RedisMetrics(this.monitoring);
             this.redisFallbackManager = new RedisFallbackManager(this.redis, this.monitoring);
+            
+            // Initialize both cache systems for gradual transition
             this.cacheService = new CacheService(this.redis, this.monitoring);
             await this.cacheService.initialize();
+            
+            // Initialize unified cache system
+            this.unifiedCache = new UnifiedCacheSystem(this.redis, this.monitoring);
+            await this.unifiedCache.initialize();
+            
+            // Create transition adapter for safe migration
+            this.cacheAdapter = new CacheTransitionAdapter(
+                this.cacheService, 
+                this.unifiedCache, 
+                this.monitoring
+            );
+            
+            this.monitoring.logInfo('Cache transition adapter initialized - safe migration mode active');
 
             // Initialize cache warmer
             this.cacheWarmer = new CacheWarmer(this.database, this.cacheService, this.monitoring);
@@ -149,12 +166,7 @@ class Area51BotModularSimple {
         this.monorailAPI = new MonorailAPI(this.redis);
         this.walletManager = new WalletManager(this.database, this.monitoring);
         
-        // Initialize Cache Monitor for performance tracking
-        if (this.redis) {
-            this.cacheMonitor = new CacheMonitor(this.redis, this.monitoring);
-            this.cacheMonitor.interceptConsoleLogs(); // Enable automatic tracking
-            this.monitoring.logInfo('Cache Monitor initialized - tracking performance');
-        }
+        // Cache monitoring is now integrated in the unified cache system
         
         // Initialize Transaction Speed Optimizer for instant settings access FIRST
         if (this.redis && this.cacheService) {
@@ -197,18 +209,8 @@ class Area51BotModularSimple {
         // }
         // this.security = new SecurityEnhancements(this.monitoring);
         
-        // Initialize health check with monitoring endpoints
-        this.healthCheck = new HealthCheck(this.database, this.redis, this.monitoring);
-        
-        // Start health check server if available in monitoring
-        if (this.monitoring && this.monitoring.healthCheck) {
-            this.monitoring.healthCheck.startServer(process.env.HEALTH_CHECK_PORT || 3001);
-        }
-        
-        // Initialize monitoring endpoints on health server (only if real monitoring system)
-        if (this.monitoring.initializeEndpoints) {
-            this.monitoring.initializeEndpoints();
-        }
+        // Start health check server with monitoring endpoints
+        await this.startHealthServer();
         
         // Set bot instance for admin alerts (only if real monitoring system)
         if (this.monitoring.setTelegramBot) {
@@ -299,6 +301,59 @@ class Area51BotModularSimple {
             }
             await next();
         });
+    }
+
+    async startHealthServer() {
+        if (!this.monitoring || !this.monitoring.initializeEndpoints) {
+            console.warn('⚠️ Monitoring system not available, skipping health server');
+            return;
+        }
+
+        const express = require('express');
+        const app = express();
+        const port = process.env.HEALTH_CHECK_PORT || 3001;
+
+        // Add JSON middleware
+        app.use(express.json());
+
+        // Initialize monitoring endpoints
+        this.monitoring.initializeEndpoints(app);
+
+        // Try to start server with retry logic
+        const startServer = (retryPort) => {
+            return new Promise((resolve, reject) => {
+                const server = app.listen(retryPort, () => {
+                    console.log(`✅ Health check server started on port ${retryPort}`);
+                    console.log(`📊 Metrics: http://localhost:${retryPort}/metrics`);
+                    console.log(`🏥 Health: http://localhost:${retryPort}/health`);
+                    console.log(`📈 Dashboard: http://localhost:${retryPort}/monitoring`);
+                    resolve(server);
+                });
+
+                server.on('error', (error) => {
+                    if (error.code === 'EADDRINUSE') {
+                        reject(new Error(`Port ${retryPort} is busy`));
+                    } else {
+                        reject(error);
+                    }
+                });
+            });
+        };
+
+        // Try original port, then alternatives
+        const ports = [port, port + 1, port + 2, port + 10];
+        
+        for (const tryPort of ports) {
+            try {
+                this.healthServer = await startServer(tryPort);
+                break;
+            } catch (error) {
+                if (tryPort === ports[ports.length - 1]) {
+                    console.warn(`⚠️ All ports busy (${ports.join(', ')}), health server not started`);
+                    console.warn('⚠️ Health checks will be available through internal monitoring only');
+                }
+            }
+        }
     }
 
     setupHandlers() {
@@ -646,10 +701,7 @@ class Area51BotModularSimple {
         try {
             await this.init();
             
-            // Use existing monitoring system instead of duplicate health server
-            if (this.monitoring) {
-                await this.startMonitoringServer();
-            }
+            // Health server is already started in initialization
             
             // Start the bot
             await this.bot.launch();
@@ -670,79 +722,6 @@ class Area51BotModularSimple {
         }
     }
 
-    async startMonitoringServer() {
-        try {
-            const express = require('express');
-            const app = express();
-            
-            // Add JSON middleware
-            app.use(express.json());
-            
-            // Add error handling middleware
-            app.use((err, req, res, next) => {
-                console.error('Express error:', err);
-                res.status(500).json({ error: 'Internal server error' });
-            });
-            
-            // Use existing monitoring system endpoints
-            if (this.monitoring && typeof this.monitoring.initializeEndpoints === 'function') {
-                this.monitoring.initializeEndpoints(app);
-            } else {
-                // Fallback basic health endpoint
-                app.get('/health', (req, res) => {
-                    res.json({
-                        status: 'healthy',
-                        timestamp: new Date().toISOString(),
-                        uptime: process.uptime(),
-                        version: '1.0.0'
-                    });
-                });
-                
-                // Fallback metrics endpoint with real Prometheus metrics
-                app.get('/metrics', async (req, res) => {
-                    try {
-                        if (this.monitoring && this.monitoring.metricsMiddleware) {
-                            const metrics = await this.monitoring.metricsMiddleware.metrics.getMetrics();
-                            res.set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
-                            res.send(metrics);
-                        } else {
-                            // Basic fallback metrics
-                            const basicMetrics = `# HELP process_uptime_seconds Process uptime in seconds
-# TYPE process_uptime_seconds gauge
-process_uptime_seconds ${process.uptime()}
-
-# HELP nodejs_heap_size_used_bytes Process heap space size used
-# TYPE nodejs_heap_size_used_bytes gauge
-nodejs_heap_size_used_bytes ${process.memoryUsage().heapUsed}
-
-# HELP nodejs_heap_size_total_bytes Process heap space size total
-# TYPE nodejs_heap_size_total_bytes gauge
-nodejs_heap_size_total_bytes ${process.memoryUsage().heapTotal}
-
-# HELP area51_bot_status Bot status (1 = running, 0 = stopped)
-# TYPE area51_bot_status gauge
-area51_bot_status{app="area51-bot"} 1
-`;
-                            res.set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
-                            res.send(basicMetrics);
-                        }
-                    } catch (error) {
-                        console.error('Metrics error:', error);
-                        res.status(500).send('# Error generating metrics\n');
-                    }
-                });
-            }
-            
-            const port = process.env.MONITORING_PORT || 3001;
-            this.healthServer = app.listen(port, () => {
-                console.log(`Monitoring server started on port ${port}`);
-                this.monitoring?.logInfo(`Monitoring server started on port ${port}`);
-            });
-        } catch (error) {
-            console.error('Failed to start monitoring server:', error);
-            this.monitoring?.logError('Monitoring server startup failed', error);
-        }
-    }
 
     async handleToggleTurboMode(ctx) {
         try {
@@ -2192,7 +2171,12 @@ _Price tolerance for automated purchases:_
             }
             
             if (this.healthServer) {
-                this.healthServer.stop();
+                this.healthServer.close();
+            }
+
+            // Close monitoring system if available
+            if (this.monitoring && this.monitoring.destroy) {
+                this.monitoring.destroy();
             }
             
             this.monitoring.logInfo('Bot stopped gracefully');

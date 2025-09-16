@@ -7141,3 +7141,166 @@
 {"identifier":"679766972","key":"area51:user_settings:679766972","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-15T23:53:07.502Z","type":"user_settings"}
 {"identifier":"679766972","key":"area51:user_settings:679766972","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-15T23:53:07.503Z","ttl":null,"type":"user_settings"}
 {"activeUsers":4,"level":"info","message":"Cache warming completed","service":"area51-bot","timestamp":"2025-09-15T23:53:07.517Z","warmedSettings":4,"warmedUsers":4}
+{"keyPrefix":"area51:","level":"info","message":"CacheService initialized","service":"area51-bot","timestamp":"2025-09-16T12:41:17.755Z"}
+{"level":"info","message":"Backup system initialized","service":"area51-bot","timestamp":"2025-09-16T12:41:17.766Z"}
+{"level":"info","message":"BackupService initialized","service":"area51-bot","timestamp":"2025-09-16T12:41:17.767Z"}
+{"level":"info","message":"Cache Monitor initialized - tracking performance","service":"area51-bot","timestamp":"2025-09-16T12:41:17.768Z"}
+{"identifier":"6920475855","key":"area51:user:6920475855","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-16T12:41:17.775Z","ttl":null,"type":"user"}
+{"identifier":"6920475855","key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:41:17.778Z","type":"user_settings"}
+{"identifier":"6920475855","key":"area51:user_settings:6920475855","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-16T12:41:17.780Z","ttl":null,"type":"user_settings"}
+{"activeUsers":1,"level":"info","message":"Cache warming completed","service":"area51-bot","timestamp":"2025-09-16T12:41:17.802Z","warmedSettings":1,"warmedUsers":1}
+{"identifier":"6920475855","key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:41:17.814Z","type":"user_settings"}
+{"level":"info","message":"User settings pre-warmed for instant access","service":"area51-bot","timestamp":"2025-09-16T12:41:17.815Z","userId":"6920475855"}
+{"level":"info","message":"Transaction Speed Optimizer initialized","preWarmedUsers":1,"service":"area51-bot","timestamp":"2025-09-16T12:41:17.816Z"}
+{"level":"info","message":"Transaction Speed Optimizer initialized","service":"area51-bot","timestamp":"2025-09-16T12:41:17.816Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-16T12:41:17.819Z"}
+{"level":"info","message":"Background refresh service started","service":"area51-bot","timestamp":"2025-09-16T12:41:17.819Z"}
+{"level":"info","message":"All components initialized successfully","service":"area51-bot","timestamp":"2025-09-16T12:41:17.819Z"}
+{"level":"info","message":"Modular bot initialized successfully","service":"area51-bot","timestamp":"2025-09-16T12:41:17.822Z"}
+{"level":"info","message":"Monitoring server started on port 3001","service":"area51-bot","timestamp":"2025-09-16T12:41:18.015Z"}
+{"level":"info","message":"Start command received","service":"area51-bot","timestamp":"2025-09-16T12:41:45.454Z","userId":6920475855}
+{"fromCache":true,"level":"info","message":"User data loaded from Redis cache","service":"area51-bot","timestamp":"2025-09-16T12:41:45.455Z","userId":6920475855}
+{"key":"area51:user_state:6920475855","level":"info","message":"User state cleared from cache","service":"area51-bot","timestamp":"2025-09-16T12:41:45.456Z","userId":6920475855}
+{"identifier":6920475855,"key":"area51:user:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:41:45.458Z","type":"user"}
+{"fromCache":true,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-16T12:41:46.139Z","userId":6920475855}
+{"identifier":6920475855,"key":"area51:user:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:41:47.810Z","type":"user"}
+{"deleted":false,"identifier":6920475855,"key":"area51:portfolio:6920475855","level":"info","message":"Cache delete","service":"area51-bot","timestamp":"2025-09-16T12:41:47.811Z","type":"portfolio"}
+{"deleted":false,"identifier":"0x439ff8bc262Db1DBa4C7bE41abA7a11f1072ebD6","key":"area51:wallet_balance:0x439ff8bc262Db1DBa4C7bE41abA7a11f1072ebD6","level":"info","message":"Cache delete","service":"area51-bot","timestamp":"2025-09-16T12:41:47.812Z","type":"wallet_balance"}
+{"deleted":true,"identifier":6920475855,"key":"area51:main_menu:6920475855","level":"info","message":"Cache delete","service":"area51-bot","timestamp":"2025-09-16T12:41:47.812Z","type":"main_menu"}
+{"level":"info","message":"Manual refresh cache cleared","service":"area51-bot","timestamp":"2025-09-16T12:41:47.812Z","userId":6920475855,"walletAddress":"0x439ff8bc262Db1DBa4C7bE41abA7a11f1072ebD6"}
+{"level":"info","message":"Manual refresh completed successfully","service":"area51-bot","timestamp":"2025-09-16T12:41:48.167Z","userId":6920475855}
+{"level":"info","message":"Manual refresh completed","monBalance":0.7225848756102616,"monPriceUSD":3.354323,"portfolioValueUSD":2.425336,"service":"area51-bot","timestamp":"2025-09-16T12:41:48.168Z","userId":6920475855}
+{"level":"info","message":"Fetching portfolio from API","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-16T12:41:52.515Z","walletAddress":"0x439ff8bc262Db1DBa4C7bE41abA7a11f1072ebD6"}
+{"level":"info","message":"Portfolio cached in Redis","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-16T12:41:52.708Z","tokenCount":0}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:41:57.439Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_state:6920475855","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-16T12:41:58.259Z","ttl":600,"type":"user_state"}
+{"identifier":6920475855,"key":"area51:user:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:41:58.567Z","type":"user"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:42:04.705Z","type":"user_settings"}
+{"error":"Failed to connect wallet to provider","level":"error","message":"Confirm buy failed","service":"area51-bot","stack":"Error: Failed to connect wallet to provider\n    at WalletManager.getWalletWithProvider (C:\\Users\\user\\Monad Area\\area51-bot\\src\\wallet.js:175:19)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async TradingHandlers.handleConfirmBuy (C:\\Users\\user\\Monad Area\\area51-bot\\src\\handlers\\tradingHandlers.js:820:26)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\src\\handlers\\tradingHandlers.js:155:13\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:519:21\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:519:21\n    at async execute (C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:518:17)\n    at async C:\\Users\\user\\Monad Area\\area51-bot\\node_modules\\telegraf\\lib\\composer.js:519:21","timestamp":"2025-09-16T12:42:04.711Z","userId":6920475855}
+{"level":"info","message":"Start command received","service":"area51-bot","timestamp":"2025-09-16T12:42:14.290Z","userId":6920475855}
+{"fromCache":true,"level":"info","message":"User data loaded from Redis cache","service":"area51-bot","timestamp":"2025-09-16T12:42:14.291Z","userId":6920475855}
+{"key":"area51:user_state:6920475855","level":"info","message":"User state cleared from cache","service":"area51-bot","timestamp":"2025-09-16T12:42:14.292Z","userId":6920475855}
+{"identifier":6920475855,"key":"area51:user:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:42:14.293Z","type":"user"}
+{"fromCache":true,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-16T12:42:14.613Z","userId":6920475855}
+{"level":"info","message":"Start command received","service":"area51-bot","timestamp":"2025-09-16T12:42:20.258Z","userId":6920475855}
+{"fromCache":true,"level":"info","message":"User data loaded from Redis cache","service":"area51-bot","timestamp":"2025-09-16T12:42:20.258Z","userId":6920475855}
+{"key":"area51:user_state:6920475855","level":"info","message":"User state cleared from cache","service":"area51-bot","timestamp":"2025-09-16T12:42:20.259Z","userId":6920475855}
+{"fromCache":true,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-16T12:42:20.374Z","userId":6920475855}
+{"identifier":6920475855,"key":"area51:user:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:42:23.899Z","type":"user"}
+{"keysCleared":6,"level":"info","message":"User cache cleared","service":"area51-bot","timestamp":"2025-09-16T12:42:23.900Z","userId":6920475855}
+{"keysCleared":5,"level":"info","message":"User cache cleared","service":"area51-bot","timestamp":"2025-09-16T12:42:23.900Z","userId":6920475855}
+{"level":"info","message":"Wallet deleted","service":"area51-bot","timestamp":"2025-09-16T12:42:24.011Z","userId":6920475855}
+{"level":"info","message":"Start command received","service":"area51-bot","timestamp":"2025-09-16T12:42:25.102Z","userId":6920475855}
+{"key":"area51:user_state:6920475855","level":"info","message":"User state cleared from cache","service":"area51-bot","timestamp":"2025-09-16T12:42:25.104Z","userId":6920475855}
+{"fromCache":false,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-16T12:42:25.252Z","userId":6920475855}
+{"identifier":6920475855,"key":"area51:user_state:6920475855","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-16T12:42:31.198Z","ttl":600,"type":"user_state"}
+{"cached":true,"level":"info","message":"Trading user state cached from database","service":"area51-bot","source":"database","telegramId":6920475855,"timestamp":"2025-09-16T12:42:31.199Z"}
+{"level":"info","message":"User state retrieved","service":"area51-bot","state":"importing_wallet","timestamp":"2025-09-16T12:42:31.199Z","userId":6920475855}
+{"level":"info","message":"Fetching portfolio from API","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-16T12:42:36.806Z","walletAddress":"0x439ff8bc262Db1DBa4C7bE41abA7a11f1072ebD6"}
+{"level":"info","message":"Portfolio cached in Redis","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-16T12:42:36.807Z","tokenCount":0}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:42:41.157Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_state:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:42:43.894Z","type":"user_state"}
+{"level":"info","message":"Trading user state served from cache","responseTime":"~1ms","service":"area51-bot","source":"cache","telegramId":6920475855,"timestamp":"2025-09-16T12:42:43.894Z"}
+{"level":"info","message":"User state retrieved","service":"area51-bot","state":"importing_wallet","timestamp":"2025-09-16T12:42:43.895Z","userId":6920475855}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:42:43.896Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:42:44.191Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:42:44.192Z","type":"user_settings"}
+{"failed":0,"level":"info","message":"Batch delete completed (fallback mode)","service":"area51-bot","successful":4,"timestamp":"2025-09-16T12:42:50.416Z","total":4}
+{"identifier":6920475855,"key":"area51:user:6920475855","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-16T12:42:52.538Z","ttl":null,"type":"user"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:42:57.341Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_state:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:42:58.319Z","type":"user_state"}
+{"identifier":6920475855,"key":"area51:user_state:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:43:01.763Z","type":"user_state"}
+{"identifier":6920475855,"key":"area51:user_state:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:43:03.101Z","type":"user_state"}
+{"identifier":6920475855,"key":"area51:user_state:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:43:08.907Z","type":"user_state"}
+{"level":"info","message":"Trading user state served from cache","responseTime":"~1ms","service":"area51-bot","source":"cache","telegramId":6920475855,"timestamp":"2025-09-16T12:43:08.907Z"}
+{"level":"info","message":"User state retrieved","service":"area51-bot","state":"importing_wallet","timestamp":"2025-09-16T12:43:08.908Z","userId":6920475855}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:43:10.294Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:43:10.610Z","type":"user"}
+{"level":"info","message":"Instant settings cache hit","responseTime":"~1ms","service":"area51-bot","timestamp":"2025-09-16T12:43:10.611Z","userId":6920475855}
+{"fromCache":true,"level":"info","message":"Optimized transaction params retrieved","responseTime":"1ms","service":"area51-bot","timestamp":"2025-09-16T12:43:10.612Z","transactionType":"buy","userId":6920475855}
+{"failed":0,"level":"info","message":"Batch delete completed (fallback mode)","service":"area51-bot","successful":4,"timestamp":"2025-09-16T12:43:13.016Z","total":4}
+{"level":"info","message":"Cache cleared after successful buy transaction","service":"area51-bot","timestamp":"2025-09-16T12:43:13.016Z","txHash":"0x0990102a30f4bb5da85c63b3aed26fcbb3bab7705eba54cd913f16ae3abe187d","userId":6920475855}
+{"level":"info","message":"Start command received","service":"area51-bot","timestamp":"2025-09-16T12:43:16.169Z","userId":6920475855}
+{"fromCache":true,"level":"info","message":"User data loaded from Redis cache","service":"area51-bot","timestamp":"2025-09-16T12:43:16.170Z","userId":6920475855}
+{"key":"area51:user_state:6920475855","level":"info","message":"User state cleared from cache","service":"area51-bot","timestamp":"2025-09-16T12:43:16.171Z","userId":6920475855}
+{"identifier":6920475855,"key":"area51:user:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:43:16.172Z","type":"user"}
+{"fromCache":true,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-16T12:43:16.510Z","userId":6920475855}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-16T12:43:17.821Z"}
+{"identifier":"global","key":"area51:mon_price_usd:global","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-16T12:43:18.025Z","ttl":3600,"type":"mon_price_usd"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:43:21.089Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user_state:6920475855","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-16T12:43:21.845Z","ttl":600,"type":"user_state"}
+{"identifier":6920475855,"key":"area51:user:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:43:22.042Z","type":"user"}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:43:23.078Z","type":"user_settings"}
+{"identifier":6920475855,"key":"area51:user:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:43:23.380Z","type":"user"}
+{"level":"info","message":"Instant settings cache hit","responseTime":"~1ms","service":"area51-bot","timestamp":"2025-09-16T12:43:23.381Z","userId":6920475855}
+{"fromCache":true,"level":"info","message":"Optimized transaction params retrieved","responseTime":"0ms","service":"area51-bot","timestamp":"2025-09-16T12:43:23.381Z","transactionType":"buy","userId":6920475855}
+{"failed":0,"level":"info","message":"Batch delete completed (fallback mode)","service":"area51-bot","successful":4,"timestamp":"2025-09-16T12:43:25.440Z","total":4}
+{"level":"info","message":"Cache cleared after successful buy transaction","service":"area51-bot","timestamp":"2025-09-16T12:43:25.440Z","txHash":"0x9cf031b921d68d985975a36651c8a7f4e26fd4cc396edb9a73e6a238b20c5712","userId":6920475855}
+{"level":"info","message":"Start command received","service":"area51-bot","timestamp":"2025-09-16T12:43:27.963Z","userId":6920475855}
+{"fromCache":true,"level":"info","message":"User data loaded from Redis cache","service":"area51-bot","timestamp":"2025-09-16T12:43:27.963Z","userId":6920475855}
+{"key":"area51:user_state:6920475855","level":"info","message":"User state cleared from cache","service":"area51-bot","timestamp":"2025-09-16T12:43:27.964Z","userId":6920475855}
+{"identifier":6920475855,"key":"area51:user:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:43:27.965Z","type":"user"}
+{"fromCache":true,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-16T12:43:28.301Z","userId":6920475855}
+{"identifier":6920475855,"key":"area51:user:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:43:33.706Z","type":"user"}
+{"deleted":false,"identifier":6920475855,"key":"area51:portfolio:6920475855","level":"info","message":"Cache delete","service":"area51-bot","timestamp":"2025-09-16T12:43:33.706Z","type":"portfolio"}
+{"deleted":false,"identifier":"0x439ff8bc262Db1DBa4C7bE41abA7a11f1072ebD6","key":"area51:wallet_balance:0x439ff8bc262Db1DBa4C7bE41abA7a11f1072ebD6","level":"info","message":"Cache delete","service":"area51-bot","timestamp":"2025-09-16T12:43:33.707Z","type":"wallet_balance"}
+{"deleted":true,"identifier":6920475855,"key":"area51:main_menu:6920475855","level":"info","message":"Cache delete","service":"area51-bot","timestamp":"2025-09-16T12:43:33.707Z","type":"main_menu"}
+{"level":"info","message":"Manual refresh cache cleared","service":"area51-bot","timestamp":"2025-09-16T12:43:33.707Z","userId":6920475855,"walletAddress":"0x439ff8bc262Db1DBa4C7bE41abA7a11f1072ebD6"}
+{"level":"info","message":"Manual refresh completed successfully","service":"area51-bot","timestamp":"2025-09-16T12:43:34.140Z","userId":6920475855}
+{"level":"info","message":"Manual refresh completed","monBalance":0.2829068756102616,"monPriceUSD":3.354323,"portfolioValueUSD":2.292011,"service":"area51-bot","timestamp":"2025-09-16T12:43:34.140Z","userId":6920475855}
+{"level":"info","message":"Fetching portfolio from API","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-16T12:43:35.556Z","walletAddress":"0x439ff8bc262Db1DBa4C7bE41abA7a11f1072ebD6"}
+{"level":"info","message":"Portfolio cached in Redis","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-16T12:43:35.748Z","tokenCount":1}
+{"level":"info","message":"Fetching portfolio from API","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-16T12:43:36.954Z","walletAddress":"0x439ff8bc262Db1DBa4C7bE41abA7a11f1072ebD6"}
+{"level":"info","message":"Portfolio cached in Redis","service":"area51-bot","telegramId":6920475855,"timestamp":"2025-09-16T12:43:36.956Z","tokenCount":1}
+{"identifier":6920475855,"key":"area51:user_settings:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:43:36.957Z","type":"user_settings"}
+{"level":"info","message":"Instant settings cache hit","responseTime":"~1ms","service":"area51-bot","timestamp":"2025-09-16T12:43:38.944Z","userId":6920475855}
+{"fromCache":true,"level":"info","message":"Optimized transaction params retrieved","responseTime":"1ms","service":"area51-bot","timestamp":"2025-09-16T12:43:38.945Z","transactionType":"sell","userId":6920475855}
+{"identifier":6920475855,"key":"area51:user:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:43:38.945Z","type":"user"}
+{"failed":0,"level":"info","message":"Batch delete completed (fallback mode)","service":"area51-bot","successful":5,"timestamp":"2025-09-16T12:43:45.109Z","total":5}
+{"level":"info","message":"Cache cleared after successful sell transaction","service":"area51-bot","timestamp":"2025-09-16T12:43:45.109Z","userId":6920475855}
+{"level":"info","message":"Start command received","service":"area51-bot","timestamp":"2025-09-16T12:43:47.413Z","userId":6920475855}
+{"fromCache":true,"level":"info","message":"User data loaded from Redis cache","service":"area51-bot","timestamp":"2025-09-16T12:43:47.414Z","userId":6920475855}
+{"key":"area51:user_state:6920475855","level":"info","message":"User state cleared from cache","service":"area51-bot","timestamp":"2025-09-16T12:43:47.414Z","userId":6920475855}
+{"identifier":6920475855,"key":"area51:user:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:43:47.415Z","type":"user"}
+{"fromCache":true,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-16T12:43:47.745Z","userId":6920475855}
+{"identifier":6920475855,"key":"area51:user_state:6920475855","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-16T12:43:57.835Z","ttl":600,"type":"user_state"}
+{"cached":true,"level":"info","message":"Trading user state cached from database","service":"area51-bot","source":"database","telegramId":6920475855,"timestamp":"2025-09-16T12:43:57.835Z"}
+{"level":"info","message":"User state retrieved","service":"area51-bot","state":"awaiting_transfer_address","timestamp":"2025-09-16T12:43:57.836Z","userId":6920475855}
+{"key":"area51:user_state:6920475855","level":"info","message":"User state cleared from cache","service":"area51-bot","timestamp":"2025-09-16T12:43:58.262Z","userId":6920475855}
+{"identifier":6920475855,"key":"area51:user_state:6920475855","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-16T12:44:00.182Z","ttl":600,"type":"user_state"}
+{"cached":true,"level":"info","message":"Trading user state cached from database","service":"area51-bot","source":"database","telegramId":6920475855,"timestamp":"2025-09-16T12:44:00.183Z"}
+{"level":"info","message":"User state retrieved","service":"area51-bot","state":"awaiting_transfer_amount","timestamp":"2025-09-16T12:44:00.183Z","userId":6920475855}
+{"failed":0,"level":"info","message":"Batch delete completed (fallback mode)","service":"area51-bot","successful":6,"timestamp":"2025-09-16T12:44:01.088Z","total":6}
+{"level":"info","message":"Start command received","service":"area51-bot","timestamp":"2025-09-16T12:44:03.969Z","userId":6920475855}
+{"fromCache":true,"level":"info","message":"User data loaded from Redis cache","service":"area51-bot","timestamp":"2025-09-16T12:44:03.970Z","userId":6920475855}
+{"key":"area51:user_state:6920475855","level":"info","message":"User state cleared from cache","service":"area51-bot","timestamp":"2025-09-16T12:44:03.971Z","userId":6920475855}
+{"identifier":6920475855,"key":"area51:user:6920475855","level":"info","message":"Cache hit","service":"area51-bot","timestamp":"2025-09-16T12:44:03.972Z","type":"user"}
+{"fromCache":true,"level":"info","message":"User started bot","service":"area51-bot","timestamp":"2025-09-16T12:44:04.390Z","userId":6920475855}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-16T12:45:17.829Z"}
+{"identifier":"global","key":"area51:mon_price_usd:global","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-16T12:45:18.368Z","ttl":3600,"type":"mon_price_usd"}
+{"level":"warn","message":"Redis Alert: LOW_HIT_RATE Cache hit rate dropped to 0%","metrics":{"alerts":1,"avgResponseTime":"0ms","hitRate":"0%","memoryUsage":"0MB","status":"warning","totalRequests":0,"uptime":"0.08h"},"service":"area51-bot","timestamp":"2025-09-16T12:46:17.754Z"}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-16T12:47:17.831Z"}
+{"identifier":"global","key":"area51:mon_price_usd:global","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-16T12:47:18.126Z","ttl":3600,"type":"mon_price_usd"}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-16T12:49:17.839Z"}
+{"identifier":"global","key":"area51:mon_price_usd:global","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-16T12:49:18.067Z","ttl":3600,"type":"mon_price_usd"}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-16T12:51:17.851Z"}
+{"identifier":"global","key":"area51:mon_price_usd:global","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-16T12:51:18.076Z","ttl":3600,"type":"mon_price_usd"}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-16T12:53:17.865Z"}
+{"identifier":"global","key":"area51:mon_price_usd:global","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-16T12:53:18.168Z","ttl":3600,"type":"mon_price_usd"}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-16T12:55:17.870Z"}
+{"identifier":"global","key":"area51:mon_price_usd:global","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-16T12:55:18.077Z","ttl":3600,"type":"mon_price_usd"}
+{"alerts":1,"avgResponseTime":"0ms","hitRate":"0%","level":"info","memoryUsage":"0MB","message":"Redis Performance Metrics","service":"area51-bot","status":"warning","timestamp":"2025-09-16T12:56:17.755Z","totalRequests":0,"uptime":"0.25h"}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-16T12:57:17.873Z"}
+{"identifier":"global","key":"area51:mon_price_usd:global","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-16T12:57:18.091Z","ttl":3600,"type":"mon_price_usd"}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-16T12:59:17.874Z"}
+{"identifier":"global","key":"area51:mon_price_usd:global","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-16T12:59:18.311Z","ttl":3600,"type":"mon_price_usd"}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-16T13:01:17.876Z"}
+{"identifier":"global","key":"area51:mon_price_usd:global","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-16T13:01:18.109Z","ttl":3600,"type":"mon_price_usd"}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-16T13:03:17.884Z"}
+{"identifier":"global","key":"area51:mon_price_usd:global","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-16T13:03:18.110Z","ttl":3600,"type":"mon_price_usd"}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-16T13:05:17.892Z"}
+{"identifier":"global","key":"area51:mon_price_usd:global","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-16T13:05:18.192Z","ttl":3600,"type":"mon_price_usd"}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-16T13:07:17.893Z"}
+{"identifier":"global","key":"area51:mon_price_usd:global","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-16T13:07:18.187Z","ttl":3600,"type":"mon_price_usd"}
+{"level":"info","message":"Refreshing global prices","service":"area51-bot","timestamp":"2025-09-16T13:09:17.904Z"}
+{"identifier":"global","key":"area51:mon_price_usd:global","level":"info","message":"Cache set","service":"area51-bot","timestamp":"2025-09-16T13:09:18.118Z","ttl":3600,"type":"mon_price_usd"}

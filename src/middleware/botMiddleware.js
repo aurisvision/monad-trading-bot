@@ -1,7 +1,10 @@
 // Bot Middleware for Area51 Bot
+const UnifiedErrorHandler = require('./UnifiedErrorHandler');
+
 class BotMiddleware {
     constructor(database, monitoring, redis = null) {
         this.database = database;
+        this.errorHandler = new UnifiedErrorHandler(monitoring);
         this.monitoring = monitoring;
         this.redis = redis;
         this.userSessions = new Map();
@@ -127,39 +130,16 @@ class BotMiddleware {
         };
     }
 
-    // Error handling middleware
+    // Error handling middleware using unified error handler
     errorMiddleware() {
-        return async (ctx, next) => {
-            try {
-                return await next();
-            } catch (error) {
-                const userId = ctx.from?.id || 'unknown';
-                
-                this.monitoring.logError('Bot handler error', error, { 
-                    userId,
-                    updateType: ctx.updateType,
-                    callbackData: ctx.callbackQuery?.data,
-                    messageText: ctx.message?.text
-                });
+        return this.errorHandler.asyncHandler(async (ctx, next) => {
+            return await next();
+        });
+    }
 
-                // Send user-friendly error message
-                try {
-                    if (error.message.includes('message is not modified')) {
-                        // Ignore message not modified errors
-                        return;
-                    }
-                    
-                    if (error.message.includes('rate limit')) {
-                        await ctx.reply('⚠️ Please wait a moment before trying again.');
-                        return;
-                    }
-
-                    await ctx.reply('⚠️ An error occurred. Please try again or contact support if the issue persists.');
-                } catch (replyError) {
-                    this.monitoring.logError('Error reply failed', replyError, { userId });
-                }
-            }
-        };
+    // Get unified error handler instance
+    getErrorHandler() {
+        return this.errorHandler;
     }
 
     // Input validation middleware

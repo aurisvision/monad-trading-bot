@@ -65,7 +65,7 @@ class CacheService {
         try {
             // Test Redis connection
             await this.redis.ping();
-            console.log('✅ CacheService initialized successfully');
+            // console.log('✅ CacheService initialized successfully'); // Reduced logging
             
             if (this.monitoring) {
                 this.monitoring.logInfo('CacheService initialized', { keyPrefix: this.keyPrefix });
