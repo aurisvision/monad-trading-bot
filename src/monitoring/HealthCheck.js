@@ -301,7 +301,7 @@ class HealthCheck {
 
             readiness: async (req, res) => {
                 try {
-                    const readiness = await getReadinessProbe();
+                    const readiness = await this.getReadinessProbe();
                     const statusCode = readiness.status === 'ready' ? 200 : 503;
                     res.status(statusCode).json(readiness);
                 } catch (error) {

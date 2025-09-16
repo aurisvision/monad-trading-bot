@@ -33,7 +33,8 @@ class PortfolioService {
      */
     async fetchPortfolioFromAPI(walletAddress) {
         try {
-            const response = await this.monorailAPI.getWalletBalance(walletAddress, true);
+            // Use cached balance data instead of forcing fresh API call
+            const response = await this.monorailAPI.getWalletBalance(walletAddress, false);
             
             if (!response || !Array.isArray(response)) {
                 throw new Error('Invalid API response');

@@ -41,8 +41,15 @@ Please enter the token contract address you want to buy:`;
         const amount = ctx.match[1];
         
         try {
-            // Get user state to find the selected token
-            const userState = await this.database.getUserState(ctx.from.id);
+            // Get user state to find the selected token - prioritize cache
+            let userState;
+            if (this.cacheService) {
+                userState = await this.cacheService.get('user_state', ctx.from.id, async () => {
+                    return await this.database.getUserState(ctx.from.id);
+                });
+            } else {
+                userState = await this.database.getUserState(ctx.from.id);
+            }
             
             if ((userState?.state !== 'token_selected' && userState?.state !== 'buy_token') || !userState?.data?.tokenAddress) {
                 return ctx.reply('❌ Token selection expired. Please try again.');
@@ -59,7 +66,15 @@ Please enter the token contract address you want to buy:`;
             // Get user's current MON balance from cache
             let balanceText = '_Loading..._';
             try {
-                const user = await this.database.getUser(ctx.from.id);
+                // Get user - prioritize cache for instant access
+                let user;
+                if (this.cacheService) {
+                    user = await this.cacheService.get('user', ctx.from.id, async () => {
+                        return await this.database.getUser(ctx.from.id);
+                    });
+                } else {
+                    user = await this.database.getUser(ctx.from.id);
+                }
                 if (user && user.wallet_address) {
                     const monBalance = await this.monorailAPI.getMONBalance(user.wallet_address);
                     if (monBalance && monBalance.success && monBalance.balanceFormatted) {
@@ -251,8 +266,15 @@ Please enter the token contract address you want to buy:`;
                 tokenName: tokenInfo.token.name || 'Unknown Token'
             });
             
-            // Get user settings for custom amounts
-            const settings = await this.database.getUserSettings(ctx.from.id);
+            // Get user settings for custom amounts - prioritize cache
+            let settings;
+            if (this.cacheService) {
+                settings = await this.cacheService.get('user_settings', ctx.from.id, async () => {
+                    return await this.database.getUserSettings(ctx.from.id);
+                });
+            } else {
+                settings = await this.database.getUserSettings(ctx.from.id);
+            }
             const amounts = parseCustomAmounts(settings.custom_buy_amounts);
             
             const buyText = `💰 *Buy ${tokenInfo.token.symbol}*

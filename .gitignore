@@ -157,6 +157,7 @@ test-*.js
 *.backup
 *.bak
 *~
+backups/
 
 # OS generated files
 .DS_Store
@@ -182,7 +183,17 @@ monitoring/logs/
 *.log.*
 combined.log
 error.log
+logs/
 
 # Performance test results
 performance-results/
 benchmark-*.json
+
+# Docker volumes and data
+data/
+docker/grafana/data/
+docker/prometheus/data/
+
+# Temporary scripts
+create_dashboard*.ps1
+create_grafana_dashboard.py

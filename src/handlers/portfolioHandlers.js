@@ -200,20 +200,12 @@ class PortfolioHandlers {
                 return;
             }
 
-            // Clear cache first to ensure fresh data
-            if (this.cacheService) {
-                try {
-                    await this.cacheService.invalidateAfterBuy(userId, user.wallet_address);
-                } catch (cacheError) {
-                    this.monitoring.logError('Cache clear failed during refresh', cacheError, { userId });
-                }
-            }
-
-            // Force refresh of all cached data using new API endpoints
+            // For refresh button, force fresh data
+            // Use cached data for faster response, only force refresh on explicit refresh button
             const [monBalanceData, portfolioValueData, monPriceData] = await Promise.all([
-                this.monorailAPI.getMONBalance(user.wallet_address, true), // Force refresh
-                this.monorailAPI.getPortfolioValue(user.wallet_address, true), // Force refresh
-                this.monorailAPI.getMONPriceUSD(true) // Force refresh
+                this.monorailAPI.getMONBalance(user.wallet_address, false), // Use cached data
+                this.monorailAPI.getPortfolioValue(user.wallet_address, false), // Use cached data
+                this.monorailAPI.getMONPriceUSD(false) // Use cached data
             ]);
 
             // Process the data

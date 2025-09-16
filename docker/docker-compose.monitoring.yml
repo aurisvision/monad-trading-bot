@@ -1,3 +1,9 @@
+version: '3.8'
+
+# Advanced Monitoring Stack (Optional)
+# Use this for professional dashboards and historical data
+# Basic monitoring is available at http://localhost:3001
+
 services:
   prometheus:
     image: prom/prometheus:latest
@@ -6,7 +12,6 @@ services:
       - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./alert_rules.yml:/etc/prometheus/alert_rules.yml
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -15,8 +20,6 @@ services:
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--storage.tsdb.retention.time=200h'
       - '--web.enable-lifecycle'
-      - '--web.enable-admin-api'
-    restart: unless-stopped
     networks:
       - monitoring
 
@@ -25,16 +28,14 @@ services:
     container_name: area51-grafana
     ports:
       - "3000:3000"
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning
-      - ./grafana/dashboards:/var/lib/grafana/dashboards
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=area51admin
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
-    restart: unless-stopped
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/provisioning/dashboards/area51-dashboard.json
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
     networks:
       - monitoring
     depends_on:
@@ -52,10 +53,10 @@ services:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
       - '--web.external-url=http://localhost:9093'
-    restart: unless-stopped
     networks:
       - monitoring
 
+  # System metrics (optional)
   node-exporter:
     image: prom/node-exporter:latest
     container_name: area51-node-exporter
@@ -70,10 +71,12 @@ services:
       - '--path.rootfs=/rootfs'
       - '--path.sysfs=/host/sys'
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
-    restart: unless-stopped
     networks:
       - monitoring
+    profiles:
+      - full
 
+  # Redis metrics (optional)
   redis-exporter:
     image: oliver006/redis_exporter:latest
     container_name: area51-redis-exporter
@@ -81,10 +84,12 @@ services:
       - "9121:9121"
     environment:
       - REDIS_ADDR=host.docker.internal:6379
-    restart: unless-stopped
     networks:
       - monitoring
+    profiles:
+      - full
 
+  # Database metrics (optional)
   postgres-exporter:
     image: prometheuscommunity/postgres-exporter:latest
     container_name: area51-postgres-exporter
@@ -92,9 +97,10 @@ services:
       - "9187:9187"
     environment:
       - DATA_SOURCE_NAME=postgresql://username:password@host.docker.internal:5432/area51_bot?sslmode=disable
-    restart: unless-stopped
     networks:
       - monitoring
+    profiles:
+      - full
 
 volumes:
   prometheus_data:

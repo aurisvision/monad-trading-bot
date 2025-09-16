@@ -128,10 +128,7 @@ class NavigationHandlers {
                 });
             }
             
-            // Clear user state when starting the bot to prevent stuck states
-            await this.database.clearUserState(userId);
-            
-            // Also clear user state from cache
+            // Clear user state only from cache (faster than DB)
             if (this.cacheService) {
                 try {
                     await this.cacheService.clearUserState(userId);
@@ -203,11 +200,59 @@ class NavigationHandlers {
                     return;
                 }
 
-                const [monBalanceData, portfolioValueData, monPriceData] = await Promise.all([
-                    this.monorailAPI.getMONBalance(user.wallet_address, true), // Force fresh data
-                    this.monorailAPI.getPortfolioValue(user.wallet_address, true), // Force fresh data
-                    this.monorailAPI.getMONPriceUSD(false)
-                ]);
+                // Try to get data from cache first, with fallback values
+                let monBalanceData = { balance: '0', balanceFormatted: '0', priceUSD: '0' };
+                let portfolioValueData = { value: '0' };
+                let monPriceData = { price: '0' };
+
+                // Check individual caches first
+                if (this.redis) {
+                    try {
+                        const [cachedBalance, cachedPortfolio, cachedPrice] = await Promise.all([
+                            this.redis.get(`area51:wallet_balance:${user.wallet_address}`),
+                            this.redis.get(`portfolio_value:${user.wallet_address}`),
+                            this.redis.get(`area51:mon_price_usd:global`)
+                        ]);
+
+                        if (cachedBalance) {
+                            const balanceData = JSON.parse(cachedBalance);
+                            const monToken = balanceData.find(token => 
+                                token.address === '0x0000000000000000000000000000000000000000' || 
+                                token.symbol === 'MON'
+                            );
+                            if (monToken) {
+                                monBalanceData = {
+                                    balance: monToken.balance || '0',
+                                    balanceFormatted: monToken.balanceFormatted || monToken.balance || '0',
+                                    priceUSD: monToken.usd_per_token || monToken.priceUSD || '0'
+                                };
+                            }
+                        }
+
+                        if (cachedPortfolio) {
+                            portfolioValueData = JSON.parse(cachedPortfolio);
+                        }
+
+                        if (cachedPrice) {
+                            monPriceData = JSON.parse(cachedPrice);
+                        }
+                    } catch (error) {
+                        console.error('Cache read error:', error);
+                    }
+                }
+
+                // Only call API if no cached data found
+                if (monBalanceData.balance === '0' || portfolioValueData.value === '0' || monPriceData.price === '0') {
+                    const [apiBalance, apiPortfolio, apiPrice] = await Promise.all([
+                        monBalanceData.balance === '0' ? this.monorailAPI.getMONBalance(user.wallet_address, false) : Promise.resolve(monBalanceData),
+                        portfolioValueData.value === '0' ? this.monorailAPI.getPortfolioValue(user.wallet_address, false) : Promise.resolve(portfolioValueData),
+                        monPriceData.price === '0' ? this.monorailAPI.getMONPriceUSD(false) : Promise.resolve(monPriceData)
+                    ]);
+
+                    if (monBalanceData.balance === '0') monBalanceData = apiBalance;
+                    if (portfolioValueData.value === '0') portfolioValueData = apiPortfolio;
+                    if (monPriceData.price === '0') monPriceData = apiPrice;
+                }
 
                 monBalance = parseFloat(monBalanceData.balance || '0');
                 monPriceUSD = parseFloat(monPriceData.price || '0');
@@ -215,11 +260,11 @@ class NavigationHandlers {
                 portfolioValueMON = monPriceUSD > 0 ? portfolioValueUSD / monPriceUSD : 0;
                 monValueUSD = monBalance * monPriceUSD;
 
-                // Cache the data for 15 seconds (only if not forced refresh)
+                // Cache the data for 60 seconds for faster access
                 if (this.redis && !forceRefresh) {
                     try {
                         const dataToCache = { monBalance, monPriceUSD, portfolioValueUSD, portfolioValueMON, monValueUSD, user };
-                        await this.redis.setEx(`area51:main_menu:${userId}`, 15, JSON.stringify(dataToCache));
+                        await this.redis.setEx(`area51:main_menu:${userId}`, 60, JSON.stringify(dataToCache));
                     } catch (redisError) {
                         // Cache error, continue without caching
                     }

@@ -46,11 +46,11 @@ class MonitoringSystem {
         app.get('/health/live', healthMiddleware.liveness);
         app.get('/health/ready', healthMiddleware.readiness);
         
-        // Alert webhook endpoint
-        app.post('/webhook/alerts', this.handleAlertWebhook.bind(this));
-        
         // Monitoring dashboard endpoint
         app.get('/monitoring', this.getMonitoringDashboard.bind(this));
+        
+        // Alert webhook endpoint
+        app.post('/webhook/alerts', this.handleAlertWebhook.bind(this));
     }
 
     // Get Telegram middleware for bot
@@ -185,29 +185,20 @@ class MonitoringSystem {
             
             for (const alert of alerts) {
                 if (alert.status === 'firing') {
-                    await this.handleFiringAlert(alert);
-                } else if (alert.status === 'resolved') {
-                    await this.handleResolvedAlert(alert);
+                    await this.alertManager.processAlert({
+                        type: 'webhook',
+                        severity: alert.labels.severity || 'warning',
+                        message: alert.annotations.summary || 'Alert triggered',
+                        details: alert.annotations.description || '',
+                        timestamp: new Date(alert.startsAt)
+                    });
                 }
             }
             
-            res.status(200).json({ status: 'ok' });
+            res.status(200).json({ status: 'ok', processed: alerts.length });
         } catch (error) {
-            this.logError('Failed to handle alert webhook', error);
-            res.status(500).json({ error: 'Internal server error' });
-        }
-    }
-
-    // Handle firing alert
-    async handleFiringAlert(alert) {
-        this.logWarning(`Alert firing: ${alert.labels.alertname}`, {
-            severity: alert.labels.severity,
-            description: alert.annotations.description
-        });
-
-        // Send to admin if critical
-        if (alert.labels.severity === 'critical') {
-            await this.sendAdminNotification(alert);
+            this.logError('Alert webhook processing failed', error);
+            res.status(500).json({ status: 'error', error: error.message });
         }
     }
 

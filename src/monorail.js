@@ -104,8 +104,7 @@ class MonorailAPI {
 
             // Quote response received successfully
 
-            // Debug: Log full API response for troubleshooting
-            console.log('🔍 Monorail API Response:', JSON.stringify(response.data, null, 2));
+            // API response received successfully
 
             if (response.data) {
                 // Check for different possible response formats
@@ -265,10 +264,10 @@ class MonorailAPI {
                     mon_value: token.mon_value
                 }));
 
-                // Cache the balance data in Redis for 1 minute
+                // Cache the balance data in Redis for 10 minutes
                 if (this.redis) {
                     try {
-                        await this.redis.setEx(`area51:wallet_balance:${walletAddress}`, 60, JSON.stringify(balanceData));
+                        await this.redis.setEx(`area51:wallet_balance:${walletAddress}`, 600, JSON.stringify(balanceData));
                         // Balance cached successfully
                     } catch (redisError) {
                         console.error('Redis cache write failed:', redisError);
@@ -359,9 +358,10 @@ class MonorailAPI {
                     priceUSD: monToken ? monToken.usd_per_token || monToken.priceUSD : '0'
                 };
 
-                // Cache for 1 minute
+                // Cache for 10 minutes
                 if (this.redis) {
-                    await this.redis.setEx(cacheKey, 60, JSON.stringify(result));
+                    await this.redis.setEx(cacheKey, 600, JSON.stringify(result));
+                    // MON Balance cached successfully
                 }
 
                 return result;
@@ -402,9 +402,10 @@ class MonorailAPI {
                     timestamp: Date.now()
                 };
 
-                // Cache for 2 minutes
+                // Cache for 10 minutes
                 if (this.redis) {
-                    await this.redis.setEx(cacheKey, 120, JSON.stringify(result));
+                    await this.redis.setEx(cacheKey, 600, JSON.stringify(result));
+                    // Portfolio value cached successfully
                 }
 
                 return result;
@@ -789,10 +790,10 @@ class MonorailAPI {
             if (options.gasPrice) {
                 // Use custom gas price from priority system
                 transaction.gasPrice = options.gasPrice;
-                console.log(`🎯 Using custom gas price: ${Math.round(options.gasPrice / 1000000000)} Gwei`);
+                // Using custom gas price from priority system
             } else if (options.turboMode) {
                 transaction.gasPrice = ethers.parseUnits('100', 'gwei');
-                console.log('🚀 Turbo mode: 100 gwei gas price');
+                // Turbo mode: 100 gwei gas price
             } else {
                 transaction.gasPrice = ethers.parseUnits('50', 'gwei');
 
@@ -1133,10 +1134,10 @@ class MonorailAPI {
             try {
                 const cached = await this.redis.get(cacheKey);
                 if (cached) {
-                    console.log(`✅ Category cache HIT for ${category} - Lightning fast response!`);
+                    // Category cache hit - returning cached data
                     return JSON.parse(cached);
                 }
-                console.log(`❌ Category cache MISS for ${category} - Fetching from API...`);
+                // Category cache miss - fetching from API
             } catch (error) {
                 console.warn('Redis cache error for category:', error);
             }
@@ -1162,7 +1163,7 @@ class MonorailAPI {
                 if (this.redis) {
                     try {
                         await this.redis.set(cacheKey, JSON.stringify(result), 'EX', 900);
-                        console.log(`💾 Category ${category} cached for 15 minutes`);
+                        // Category data cached successfully
                     } catch (error) {
                         console.warn('Failed to cache category data:', error);
                     }

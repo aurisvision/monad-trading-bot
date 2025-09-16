@@ -1,11 +1,13 @@
 const { ethers } = require('ethers');
 
 class TradingEngine {
-    constructor(database, monorailAPI, walletManager, monitoring) {
+    constructor(database, monorailAPI, walletManager, monitoring, cacheService = null, transactionSpeedOptimizer = null) {
         this.db = database;
         this.monorailAPI = monorailAPI;
         this.walletManager = walletManager;
         this.monitoring = monitoring;
+        this.cacheService = cacheService;
+        this.transactionSpeedOptimizer = transactionSpeedOptimizer;
         
         // Initialize gas/slippage priority system
         const GasSlippagePriority = require('./utils/gasSlippagePriority');
@@ -24,17 +26,41 @@ class TradingEngine {
                 throw new Error('Amount must be greater than 0');
             }
 
-            // Get user wallet
-            const user = await this.db.getUser(telegramId);
+            // Get user wallet - prioritize cache for instant access
+            let user;
+            if (this.cacheService) {
+                user = await this.cacheService.get('user', telegramId, async () => {
+                    return await this.db.getUser(telegramId);
+                });
+            } else {
+                user = await this.db.getUser(telegramId);
+            }
+            
             if (!user) {
                 throw new Error('User not found');
             }
 
-            // Get effective gas and slippage based on priority system
-            const effectiveGasPrice = await this.prioritySystem.getEffectiveGasPrice(telegramId, 'buy');
-            const effectiveSlippage = slippage !== null ? slippage : await this.prioritySystem.getEffectiveSlippage(telegramId, 'buy');
+            // Get optimized transaction parameters from cache for instant access
+            let effectiveGasPrice, effectiveSlippage;
             
-            console.log(`🎯 Using priority-based settings: Gas=${Math.round(effectiveGasPrice/1000000000)} Gwei, Slippage=${effectiveSlippage}%`);
+            if (this.transactionSpeedOptimizer) {
+                const optimizedParams = await this.transactionSpeedOptimizer.getOptimizedTransactionParams(telegramId, 'buy');
+                if (optimizedParams) {
+                    effectiveGasPrice = optimizedParams.gasPrice;
+                    effectiveSlippage = slippage !== null ? slippage : optimizedParams.slippage;
+                    // Using instant cache for optimal performance
+                } else {
+                    // Fallback to priority system
+                    effectiveGasPrice = await this.prioritySystem.getEffectiveGasPrice(telegramId, 'buy');
+                    effectiveSlippage = slippage !== null ? slippage : await this.prioritySystem.getEffectiveSlippage(telegramId, 'buy');
+                    // Using fallback priority system
+                }
+            } else {
+                // Legacy priority system
+                effectiveGasPrice = await this.prioritySystem.getEffectiveGasPrice(telegramId, 'buy');
+                effectiveSlippage = slippage !== null ? slippage : await this.prioritySystem.getEffectiveSlippage(telegramId, 'buy');
+                // Using legacy priority system
+            }
 
             let wallet;
             try {
@@ -91,7 +117,7 @@ class TradingEngine {
 
             // Use effective slippage from priority system
             let finalSlippage = effectiveSlippage; // No minimum limit for high-risk trading
-            console.log(`Using slippage: ${finalSlippage}% (effective: ${effectiveSlippage}%)`);
+            // Slippage configuration applied
             
             // Execute swap with priority-based gas and slippage
             const swapResult = await this.monorailAPI.buyToken(
@@ -172,10 +198,18 @@ Current balance: ${monBalance} MON`;
     // Execute turbo buy order - bypasses all safety checks for maximum speed
     async executeBuyTurbo(telegramId, tokenAddress, monAmount) {
         try {
-            console.log(`🚀 TURBO BUY: ${monAmount} MON for token ${tokenAddress}`);
+            // Executing turbo buy order
             
-            // Minimal validation - only user lookup
-            const user = await this.db.getUser(telegramId);
+            // Minimal validation - prioritize cache for turbo speed
+            let user;
+            if (this.cacheService) {
+                user = await this.cacheService.get('user', telegramId, async () => {
+                    return await this.db.getUser(telegramId);
+                });
+            } else {
+                user = await this.db.getUser(telegramId);
+            }
+            
             if (!user) {
                 throw new Error('User not found');
             }
@@ -206,7 +240,7 @@ Current balance: ${monBalance} MON`;
                 throw new Error(`Turbo swap failed: ${swapResult.error}`);
             }
 
-            console.log(`🚀 Turbo buy transaction successful: ${swapResult.txHash}`);
+            // Turbo buy transaction completed successfully
             return {
                 success: true,
                 txHash: swapResult.txHash,
@@ -227,11 +261,27 @@ Current balance: ${monBalance} MON`;
     // Execute sell order
     async executeSell(telegramId, tokenAddress, tokenAmount, slippage = null) {
         try {
-            // Get effective gas and slippage based on priority system
-            const effectiveGasPrice = await this.prioritySystem.getEffectiveGasPrice(telegramId, 'sell');
-            const effectiveSlippage = slippage !== null ? slippage : await this.prioritySystem.getEffectiveSlippage(telegramId, 'sell');
+            // Get optimized transaction parameters from cache for instant access
+            let effectiveGasPrice, effectiveSlippage;
             
-            console.log(`🎯 Sell using priority settings: Gas=${Math.round(effectiveGasPrice/1000000000)} Gwei, Slippage=${effectiveSlippage}%`);
+            if (this.transactionSpeedOptimizer) {
+                const optimizedParams = await this.transactionSpeedOptimizer.getOptimizedTransactionParams(telegramId, 'sell');
+                if (optimizedParams) {
+                    effectiveGasPrice = optimizedParams.gasPrice;
+                    effectiveSlippage = slippage !== null ? slippage : optimizedParams.slippage;
+                    // Using instant cache for optimal performance
+                } else {
+                    // Fallback to priority system
+                    effectiveGasPrice = await this.prioritySystem.getEffectiveGasPrice(telegramId, 'sell');
+                    effectiveSlippage = slippage !== null ? slippage : await this.prioritySystem.getEffectiveSlippage(telegramId, 'sell');
+                    // Using fallback priority system
+                }
+            } else {
+                // Legacy priority system
+                effectiveGasPrice = await this.prioritySystem.getEffectiveGasPrice(telegramId, 'sell');
+                effectiveSlippage = slippage !== null ? slippage : await this.prioritySystem.getEffectiveSlippage(telegramId, 'sell');
+                // Using legacy priority system
+            }
 
             const { wallet, approvalStatus } = await this.fastPreflightCheck(telegramId, tokenAddress, tokenAmount);
             
@@ -274,8 +324,34 @@ Current balance: ${monBalance} MON`;
     async sellToken(walletAddress, tokenAddress, tokenAmount, slippage = 1) {
         try {
 
-            // Find user by wallet address
-            const user = await this.db.getUserByWalletAddress(walletAddress);
+            // Find user by wallet address - prioritize cache
+            let user;
+            if (this.cacheService) {
+                // Try to find user in cache by checking all cached users
+                const cachedUsers = await this.cacheService.redis.keys('area51:user:*');
+                for (const key of cachedUsers) {
+                    const cachedUser = await this.cacheService.redis.get(key);
+                    if (cachedUser) {
+                        const userData = JSON.parse(cachedUser);
+                        if (userData.wallet_address === walletAddress) {
+                            user = userData;
+                            break;
+                        }
+                    }
+                }
+                
+                // Fallback to database if not found in cache
+                if (!user) {
+                    user = await this.db.getUserByWalletAddress(walletAddress);
+                    if (user) {
+                        // Cache the user for future use
+                        await this.cacheService.set('user', user.telegram_id, user);
+                    }
+                }
+            } else {
+                user = await this.db.getUserByWalletAddress(walletAddress);
+            }
+            
             if (!user) {
                 throw new Error('User not found for wallet address');
             }
@@ -303,8 +379,16 @@ Current balance: ${monBalance} MON`;
                 };
             }
             
-            // Get user wallet for sender parameter
-            const user = await this.db.getUser(telegramId);
+            // Get user wallet for sender parameter - prioritize cache
+            let user;
+            if (this.cacheService) {
+                user = await this.cacheService.get('user', telegramId, async () => {
+                    return await this.db.getUser(telegramId);
+                });
+            } else {
+                user = await this.db.getUser(telegramId);
+            }
+            
             if (!user) {
                 return {
                     success: false,
@@ -355,7 +439,16 @@ Current balance: ${monBalance} MON`;
             throw new Error('Invalid sell amount');
         }
 
-        const user = await this.db.getUser(telegramId);
+        // Get user - prioritize cache for speed
+        let user;
+        if (this.cacheService) {
+            user = await this.cacheService.get('user', telegramId, async () => {
+                return await this.db.getUser(telegramId);
+            });
+        } else {
+            user = await this.db.getUser(telegramId);
+        }
+        
         if (!user) {
             throw new Error('User not found');
         }
@@ -431,7 +524,16 @@ Current balance: ${monBalance} MON`;
     // Calculate percentage of token balance to sell
     async calculateSellAmount(telegramId, tokenAddress, percentage) {
         try {
-            const user = await this.db.getUser(telegramId);
+            // Get user - prioritize cache for speed
+            let user;
+            if (this.cacheService) {
+                user = await this.cacheService.get('user', telegramId, async () => {
+                    return await this.db.getUser(telegramId);
+                });
+            } else {
+                user = await this.db.getUser(telegramId);
+            }
+            
             if (!user) {
                 throw new Error('User not found');
             }

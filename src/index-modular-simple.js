@@ -45,7 +45,7 @@ class Area51BotModularSimple {
             await this.setupMiddleware();
             this.setupHandlers();
             this.initialized = true;
-            console.log('✅ Modular bot initialized successfully');
+            this.monitoring?.logInfo('Modular bot initialized successfully');
         } catch (error) {
             console.error('❌ Modular bot initialization failed:', error.message);
             throw error;
@@ -78,24 +78,24 @@ class Area51BotModularSimple {
             );
 
             await Promise.race([connectPromise, timeoutPromise]);
-            console.log('✅ Redis connected successfully');
+            this.monitoring?.logInfo('Redis connected successfully');
             
         } catch (error) {
-            console.log('⚠️ Redis connection failed, running without cache:', error.message);
+            this.monitoring?.logWarning('Redis connection failed, running without cache', { error: error.message });
             this.redis = null;
         }
 
         // Initialize monitoring system
         try {
             this.monitoring = new MonitoringSystem(this.database, this.redis, console);
-            console.log('✅ Monitoring system initialized successfully');
+            // Monitoring system initialized - no need to log to itself
         } catch (error) {
             console.error('❌ Failed to initialize monitoring system:', error.message);
             // Fallback to mock monitoring
             this.monitoring = {
-                logInfo: (msg, meta) => console.log(`[INFO] ${msg}`, meta || ''),
-                logError: (msg, error, meta) => console.error(`[ERROR] ${msg}`, error?.message || error, meta || ''),
-                logWarning: (msg, meta) => console.warn(`[WARN] ${msg}`, meta || ''),
+                logInfo: (msg, meta) => {},
+                logError: (msg, error, meta) => {},
+                logWarning: (msg, meta) => {},
                 getTelegramMiddleware: () => (ctx, next) => next(),
                 initializeEndpoints: () => {},
                 setTelegramBot: () => {},
@@ -148,9 +148,6 @@ class Area51BotModularSimple {
         // Initialize services
         this.monorailAPI = new MonorailAPI(this.redis);
         this.walletManager = new WalletManager(this.database, this.monitoring);
-        this.tradingEngine = new TradingEngine(this.database, this.monorailAPI, this.walletManager, this.monitoring);
-        // this.portfolioManager = new PortfolioManager(this.monorailAPI, this.database, this.redis); // Removed - using portfolioService instead
-        this.portfolioService = new (require('./portfolioService'))(this.monorailAPI, this.redis, this.monitoring);
         
         // Initialize Cache Monitor for performance tracking
         if (this.redis) {
@@ -159,7 +156,7 @@ class Area51BotModularSimple {
             this.monitoring.logInfo('Cache Monitor initialized - tracking performance');
         }
         
-        // Initialize Transaction Speed Optimizer for instant settings access
+        // Initialize Transaction Speed Optimizer for instant settings access FIRST
         if (this.redis && this.cacheService) {
             this.transactionSpeedOptimizer = new TransactionSpeedOptimizer(
                 this.cacheService,
@@ -170,7 +167,14 @@ class Area51BotModularSimple {
             // Initialize and pre-warm caches
             await this.transactionSpeedOptimizer.initialize();
             this.monitoring.logInfo('Transaction Speed Optimizer initialized');
+        }
+        
+        // Initialize TradingEngine with cache services
+        this.tradingEngine = new TradingEngine(this.database, this.monorailAPI, this.walletManager, this.monitoring, this.cacheService, this.transactionSpeedOptimizer);
+        // this.portfolioManager = new PortfolioManager(this.monorailAPI, this.database, this.redis); // Removed - using portfolioService instead
+        this.portfolioService = new (require('./portfolioService'))(this.monorailAPI, this.redis, this.monitoring);
             
+        if (this.redis && this.cacheService) {
             this.backgroundRefreshService = new BackgroundRefreshService(
                 this.cacheService,
                 this.database,
@@ -570,7 +574,7 @@ class Area51BotModularSimple {
 
         // Start command handler
         this.bot.start(async (ctx) => {
-            console.log('🚀 /start command received from user:', ctx.from.id);
+            this.monitoring?.logInfo('Start command received', { userId: ctx.from.id });
             await this.navigationHandlers.handleStart(ctx);
         });
 
@@ -578,7 +582,7 @@ class Area51BotModularSimple {
         this.bot.on('text', async (ctx) => {
 
             const userState = await this.tradingCacheOptimizer.getTradingUserState(ctx.from.id);
-            console.log('🔍 User state:', userState);
+            this.monitoring?.logInfo('User state retrieved', { userId: ctx.from.id, state: userState?.state });
             
             if (userState?.state === 'awaiting_custom_buy_amounts') {
                 await this.handleCustomBuyAmountsInput(ctx);
@@ -642,9 +646,14 @@ class Area51BotModularSimple {
         try {
             await this.init();
             
+            // Use existing monitoring system instead of duplicate health server
+            if (this.monitoring) {
+                await this.startMonitoringServer();
+            }
+            
             // Start the bot
             await this.bot.launch();
-            console.log('🚀 Bot launched successfully!');
+            this.monitoring?.logInfo('Bot launched successfully');
             this.monitoring.logInfo('🚀 Modular Area51 Bot started successfully');
             
             // Enable graceful stop
@@ -656,8 +665,82 @@ class Area51BotModularSimple {
             if (this.monitoring) {
                 this.monitoring.logError('Bot start failed', error);
             }
-            console.log('Failed to start bot:', error);
+            this.monitoring?.logError('Failed to start bot', error);
             throw error;
+        }
+    }
+
+    async startMonitoringServer() {
+        try {
+            const express = require('express');
+            const app = express();
+            
+            // Add JSON middleware
+            app.use(express.json());
+            
+            // Add error handling middleware
+            app.use((err, req, res, next) => {
+                console.error('Express error:', err);
+                res.status(500).json({ error: 'Internal server error' });
+            });
+            
+            // Use existing monitoring system endpoints
+            if (this.monitoring && typeof this.monitoring.initializeEndpoints === 'function') {
+                this.monitoring.initializeEndpoints(app);
+            } else {
+                // Fallback basic health endpoint
+                app.get('/health', (req, res) => {
+                    res.json({
+                        status: 'healthy',
+                        timestamp: new Date().toISOString(),
+                        uptime: process.uptime(),
+                        version: '1.0.0'
+                    });
+                });
+                
+                // Fallback metrics endpoint with real Prometheus metrics
+                app.get('/metrics', async (req, res) => {
+                    try {
+                        if (this.monitoring && this.monitoring.metricsMiddleware) {
+                            const metrics = await this.monitoring.metricsMiddleware.metrics.getMetrics();
+                            res.set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
+                            res.send(metrics);
+                        } else {
+                            // Basic fallback metrics
+                            const basicMetrics = `# HELP process_uptime_seconds Process uptime in seconds
+# TYPE process_uptime_seconds gauge
+process_uptime_seconds ${process.uptime()}
+
+# HELP nodejs_heap_size_used_bytes Process heap space size used
+# TYPE nodejs_heap_size_used_bytes gauge
+nodejs_heap_size_used_bytes ${process.memoryUsage().heapUsed}
+
+# HELP nodejs_heap_size_total_bytes Process heap space size total
+# TYPE nodejs_heap_size_total_bytes gauge
+nodejs_heap_size_total_bytes ${process.memoryUsage().heapTotal}
+
+# HELP area51_bot_status Bot status (1 = running, 0 = stopped)
+# TYPE area51_bot_status gauge
+area51_bot_status{app="area51-bot"} 1
+`;
+                            res.set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
+                            res.send(basicMetrics);
+                        }
+                    } catch (error) {
+                        console.error('Metrics error:', error);
+                        res.status(500).send('# Error generating metrics\n');
+                    }
+                });
+            }
+            
+            const port = process.env.MONITORING_PORT || 3001;
+            this.healthServer = app.listen(port, () => {
+                console.log(`Monitoring server started on port ${port}`);
+                this.monitoring?.logInfo(`Monitoring server started on port ${port}`);
+            });
+        } catch (error) {
+            console.error('Failed to start monitoring server:', error);
+            this.monitoring?.logError('Monitoring server startup failed', error);
         }
     }
 
@@ -890,12 +973,12 @@ _Set price tolerance for market volatility:_
             }
             
             const userSettings = await this.database.getUserSettings(ctx.from.id);
-            console.log('🔍 Auto Buy Settings Display - Raw user settings:', {
+            this.monitoring?.logInfo('Auto Buy Settings Display', {
+                userId: ctx.from.id,
                 auto_buy_enabled: userSettings?.auto_buy_enabled,
                 auto_buy_amount: userSettings?.auto_buy_amount,
                 auto_buy_gas: userSettings?.auto_buy_gas,
-                auto_buy_slippage: userSettings?.auto_buy_slippage,
-                userId: ctx.from.id
+                auto_buy_slippage: userSettings?.auto_buy_slippage
             });
             
             const autoBuyEnabled = userSettings?.auto_buy_enabled || false;
@@ -1166,7 +1249,7 @@ _Price variance tolerance for sell transactions:_
             const userId = ctx.from.id;
 
 
-            console.log(`   - value: ${value} (${Math.round(value / 1000000000)} Gwei)`);
+            this.monitoring?.logInfo('Gas value update', { value, gweiValue: Math.round(value / 1000000000) });
 
 
             // Check current settings before update
@@ -1180,7 +1263,8 @@ _Price variance tolerance for sell transactions:_
 
             // Verify the update worked
             const verifySettings = await this.database.getUserSettings(userId);
-            console.log(`✅ Settings AFTER update verification:`, {
+            this.monitoring?.logInfo('Settings verification after update', {
+                userId,
                 auto_buy_gas: verifySettings?.auto_buy_gas,
                 gas_price: verifySettings?.gas_price,
                 [field]: verifySettings?.[field]
@@ -1284,7 +1368,8 @@ _Price variance tolerance for sell transactions:_
 
             // Verify the update worked
             const verifySettings = await this.database.getUserSettings(userId);
-            console.log(`✅ Settings AFTER amount update verification:`, {
+            this.monitoring?.logInfo('Settings verification after amount update', {
+                userId,
                 auto_buy_amount: verifySettings?.auto_buy_amount,
                 auto_buy_gas: verifySettings?.auto_buy_gas,
                 auto_buy_slippage: verifySettings?.auto_buy_slippage
@@ -1339,7 +1424,8 @@ _Price variance tolerance for sell transactions:_
 
             // Verify the update worked
             const verifySettings = await this.database.getUserSettings(userId);
-            console.log(`✅ Settings AFTER gas update verification:`, {
+            this.monitoring?.logInfo('Settings verification after gas update', {
+                userId,
                 auto_buy_amount: verifySettings?.auto_buy_amount,
                 auto_buy_gas: verifySettings?.auto_buy_gas,
                 auto_buy_slippage: verifySettings?.auto_buy_slippage
@@ -1392,7 +1478,8 @@ _Price variance tolerance for sell transactions:_
 
             // Verify the update worked
             const verifySettings = await this.database.getUserSettings(userId);
-            console.log(`✅ Settings AFTER slippage update verification:`, {
+            this.monitoring?.logInfo('Settings verification after slippage update', {
+                userId,
                 auto_buy_amount: verifySettings?.auto_buy_amount,
                 auto_buy_gas: verifySettings?.auto_buy_gas,
                 auto_buy_slippage: verifySettings?.auto_buy_slippage
@@ -1878,7 +1965,7 @@ Send the new percentage for this button:
             }
             
             const userSettings = await this.database.getUserSettings(ctx.from.id);
-            console.log('🔍 Current user settings for gas display:', {
+            this.monitoring?.logInfo('Current user settings for gas display', {
                 auto_buy_gas: userSettings?.auto_buy_gas,
                 gas_price: userSettings?.gas_price,
                 userId: ctx.from.id
