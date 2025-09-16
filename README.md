@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Area51 Telegram Trading Bot
 
 🛸 **Area51** - Enterprise-grade Telegram trading bot for Monad testnet with high-performance architecture supporting 10,000+ concurrent users.
@@ -738,3 +739,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 **🎯 Ready for Production Deployment**
 
 This bot is optimized for high-performance trading with comprehensive monitoring, security, and reliability features.
+=======
+# area51-telegram-bot
+🛸 Area51 Telegram Trading Bot - Advanced Telegram bot for Monad blockchain trading with comprehensive monitoring, caching, and security features
+>>>>>>> 119f5462008a9fcb348358c366901a6686d660cc
