@@ -9,12 +9,13 @@ const httpsAgent = new https.Agent({
 });
 
 class MonorailAPI {
-    constructor(redis = null) {
+    constructor(redis = null, cacheService = null) {
         this.baseURL = 'https://testnet-api.monorail.xyz/v1';
         this.dataUrl = 'https://testnet-api.monorail.xyz/v1';
         this.quoteUrl = 'https://testnet-pathfinder.monorail.xyz/v4';
         this.appId = '2837175649443187';
         this.redis = redis;
+        this.cacheService = cacheService;
         
         // Common token addresses
         this.tokens = {
@@ -219,17 +220,17 @@ class MonorailAPI {
     async getWalletBalance(walletAddress, forceRefresh = false) {
         try {
             // Check Redis cache first unless force refresh
-            if (!forceRefresh && this.redis) {
-                try {
-                    const cachedBalance = await this.redis.get(`area51:wallet_balance:${walletAddress}`);
-                    if (cachedBalance) {
-                        // Balance loaded from cache
-                        return JSON.parse(cachedBalance);
-                    }
-                } catch (redisError) {
-                    console.error('Redis cache read failed:', redisError);
+        if (!forceRefresh && this.cacheService) {
+            try {
+                const cachedBalance = await this.cacheService.get('wallet_balance', walletAddress);
+                if (cachedBalance) {
+                    // Balance loaded from unified cache
+                    return cachedBalance;
                 }
+            } catch (cacheError) {
+                console.error('Unified cache read failed:', cacheError);
             }
+        }
 
             // Fetching fresh wallet balance from API
             
@@ -264,13 +265,13 @@ class MonorailAPI {
                     mon_value: token.mon_value
                 }));
 
-                // Cache the balance data in Redis for 10 minutes
-                if (this.redis) {
+                // Cache the balance data using unified cache for 10 minutes
+                if (this.cacheService) {
                     try {
-                        await this.redis.setEx(`area51:wallet_balance:${walletAddress}`, 600, JSON.stringify(balanceData));
+                        await this.cacheService.set('wallet_balance', walletAddress, balanceData, 600);
                         // Balance cached successfully
-                    } catch (redisError) {
-                        console.error('Redis cache write failed:', redisError);
+                    } catch (cacheError) {
+                        console.error('Unified cache write failed:', cacheError);
                     }
                 }
 
@@ -315,14 +316,14 @@ class MonorailAPI {
         const cacheKey = `mon_balance:${walletAddress}`;
         
         // Always force refresh if forceRefresh is true, otherwise check cache
-        if (!forceRefresh && this.redis) {
+        if (!forceRefresh && this.cacheService) {
             try {
-                const cached = await this.redis.get(cacheKey);
+                const cached = await this.cacheService.get('mon_balance', walletAddress);
                 if (cached) {
-                    return JSON.parse(cached);
+                    return cached;
                 }
             } catch (error) {
-                console.error('Redis cache read failed:', error);
+                console.error('Unified cache read failed:', error);
             }
         }
 
@@ -358,9 +359,9 @@ class MonorailAPI {
                     priceUSD: monToken ? monToken.usd_per_token || monToken.priceUSD : '0'
                 };
 
-                // Cache for 10 minutes
-                if (this.redis) {
-                    await this.redis.setEx(cacheKey, 600, JSON.stringify(result));
+                // Cache for 10 minutes using unified cache
+                if (this.cacheService) {
+                    await this.cacheService.set('mon_balance', walletAddress, result, 600);
                     // MON Balance cached successfully
                 }
 
@@ -379,14 +380,14 @@ class MonorailAPI {
         const cacheKey = `portfolio_value:${walletAddress}`;
         
         // Check cache first unless force refresh
-        if (!forceRefresh && this.redis) {
+        if (!forceRefresh && this.cacheService) {
             try {
-                const cached = await this.redis.get(cacheKey);
+                const cached = await this.cacheService.get('portfolio', walletAddress);
                 if (cached) {
-                    return JSON.parse(cached);
+                    return cached;
                 }
             } catch (error) {
-                console.error('Redis cache read failed:', error);
+                console.error('Unified cache read failed:', error);
             }
         }
 
@@ -402,9 +403,9 @@ class MonorailAPI {
                     timestamp: Date.now()
                 };
 
-                // Cache for 10 minutes
-                if (this.redis) {
-                    await this.redis.setEx(cacheKey, 600, JSON.stringify(result));
+                // Cache for 10 minutes using unified cache
+                if (this.cacheService) {
+                    await this.cacheService.set('portfolio', walletAddress, result, 600);
                     // Portfolio value cached successfully
                 }
 
@@ -423,14 +424,14 @@ class MonorailAPI {
         const cacheKey = 'mon_price_usd';
         
         // Check cache first unless force refresh
-        if (!forceRefresh && this.redis) {
+        if (!forceRefresh && this.cacheService) {
             try {
-                const cached = await this.redis.get(cacheKey);
+                const cached = await this.cacheService.get('mon_price_usd', 'global');
                 if (cached) {
-                    return JSON.parse(cached);
+                    return cached;
                 }
             } catch (error) {
-                console.error('Redis cache read failed:', error);
+                console.error('Unified cache read failed:', error);
             }
         }
 
@@ -446,9 +447,9 @@ class MonorailAPI {
                     timestamp: Date.now()
                 };
 
-                // Cache for 5 minutes
-                if (this.redis) {
-                    await this.redis.setEx(cacheKey, 300, JSON.stringify(result));
+                // Cache for 5 minutes using unified cache
+                if (this.cacheService) {
+                    await this.cacheService.set('mon_price_usd', 'global', result, 300);
                 }
 
                 return result;

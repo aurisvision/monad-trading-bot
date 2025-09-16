@@ -2,11 +2,12 @@
 const UnifiedErrorHandler = require('./UnifiedErrorHandler');
 
 class BotMiddleware {
-    constructor(database, monitoring, redis = null) {
+    constructor(database, monitoring, redis = null, cacheService = null) {
         this.database = database;
         this.errorHandler = new UnifiedErrorHandler(monitoring);
         this.monitoring = monitoring;
         this.redis = redis;
+        this.cacheService = cacheService;
         this.userSessions = new Map();
         this.rateLimitMap = new Map();
     }
@@ -60,20 +61,19 @@ class BotMiddleware {
                 // Check if user exists in database
                 let user = null;
                 
-                // Try Redis cache first
-                if (this.redis) {
+                // Try unified cache first
+                if (this.cacheService) {
                     try {
-                        const cachedUser = await this.redis.get(`area51:user:${userId}`);
-                        if (cachedUser) {
-                            user = JSON.parse(cachedUser);
-                        }
-                    } catch (redisError) {
-                        this.monitoring.logError('Redis auth cache read failed', redisError, { userId });
+                        user = await this.cacheService.get('user', userId, async () => {
+                            return await this.database.getUserByTelegramId(userId);
+                        });
+                    } catch (cacheError) {
+                        this.monitoring.logError('Unified cache auth read failed', cacheError, { userId });
+                        // Fallback to database
+                        user = await this.database.getUserByTelegramId(userId);
                     }
-                }
-
-                // Fallback to database
-                if (!user) {
+                } else {
+                    // Fallback to database
                     user = await this.database.getUserByTelegramId(userId);
                 }
 
@@ -111,12 +111,12 @@ class BotMiddleware {
 
                 this.userSessions.set(userId, sessionData);
 
-                // Store in Redis if available
-                if (this.redis) {
+                // Store in unified cache if available
+                if (this.cacheService) {
                     try {
-                        await this.redis.setEx(`session:${userId}`, 3600, JSON.stringify(sessionData)); // 1 hour TTL
-                    } catch (redisError) {
-                        this.monitoring.logError('Session Redis storage failed', redisError, { userId });
+                        await this.cacheService.set('session', userId, sessionData, 3600); // 1 hour TTL
+                    } catch (cacheError) {
+                        this.monitoring.logError('Session unified cache storage failed', cacheError, { userId });
                     }
                 }
 
@@ -241,3 +241,9 @@ class BotMiddleware {
 }
 
 module.exports = BotMiddleware;
+
+// Factory function for backward compatibility
+module.exports.createBotMiddleware = function(database, monitoring, redis = null, cacheService = null) {
+    const middleware = new BotMiddleware(database, monitoring, redis, cacheService);
+    return middleware.getAllMiddleware();
+};

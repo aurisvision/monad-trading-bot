@@ -666,14 +666,16 @@ class UnifiedMonitoringSystem {
                     FROM users 
                     WHERE last_activity > NOW() - INTERVAL '1 hour'
                 `);
-                this.updateActiveUsers(activeResult.rows[0]?.count || 0);
+                const activeCount = parseInt(activeResult.rows[0]?.count || 0);
+                this.updateActiveUsers(activeCount);
 
                 // Total users
                 const totalResult = await this.database.query(`
                     SELECT COUNT(DISTINCT telegram_id) as count 
                     FROM users
                 `);
-                this.updateTotalUsers(totalResult.rows[0]?.count || 0);
+                const totalCount = parseInt(totalResult.rows[0]?.count || 0);
+                this.updateTotalUsers(totalCount);
             }
         } catch (error) {
             this.logError('Failed to update user metrics', error);

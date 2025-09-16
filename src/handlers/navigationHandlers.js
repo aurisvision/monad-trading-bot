@@ -40,33 +40,9 @@ class NavigationHandlers {
             await this.handleTokenCategory(ctx);
         });
 
-        // Settings handlers
-        this.bot.action('settings', async (ctx) => {
-            await this.showSettings(ctx);
-        });
+        // Settings handlers removed - using updated versions from index-modular-simple.js
 
-        this.bot.action('slippage_settings', async (ctx) => {
-            await ctx.answerCbQuery();
-            await ctx.reply('⚙️ Slippage settings coming soon!');
-        });
-
-        this.bot.action('gas_settings', async (ctx) => {
-            await ctx.answerCbQuery();
-            await ctx.reply('⚙️ Gas settings coming soon!');
-        });
-
-        this.bot.action('notification_settings', async (ctx) => {
-            await ctx.answerCbQuery();
-            await ctx.reply('⚙️ Notification settings coming soon!');
-        });
-
-        this.bot.action('toggle_turbo_mode', async (ctx) => {
-            await this.handleToggleTurboMode(ctx);
-        });
-
-        this.bot.action('confirm_turbo_enable', async (ctx) => {
-            await this.handleConfirmTurboEnable(ctx);
-        });
+        // Old settings handlers removed - using updated versions from index-modular-simple.js
 
         // Manual refresh handler
         this.bot.action('refresh', async (ctx) => {
@@ -88,36 +64,28 @@ class NavigationHandlers {
         const userId = ctx.from.id;
         
         try {
-            // Check Redis cache first for existing user
+            // Check cache first for existing user using unified cache system
             let user = null;
             let fromCache = false;
             
-            if (this.redis) {
+            if (this.cacheService) {
                 try {
-                    const cachedUser = await this.redis.get(`area51:user:${userId}`);
-                    if (cachedUser) {
-                        user = JSON.parse(cachedUser);
+                    user = await this.cacheService.get('user', userId, async () => {
+                        return await this.database.getUserByTelegramId(userId);
+                    });
+                    
+                    if (user) {
                         fromCache = true;
-                        this.monitoring.logInfo('User data loaded from Redis cache', { userId, fromCache: true });
+                        this.monitoring.logInfo('User data loaded from unified cache', { userId, fromCache: true });
                     }
-                } catch (redisError) {
-                    this.monitoring.logError('Redis cache read failed during start', redisError, { userId });
+                } catch (cacheError) {
+                    this.monitoring.logError('Unified cache operation failed during start', cacheError, { userId });
+                    // Fallback to database
+                    user = await this.database.getUserByTelegramId(userId);
                 }
-            }
-            
-            // Fallback to database if no cache
-            if (!user) {
+            } else {
+                // Fallback to database if no cache service
                 user = await this.database.getUserByTelegramId(userId);
-                
-                // Cache user data in Redis if available
-                if (user && this.redis) {
-                    try {
-                        await this.redis.setEx(`area51:user:${userId}`, 86400, JSON.stringify(user)); // 24 hour TTL
-                        this.monitoring.logInfo('User data cached in Redis', { userId, ttl: '24h' });
-                    } catch (redisError) {
-                        this.monitoring.logError('Redis cache write failed', redisError, { userId });
-                    }
-                }
             }
             
             // Create session
@@ -169,14 +137,11 @@ class NavigationHandlers {
             const cacheKey = `area51:main_menu:${userId}`;
             let cachedData = null;
             
-            if (this.redis && !forceRefresh) {
+            if (this.cacheService && !forceRefresh) {
                 try {
-                    const cached = await this.redis.get(cacheKey);
-                    if (cached) {
-                        cachedData = JSON.parse(cached);
-                    }
-                } catch (redisError) {
-                    // Redis error, continue without cache
+                    cachedData = await this.cacheService.get('main_menu', userId);
+                } catch (cacheError) {
+                    this.monitoring.logError('Main menu cache read failed', cacheError, { userId });
                 }
             }
 
@@ -206,12 +171,12 @@ class NavigationHandlers {
                 let monPriceData = { price: '0' };
 
                 // Check individual caches first
-                if (this.redis) {
+                if (this.cacheService) {
                     try {
                         const [cachedBalance, cachedPortfolio, cachedPrice] = await Promise.all([
-                            this.redis.get(`area51:wallet_balance:${user.wallet_address}`),
-                            this.redis.get(`portfolio_value:${user.wallet_address}`),
-                            this.redis.get(`area51:mon_price_usd:global`)
+                            this.cacheService.get('wallet_balance', user.wallet_address),
+                            this.cacheService.get('portfolio', user.wallet_address),
+                            this.cacheService.get('mon_price_usd', 'global')
                         ]);
 
                         if (cachedBalance) {
@@ -261,10 +226,10 @@ class NavigationHandlers {
                 monValueUSD = monBalance * monPriceUSD;
 
                 // Cache the data for 60 seconds for faster access
-                if (this.redis && !forceRefresh) {
+                if (this.cacheService && !forceRefresh) {
                     try {
                         const dataToCache = { monBalance, monPriceUSD, portfolioValueUSD, portfolioValueMON, monValueUSD, user };
-                        await this.redis.setEx(`area51:main_menu:${userId}`, 60, JSON.stringify(dataToCache));
+                        await this.cacheService.set('main_menu', userId, dataToCache, 60);
                     } catch (redisError) {
                         // Cache error, continue without caching
                     }
@@ -315,7 +280,7 @@ class NavigationHandlers {
             try {
                 if (ctx.callbackQuery) {
                     await ctx.editMessageText(text, {
-                        parse_mode: 'Markdown',
+                    parse_mode: 'Markdown',
                         reply_markup: keyboard.reply_markup
                     });
                 } else {
@@ -353,7 +318,7 @@ Explore and trade tokens in the Monad ecosystem:`;
             } catch (error) {
                 await ctx.replyWithMarkdown(categoriesText, keyboard);
             }
-            
+
         } catch (error) {
             this.monitoring.logError('Token categories failed', error, { userId: ctx.from.id });
             await ctx.reply('❌ Error loading token categories.');
@@ -466,45 +431,7 @@ Explore and trade tokens in the Monad ecosystem:`;
         }
     }
 
-    async showSettings(ctx) {
-        try {
-            await ctx.answerCbQuery();
-            
-            // Get user settings to display current Turbo Mode status
-            const userSettings = await this.database.getUserSettings(ctx.from.id);
-            const turboStatus = userSettings.turbo_mode ? '🟢 ON' : '🔴 OFF';
-            
-            const settingsText = `⚙️ *Settings*
-
-Configure your trading preferences:
-
-• Slippage tolerance
-• Gas settings  
-• Turbo Mode: ${turboStatus}
-• Notification preferences`;
-
-            const keyboard = Markup.inlineKeyboard([
-                [Markup.button.callback('📊 Slippage Settings', 'slippage_settings')],
-                [Markup.button.callback('⚡ Gas Settings', 'gas_settings')],
-                [Markup.button.callback('🚀 Toggle Turbo Mode', 'toggle_turbo_mode')],
-                [Markup.button.callback('🔔 Notifications', 'notification_settings')],
-                [Markup.button.callback('🔙 Back to Main', 'back_to_main')]
-            ]);
-
-            try {
-                await ctx.editMessageText(settingsText, {
-                    parse_mode: 'Markdown',
-                    reply_markup: keyboard.reply_markup
-                });
-            } catch (error) {
-                await ctx.replyWithMarkdown(settingsText, keyboard);
-            }
-            
-        } catch (error) {
-            this.monitoring.logError('Settings failed', error, { userId: ctx.from.id });
-            await ctx.reply('❌ Error loading settings.');
-        }
-    }
+    // showSettings method removed - using the updated version from index-modular-simple.js
 
     async showHelp(ctx) {
         try {
@@ -652,8 +579,8 @@ Enter the amount you want to transfer:
 **Example:** \`1.5\``;
 
             await ctx.reply(amountText, {
-                parse_mode: 'Markdown',
-                reply_markup: {
+                    parse_mode: 'Markdown',
+                    reply_markup: {
                     force_reply: true,
                     input_field_placeholder: "1.5"
                 }
@@ -725,12 +652,12 @@ Enter the amount you want to transfer:
                     } catch (cacheError) {
                         this.monitoring.logError('Cache clear failed after transfer', cacheError, { userId });
                     }
-                } else if (this.redis) {
-                    // Fallback to legacy cache clearing
+                } else if (this.cacheService) {
+                    // Use unified cache clearing
                     await Promise.all([
-                        this.redis.del(`area51:wallet_balance:${user.wallet_address}`),
-                        this.redis.del(`area51:user:${userId}`),
-                        this.redis.del(`area51:main_menu:${userId}`)
+                        this.cacheService.del('wallet_balance', user.wallet_address),
+                        this.cacheService.del('user', userId),
+                        this.cacheService.del('main_menu', userId)
                     ]);
                 }
 
@@ -773,7 +700,7 @@ Please try again or check your wallet balance.`);
                 await ctx.reply('❌ Please enter a gas price of at least 50 Gwei.');
                 return;
             }
-            
+
             // Convert to wei (Gwei * 1e9)
             const gasPriceWei = gasPrice * 1000000000;
             
@@ -865,7 +792,7 @@ Please try again or check your wallet balance.`);
             
             // Clear user state
             await this.database.clearUserState(userId);
-            
+
             // Force immediate cache refresh using CacheService
             if (this.cacheService) {
                 await this.cacheService.invalidateUserSettings(userId);
@@ -884,7 +811,7 @@ Please try again or check your wallet balance.`);
                     } else if (type === 'auto_buy') {
                         await this.mainBot.showAutoBuySlippageSettings(ctx);
                     }
-                } catch (error) {
+        } catch (error) {
                     // Navigation error handled silently
                 }
             }, 800);
@@ -904,9 +831,9 @@ Please try again or check your wallet balance.`);
             // Validate amount range
             if (isNaN(amount) || amount < 0.01 || amount > 100) {
                 await ctx.reply('❌ Please enter an amount between 0.01 and 100 MON.');
-                return;
-            }
-            
+            return;
+        }
+
             // Update database with timestamp tracking
             const GasSlippagePriority = require('../utils/gasSlippagePriority');
             const prioritySystem = new GasSlippagePriority(this.database, this.cacheService);
@@ -927,7 +854,7 @@ Please try again or check your wallet balance.`);
             setTimeout(async () => {
                 try {
                     await this.mainBot.showAutoBuyAmount(ctx);
-                } catch (error) {
+        } catch (error) {
                     // Navigation error handled silently
                 }
             }, 800);
@@ -954,9 +881,9 @@ Please try again or check your wallet balance.`);
             // Validate token address format
             if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) {
                 await ctx.reply('❌ Invalid token address format. Please check and try again.');
-                return;
-            }
-            
+            return;
+        }
+
             // Get token info from Monorail API
             const tokenInfo = await this.monorailAPI.getTokenInfo(tokenAddress);
             if (!tokenInfo.success) {
@@ -997,13 +924,13 @@ Please try again or check your wallet balance.`);
                     } catch (cacheError) {
                         this.monitoring.logError('Cache clear failed after auto buy', cacheError, { userId });
                     }
-                } else if (this.redis) {
-                    // Fallback to legacy cache clearing
+                } else if (this.cacheService) {
+                    // Use unified cache clearing
                     await Promise.all([
-                        this.redis.del(`area51:user:${userId}`),
-                        this.redis.del(`area51:wallet_balance:${user.wallet_address}`),
-                        this.redis.del(`area51:portfolio:${userId}`),
-                        this.redis.del(`area51:main_menu:${userId}`)
+                        this.cacheService.del('user', userId),
+                        this.cacheService.del('wallet_balance', user.wallet_address),
+                        this.cacheService.del('portfolio', userId),
+                        this.cacheService.del('main_menu', userId)
                     ]);
                 }
                 
@@ -1078,9 +1005,9 @@ Please try again or contact support if the issue persists.
             // Validate token address format
             if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) {
                 await ctx.reply('❌ Invalid token address format. Please enter a valid Ethereum address.');
-                return;
-            }
-            
+            return;
+        }
+
             // Get token info from Monorail API
             const tokenInfo = await this.monorailAPI.getTokenInfo(tokenAddress);
             if (!tokenInfo.success) {
@@ -1195,7 +1122,7 @@ ${tokenAddress}
                     } catch (editError) {
                         await ctx.reply('❌ Invalid private key or mnemonic phrase. Please try again.');
                     }
-                    return;
+            return;
                 }
             }
             
@@ -1319,13 +1246,13 @@ Proceed with this purchase?`, {
                 } catch (cacheError) {
                     this.monitoring.logError('Manual refresh cache clear failed', cacheError, { userId });
                 }
-            } else if (this.redis) {
-                // Fallback to legacy cache clearing
+            } else if (this.cacheService) {
+                // Use unified cache clearing
                 try {
                     await Promise.all([
-                        this.redis.del(`area51:portfolio:${userId}`),
-                        this.redis.del(`area51:wallet_balance:${user.wallet_address}`),
-                        this.redis.del(`area51:main_menu:${userId}`)
+                        this.cacheService.del('portfolio', userId),
+                        this.cacheService.del('wallet_balance', user.wallet_address),
+                        this.cacheService.del('main_menu', userId)
                     ]);
                     
                     this.monitoring.logInfo('Manual refresh cache cleared (legacy)', { userId, walletAddress: user.wallet_address });
@@ -1383,13 +1310,7 @@ Proceed with this purchase?`, {
         }
     }
 
-    async handleToggleTurboMode(ctx) {
-        // Will be implemented in settings handlers
-    }
-
-    async handleConfirmTurboEnable(ctx) {
-        // Will be implemented in settings handlers
-    }
+    // handleToggleTurboMode and handleConfirmTurboEnable removed - using updated versions from index-modular-simple.js
 
 
 }

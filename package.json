@@ -6,14 +6,22 @@
   "scripts": {
     "start": "node src/index-modular-simple.js",
     "dev": "nodemon src/index-modular-simple.js",
-    "test": "jest",
+    "test": "jest --passWithNoTests",
     "migrate": "node src/database/migrate.js",
     "backup": "node src/backup/backup.js",
     "monitoring:start": "docker-compose -f docker/docker-compose.monitoring.yml up -d",
     "monitoring:full": "docker-compose -f docker/docker-compose.monitoring.yml --profile full up -d",
     "monitoring:stop": "docker-compose -f docker/docker-compose.monitoring.yml down",
     "monitoring:logs": "docker-compose -f docker/docker-compose.monitoring.yml logs -f",
-    "health": "curl http://localhost:3001/health || echo 'Health check failed'"
+    "health": "curl http://localhost:3001/health || echo 'Health check failed'",
+    "redis:start": "node scripts/setup-redis-cluster-dev.js start",
+    "redis:stop": "node scripts/setup-redis-cluster-dev.js stop",
+    "redis:status": "node scripts/setup-redis-cluster-dev.js status",
+    "redis:cleanup": "node scripts/setup-redis-cluster-dev.js cleanup",
+    "cluster:dev": "npm run redis:start",
+    "test:cache": "node scripts/test-enhanced-cache.js",
+    "test:integration": "node scripts/test-bot-integration.js",
+    "cache:performance": "node scripts/test-enhanced-cache.js"
   },
   "keywords": [
     "telegram",

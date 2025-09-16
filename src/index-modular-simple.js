@@ -10,6 +10,7 @@ const MonorailAPI = require('./monorail');
 const CacheService = require('./services/CacheService');
 const UnifiedCacheSystem = require('./services/UnifiedCacheSystem');
 const CacheTransitionAdapter = require('./services/CacheTransitionAdapter');
+const CacheClusterAdapter = require('./services/CacheClusterAdapter');
 const CacheWarmer = require('./utils/cacheWarmer');
 const BackupService = require('./services/BackupService');
 const UnifiedMonitoringSystem = require('./monitoring/UnifiedMonitoringSystem');
@@ -116,22 +117,21 @@ class Area51BotModularSimple {
             this.redisMetrics = new RedisMetrics(this.monitoring);
             this.redisFallbackManager = new RedisFallbackManager(this.redis, this.monitoring);
             
-            // Initialize both cache systems for gradual transition
-            this.cacheService = new CacheService(this.redis, this.monitoring);
-            await this.cacheService.initialize();
+            // Initialize Enhanced Cache Cluster System
+            const cacheConfig = {
+                redis: this.redis, // Pass the existing Redis connection
+                host: process.env.REDIS_HOST || 'localhost',
+                port: parseInt(process.env.REDIS_PORT) || 6379,
+                password: process.env.REDIS_PASSWORD || undefined,
+                db: parseInt(process.env.REDIS_DB) || 0
+            };
             
-            // Initialize unified cache system
+            this.cacheAdapter = new CacheClusterAdapter(cacheConfig, this.monitoring);
+            await this.cacheAdapter.initialize();
+            
+            // Legacy cache services (for backward compatibility during transition)
+            this.cacheService = this.cacheAdapter; // Use adapter as primary cache service
             this.unifiedCache = new UnifiedCacheSystem(this.redis, this.monitoring);
-            await this.unifiedCache.initialize();
-            
-            // Create transition adapter for safe migration
-            this.cacheAdapter = new CacheTransitionAdapter(
-                this.cacheService, 
-                this.unifiedCache, 
-                this.monitoring
-            );
-            
-            this.monitoring.logInfo('Cache transition adapter initialized - safe migration mode active');
 
             // Initialize cache warmer
             this.cacheWarmer = new CacheWarmer(this.database, this.cacheService, this.monitoring);
@@ -163,7 +163,7 @@ class Area51BotModularSimple {
         }
         
         // Initialize services
-        this.monorailAPI = new MonorailAPI(this.redis);
+        this.monorailAPI = new MonorailAPI(this.redis, this.cacheService);
         this.walletManager = new WalletManager(this.database, this.monitoring);
         
         // Cache monitoring is now integrated in the unified cache system
@@ -291,6 +291,12 @@ class Area51BotModularSimple {
         // Use monitoring middleware for Telegram (only if real monitoring system)
         if (this.monitoring.getTelegramMiddleware) {
             this.bot.use(this.monitoring.getTelegramMiddleware());
+        }
+
+        // Use unified bot middleware (rate limiting, sessions, auth, error handling)
+        if (this.database && this.monitoring) {
+            const middlewares = createBotMiddleware(this.database, this.monitoring, this.redis, this.cacheService);
+            middlewares.forEach(middleware => this.bot.use(middleware));
         }
 
         // User activity tracking
