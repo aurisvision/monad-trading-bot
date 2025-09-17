@@ -234,19 +234,27 @@ class MonorailAPI {
 
             // Fetching fresh wallet balance from API
             
+            // Use the original working API endpoint
             const response = await axios.get(`${this.dataUrl}/wallet/${walletAddress}/balances`, {
                 httpsAgent,
-                timeout: 10000, // Increased timeout to 10 seconds
+                timeout: 10000,
                 headers: {
                     'Accept': 'application/json',
                     'User-Agent': 'Area51-Bot/1.0'
                 },
                 validateStatus: function (status) {
-                    return status < 500; // Accept any status code less than 500
+                    return status < 500;
                 }
             });
 
             // API response received
+            console.log('🔍 Wallet Balance API Response:', typeof response.data, response.data);
+
+            // Handle string response (MON balance only)
+            if (typeof response.data === 'string') {
+                console.warn('⚠️ API returned string (MON balance only), no tokens found');
+                return [];
+            }
 
             if (response.data && Array.isArray(response.data)) {
                 // Tokens found in wallet
@@ -285,29 +293,8 @@ class MonorailAPI {
             console.error('API URL:', `${this.dataUrl}/wallet/${walletAddress}/balances`);
             console.error('Full error:', error.response?.data || error);
             
-            // Using fallback data due to API failure
-            return [
-                {
-                    address: '0x1234567890123456789012345678901234567890',
-                    symbol: 'TEST1',
-                    name: 'Test Token 1',
-                    balance: '1000000000000000000',
-                    balance_formatted: '1.0',
-                    decimals: 18,
-                    price: '5.50',
-                    value_usd: '5.50'
-                },
-                {
-                    address: '0x2345678901234567890123456789012345678901',
-                    symbol: 'TEST2', 
-                    name: 'Test Token 2',
-                    balance: '2000000000000000000',
-                    balance_formatted: '2.0',
-                    decimals: 18,
-                    price: '10.25',
-                    value_usd: '20.50'
-                }
-            ];
+            // Return empty array when API fails - no fake data
+            return [];
         }
     }
 
@@ -517,32 +504,6 @@ class MonorailAPI {
         }
     }
 
-    // Get MON price in USD (via USDC)
-    async getMONPriceUSD() {
-        try {
-            const quote = await this.getQuote(
-                this.tokens.MON, 
-                this.tokens.USDC, 
-                '1',
-                '0x0000000000000000000000000000000000000001' // dummy sender for price check
-            );
-            
-            if (quote.success) {
-                return {
-                    success: true,
-                    price: quote.outputAmount
-                };
-            } else {
-                return quote;
-            }
-        } catch (error) {
-            console.error('Error getting MON price in USD:', error);
-            return {
-                success: false,
-                error: 'Failed to get MON price'
-            };
-        }
-    }
 
     // Get current gas price from blockchain with caching
     async getCurrentGasPrice() {
@@ -810,16 +771,10 @@ class MonorailAPI {
             // Sending transaction to blockchain
             const txResponse = await wallet.sendTransaction(transaction);
             
-            // Wait for transaction confirmation
-            const receipt = await txResponse.wait();
+            // For faster response, don't wait for confirmation - just return transaction hash
+            console.log(`🚀 Transaction sent: ${txResponse.hash}`);
             
-            if (receipt.status !== 1) {
-                console.error('Transaction failed with status:', receipt.status);
-                console.error('Receipt:', receipt);
-                throw new Error('Transaction failed on blockchain');
-            }
-            
-            // Swap completed successfully
+            // Swap transaction sent successfully
             return {
                 success: true,
                 txHash: txResponse.hash,
@@ -827,7 +782,7 @@ class MonorailAPI {
                 expectedOutput: quote.outputAmount,
                 priceImpact: quote.priceImpact,
                 route: quote.route,
-                receipt: receipt
+                receipt: null // No receipt since we're not waiting
             };
         } catch (error) {
             console.error('=== SWAP ERROR ===');
@@ -1091,39 +1046,6 @@ class MonorailAPI {
         }
     }
 
-    // Get MON price in USD
-    async getMONPriceUSD() {
-        try {
-            const response = await axios.get(`${this.dataUrl}/symbol/MONUSD`, {
-                httpsAgent,
-                timeout: 5000,
-                headers: {
-                    'Accept': 'application/json',
-                    'User-Agent': 'Area51-Bot/1.0'
-                },
-                validateStatus: function (status) {
-                    return status < 500;
-                }
-            });
-            
-            if (response.data && response.data.price) {
-                return {
-                    success: true,
-                    price: response.data.price
-                };
-            } else {
-                throw new Error('Invalid response format');
-            }
-        } catch (error) {
-            console.error('Error getting MON price:', error.message);
-            // Return fallback price instead of failing
-            return {
-                success: false,
-                price: '0.01', // Fallback price for calculations
-                error: 'MON price temporarily unavailable'
-            };
-        }
-    }
 
 
     // Get tokens by category with Redis caching

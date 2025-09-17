@@ -1,0 +1,124 @@
+/**
+ * Legacy System Bridge - جسر النظام القديم
+ * يوفر توافق مؤقت مع النظام القديم أثناء الانتقال الكامل للنظام الجديد
+ * سيتم حذف هذا الملف بعد اكتمال الترحيل
+ */
+
+const UnifiedTradingEngine = require('../trading/UnifiedTradingEngine');
+const TradingInterface = require('../trading/TradingInterface');
+
+class LegacySystemBridge {
+    constructor(dependencies) {
+        this.dependencies = dependencies;
+        this.unifiedEngine = new UnifiedTradingEngine(dependencies);
+        this.tradingInterface = new TradingInterface(null, dependencies);
+        
+        console.log('🌉 Legacy System Bridge initialized - temporary compatibility layer');
+    }
+
+    /**
+     * 🔄 Bridge old TradingHandlers calls to new UnifiedTradingEngine
+     */
+    async bridgeTradeExecution(type, action, userId, tokenAddress, amount, ctx) {
+        console.log(`🌉 Bridging ${type} ${action} trade to unified system`);
+        
+        try {
+            const result = await this.unifiedEngine.executeTrade({
+                type,
+                action,
+                userId,
+                tokenAddress,
+                amount,
+                ctx
+            });
+            
+            console.log(`✅ Bridge successful: ${type} ${action} completed`);
+            return result;
+            
+        } catch (error) {
+            console.error(`❌ Bridge failed: ${type} ${action}`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * 🔄 Bridge old AutoBuyEngine calls to new system
+     */
+    async bridgeAutoBuy(userId, tokenAddress, amount, userSettings) {
+        console.log(`🌉 Bridging Auto Buy to unified system`);
+        
+        try {
+            const result = await this.tradingInterface.executeAutoBuy(
+                userId, 
+                tokenAddress, 
+                amount, 
+                null, // user will be loaded by system
+                userSettings
+            );
+            
+            console.log(`✅ Auto Buy bridge successful`);
+            return result;
+            
+        } catch (error) {
+            console.error(`❌ Auto Buy bridge failed`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * 🔄 Bridge old portfolio calls to new system
+     */
+    async bridgePortfolioData(userId, walletAddress) {
+        console.log(`🌉 Bridging Portfolio data to unified system`);
+        
+        try {
+            // Use unified data manager for portfolio
+            const portfolioData = await this.unifiedEngine.dataManager.getCachedTokenInfo(walletAddress);
+            
+            console.log(`✅ Portfolio bridge successful`);
+            return portfolioData;
+            
+        } catch (error) {
+            console.error(`❌ Portfolio bridge failed`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * 📊 Get bridge statistics
+     */
+    getBridgeStats() {
+        return {
+            status: 'active',
+            purpose: 'temporary compatibility during migration',
+            unifiedEngineStats: this.unifiedEngine.getDetailedStats(),
+            recommendation: 'Complete migration to remove this bridge'
+        };
+    }
+
+    /**
+     * 🔧 Health check for bridge
+     */
+    async healthCheck() {
+        try {
+            const unifiedHealth = await this.unifiedEngine.healthCheck();
+            
+            return {
+                bridge: 'healthy',
+                unifiedSystem: unifiedHealth.status,
+                redis: unifiedHealth.redis,
+                database: unifiedHealth.database,
+                recommendation: unifiedHealth.status === 'healthy' ? 
+                    'Ready to remove legacy bridge' : 
+                    'Fix unified system issues first'
+            };
+        } catch (error) {
+            return {
+                bridge: 'error',
+                error: error.message
+            };
+        }
+    }
+}
+
+module.exports = LegacySystemBridge;

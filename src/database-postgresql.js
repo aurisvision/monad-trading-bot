@@ -27,7 +27,7 @@ class DatabasePostgreSQL {
             acquireTimeoutMillis: 2000,    // Added acquire timeout
             query_timeout: 5000,
             statement_timeout: 5000,
-            ssl: false
+            ssl: this.getSSLConfig()
         });
 
         // Use shared Redis client or null
@@ -47,6 +47,80 @@ class DatabasePostgreSQL {
             user: 'area51:user:',
             settings: 'area51:user_settings:'
         };
+    }
+
+    // 🔒 SSL Configuration for secure database connections
+    getSSLConfig() {
+        const sslMode = process.env.POSTGRES_SSL_MODE || 'prefer';
+        
+        // Development mode or disabled SSL - allow non-SSL connections
+        if (sslMode === 'disable' || process.env.NODE_ENV === 'development') {
+            console.warn('⚠️  WARNING: SSL disabled for database connection');
+            return false;
+        }
+        
+        // Production mode - enforce SSL (only if SSL is explicitly required)
+        if (process.env.NODE_ENV === 'production' && sslMode === 'require') {
+            const fs = require('fs');
+            
+            try {
+                const sslConfig = {
+                    rejectUnauthorized: process.env.POSTGRES_SSL_REJECT_UNAUTHORIZED !== 'false',
+                    sslmode: 'require'
+                };
+                
+                // Add CA certificate if provided
+                if (process.env.POSTGRES_SSL_CA_CERT_PATH) {
+                    if (fs.existsSync(process.env.POSTGRES_SSL_CA_CERT_PATH)) {
+                        sslConfig.ca = fs.readFileSync(process.env.POSTGRES_SSL_CA_CERT_PATH).toString();
+                    } else {
+                        console.warn('⚠️  SSL CA certificate file not found:', process.env.POSTGRES_SSL_CA_CERT_PATH);
+                    }
+                }
+                
+                // Add client certificate if provided
+                if (process.env.POSTGRES_SSL_CERT_PATH && process.env.POSTGRES_SSL_KEY_PATH) {
+                    if (fs.existsSync(process.env.POSTGRES_SSL_CERT_PATH) && 
+                        fs.existsSync(process.env.POSTGRES_SSL_KEY_PATH)) {
+                        sslConfig.cert = fs.readFileSync(process.env.POSTGRES_SSL_CERT_PATH).toString();
+                        sslConfig.key = fs.readFileSync(process.env.POSTGRES_SSL_KEY_PATH).toString();
+                    } else {
+                        console.warn('⚠️  SSL client certificate files not found');
+                    }
+                }
+                
+                console.log('✅ SSL enabled for database connection');
+                return sslConfig;
+                
+            } catch (error) {
+                console.error('❌ Error configuring SSL for database:', error.message);
+                // Fallback to basic SSL in production
+                return { rejectUnauthorized: false, sslmode: 'require' };
+            }
+        }
+        
+        // Handle different SSL modes
+        switch (sslMode) {
+            case 'disable':
+                console.warn('⚠️  WARNING: SSL disabled for database connection');
+                return false;
+            
+            case 'require':
+                console.log('✅ SSL required for database connection');
+                return { 
+                    rejectUnauthorized: false,
+                    sslmode: 'require' 
+                };
+            
+            case 'prefer':
+            default:
+                // Try SSL first, fallback to non-SSL if server doesn't support it
+                console.log('ℹ️  SSL preferred for database connection (with fallback)');
+                return { 
+                    rejectUnauthorized: false,
+                    sslmode: 'prefer' 
+                };
+        }
     }
 
     async initialize() {
@@ -1014,9 +1088,28 @@ class DatabasePostgreSQL {
         const query = 'DELETE FROM users WHERE telegram_id = $1';
         const result = await this.query(query, [telegramId]);
         
-        // Use CacheService for comprehensive cache clearing if available
+        // Clear all user-related cache entries
         if (this.cacheService) {
-            await this.cacheService.clearUserCache(telegramId);
+            try {
+                // Clear user-specific cache entries
+                await this.cacheService.delete('user', telegramId);
+                await this.cacheService.delete('user_settings', telegramId);
+                await this.cacheService.delete('user_state', telegramId);
+                await this.cacheService.delete('session', telegramId);
+                await this.cacheService.delete('main_menu', telegramId);
+                
+                // Clear wallet-related cache if we have wallet address
+                if (userData?.wallet_address) {
+                    const walletAddress = userData.wallet_address;
+                    await this.cacheService.delete('wallet_balance', walletAddress);
+                    await this.cacheService.delete('portfolio', walletAddress);
+                    await this.cacheService.delete('mon_balance', walletAddress);
+                }
+                
+                console.log('✅ User cache cleared successfully', { telegramId });
+            } catch (cacheError) {
+                console.warn('⚠️ Cache clearing failed (non-critical)', { error: cacheError.message });
+            }
         } else {
             // Fallback to legacy cache invalidation
             await this.invalidateStaticCache(telegramId, 'user');

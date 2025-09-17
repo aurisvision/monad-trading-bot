@@ -486,7 +486,7 @@ npm install
 2. **Configure Environment**
 ```bash
 cp .env.example .env
-# Edit .env with your configuration (see Configuration section)
+# Edit .env with your configuration
 ```
 
 3. **Database Setup**

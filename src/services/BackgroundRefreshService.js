@@ -166,8 +166,15 @@ class BackgroundRefreshService {
             
             // Refresh MON price
             const monPrice = await this.monorailAPI.getMONPriceUSD();
-            if (monPrice) {
+            if (monPrice && monPrice.success) {
                 await this.cache.set('mon_price_usd', 'global', monPrice);
+            } else if (monPrice && monPrice.price) {
+                // Handle different response formats
+                await this.cache.set('mon_price_usd', 'global', {
+                    success: true,
+                    price: monPrice.price,
+                    timestamp: Date.now()
+                });
             }
             
             this.stats.priceRefreshes++;

@@ -1,6 +1,7 @@
 const { ethers } = require('ethers');
 const bip39 = require('bip39');
 const crypto = require('crypto');
+const { secureLogger } = require('./utils/secureLogger');
 
 class WalletManager {
     constructor() {
@@ -39,7 +40,7 @@ class WalletManager {
                 mnemonic
             };
         } catch (error) {
-            console.error('Error generating wallet:', error);
+            secureLogger.error('Error generating wallet', error);
             throw new Error('Failed to generate wallet');
         }
     }
@@ -62,7 +63,7 @@ class WalletManager {
                 encryptedMnemonic: null
             };
         } catch (error) {
-            console.error('Error importing from private key:', error);
+            secureLogger.error('Error importing from private key', error);
             throw new Error('Failed to import from private key: ' + error.message);
         }
     }
@@ -87,7 +88,7 @@ class WalletManager {
                 encryptedMnemonic: encryptedMnemonic
             };
         } catch (error) {
-            console.error('Error importing from mnemonic:', error);
+            secureLogger.error('Error importing from mnemonic', error);
             throw new Error('Failed to import from mnemonic: ' + error.message);
         }
     }
@@ -121,7 +122,7 @@ class WalletManager {
                 encryptedMnemonic: encryptedMnemonic
             };
         } catch (error) {
-            console.error('Error importing wallet:', error);
+            secureLogger.error('Error importing wallet', error);
             throw new Error('Failed to import wallet: ' + error.message);
         }
     }
@@ -138,7 +139,7 @@ class WalletManager {
             
             return new ethers.Wallet(privateKey);
         } catch (error) {
-            console.error('Error getting wallet:', error);
+            secureLogger.error('Error getting wallet', error);
             if (error.message.includes('DECRYPTION_FAILED') || error.message.includes('bad decrypt')) {
                 throw new Error('Wallet decryption failed. Please regenerate your wallet.');
             }
@@ -166,12 +167,12 @@ class WalletManager {
             try {
                 await provider.getNetwork();
             } catch (walletError) {
-                console.error('Wallet connection test failed');
+                secureLogger.warn('Wallet connection test failed', { error: walletError.message });
             }
             
             return connectedWallet;
         } catch (error) {
-            console.error('Error getting wallet with provider:', error);
+            secureLogger.error('Error getting wallet with provider', error);
             throw new Error('Failed to connect wallet to provider');
         }
     }
@@ -185,7 +186,7 @@ class WalletManager {
             encrypted += cipher.final('hex');
             return iv.toString('hex') + ':' + encrypted;
         } catch (error) {
-            console.error('Error encrypting:', error);
+            secureLogger.error('Error encrypting', error);
             throw new Error('Encryption failed');
         }
     }
@@ -216,7 +217,7 @@ class WalletManager {
                 return encryptedData;
             }
         } catch (error) {
-            console.error('Error decrypting:', error);
+            secureLogger.error('Error decrypting', error);
             // Return a placeholder for failed decryption
             return 'DECRYPTION_FAILED_PLEASE_REGENERATE_WALLET';
         }
@@ -232,24 +233,24 @@ class WalletManager {
         try {
             // Validate address format first
             if (!walletAddress || typeof walletAddress !== 'string') {
-                console.error('Invalid wallet address provided:', walletAddress);
+                secureLogger.warn('Invalid wallet address provided', { addressType: typeof walletAddress });
                 return '0.000000';
             }
 
             if (!ethers.isAddress(walletAddress)) {
-                console.error('Invalid wallet address format:', walletAddress);
+                secureLogger.warn('Invalid wallet address format', { address: 'REDACTED' });
                 return '0.000000';
             }
 
             const provider = new ethers.JsonRpcProvider(process.env.MONAD_RPC_URL, {
-                chainId: 10143,
+                chainId: parseInt(process.env.CHAIN_ID) || 41454,
                 name: 'monad-testnet'
             });
             
             const balance = await provider.getBalance(walletAddress);
             return ethers.formatEther(balance);
         } catch (error) {
-            console.error('Error getting balance:', error);
+            secureLogger.error('Error getting balance', error);
             return '0.000000'; // Return 0 instead of throwing error
         }
     }
@@ -299,7 +300,7 @@ class WalletManager {
                 gasPrice: gasPrice.toString()
             };
         } catch (error) {
-            console.error('Error sending MON:', error);
+            secureLogger.error('Error sending MON', error);
             return {
                 success: false,
                 error: error.message
@@ -313,7 +314,7 @@ class WalletManager {
             const wallet = await this.getWallet(encryptedPrivateKey);
             return await wallet.signTransaction(transaction);
         } catch (error) {
-            console.error('Error signing transaction:', error);
+            secureLogger.error('Error signing transaction', error);
             throw new Error('Failed to sign transaction');
         }
     }
@@ -324,7 +325,7 @@ class WalletManager {
             const provider = new ethers.JsonRpcProvider(process.env.MONAD_RPC_URL);
             return await provider.getTransactionReceipt(txHash);
         } catch (error) {
-            console.error('Error getting transaction receipt:', error);
+            secureLogger.error('Error getting transaction receipt', error);
             return null;
         }
     }
@@ -335,7 +336,7 @@ class WalletManager {
             const provider = new ethers.JsonRpcProvider(process.env.MONAD_RPC_URL);
             return await provider.waitForTransaction(txHash, confirmations);
         } catch (error) {
-            console.error('Error waiting for transaction:', error);
+            secureLogger.error('Error waiting for transaction', error);
             throw new Error('Transaction confirmation failed');
         }
     }

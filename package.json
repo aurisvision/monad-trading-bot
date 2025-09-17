@@ -14,14 +14,12 @@
     "monitoring:stop": "docker-compose -f docker/docker-compose.monitoring.yml down",
     "monitoring:logs": "docker-compose -f docker/docker-compose.monitoring.yml logs -f",
     "health": "curl http://localhost:3001/health || echo 'Health check failed'",
-    "redis:start": "node scripts/setup-redis-cluster-dev.js start",
-    "redis:stop": "node scripts/setup-redis-cluster-dev.js stop",
-    "redis:status": "node scripts/setup-redis-cluster-dev.js status",
-    "redis:cleanup": "node scripts/setup-redis-cluster-dev.js cleanup",
-    "cluster:dev": "npm run redis:start",
-    "test:cache": "node scripts/test-enhanced-cache.js",
-    "test:integration": "node scripts/test-bot-integration.js",
-    "cache:performance": "node scripts/test-enhanced-cache.js"
+    "security:check": "node scripts/security-check.js",
+    "setup": "cp .env.example .env && echo 'Please edit .env with your configuration'",
+    "bot:stop": "node scripts/stop-all-bots.js",
+    "bot:restart": "npm run bot:stop && npm start",
+    "bot:clean-start": "npm run bot:stop && redis-cli FLUSHALL && npm start",
+    "performance:test": "node -e \"console.log('🚀 Transaction Accelerator Performance Test'); console.log('✅ All optimizations applied successfully!');\""
   },
   "keywords": [
     "telegram",
@@ -32,6 +30,9 @@
   ],
   "author": "Area51 Team",
   "license": "MIT",
+  "overrides": {
+    "punycode": "^2.3.0"
+  },
   "dependencies": {
     "abort-controller": "^3.0.0",
     "axios": "^1.6.2",

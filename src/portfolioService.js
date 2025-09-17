@@ -33,15 +33,11 @@ class PortfolioService {
      */
     async fetchPortfolioFromAPI(walletAddress) {
         try {
-            // Use cached balance data instead of forcing fresh API call
-            const response = await this.monorailAPI.getWalletBalance(walletAddress, false);
+            // Direct call to monorailAPI.getWalletBalance (no duplication)
+            const tokens = await this.monorailAPI.getWalletBalance(walletAddress, false);
             
-            if (!response || !Array.isArray(response)) {
-                throw new Error('Invalid API response');
-            }
-
-            // Filter and transform tokens
-            const filteredTokens = response
+            // Filter and transform tokens for portfolio display
+            const filteredTokens = tokens
                 .filter(token => {
                     // Exclude MON (native coin with address 0x000...000)
                     const isNotMON = token.address !== '0x0000000000000000000000000000000000000000';
@@ -66,7 +62,7 @@ class PortfolioService {
             return filteredTokens;
         } catch (error) {
             this.monitoring?.logError('Portfolio API fetch failed', error);
-            throw error;
+            return [];
         }
     }
 

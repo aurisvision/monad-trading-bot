@@ -1,12 +1,14 @@
 // Simplified Modular Area51 Bot - Working Version
-require('dotenv').config({ path: '.env.production' });
+// Load environment configuration from .env file
+require('dotenv').config();
+console.log('🔧 Loaded environment from: .env');
 
 const { Telegraf, Markup } = require('telegraf');
 const Database = require('./database-postgresql');
 const WalletManager = require('./wallet');
-const TradingEngine = require('./trading');
+// Legacy trading system - REPLACED by unified system
+// const TradingEngine = require('./trading');
 const MonorailAPI = require('./monorail');
-// const PortfolioManager = require('./portfolio'); // Removed - using portfolioService instead
 const CacheService = require('./services/CacheService');
 const UnifiedCacheSystem = require('./services/UnifiedCacheSystem');
 const CacheTransitionAdapter = require('./services/CacheTransitionAdapter');
@@ -16,6 +18,18 @@ const BackupService = require('./services/BackupService');
 const UnifiedMonitoringSystem = require('./monitoring/UnifiedMonitoringSystem');
 const { createBotMiddleware } = require('./middleware/botMiddleware');
 const UnifiedErrorHandler = require('./middleware/UnifiedErrorHandler');
+const TransactionMiddleware = require('./middleware/transactionMiddleware');
+
+// NEW UNIFIED TRADING SYSTEM
+const TradingInterface = require('./trading/TradingInterface');
+
+// Comprehensive Tracking System - DISABLED
+// const ComprehensiveTracker = require('./monitoring/ComprehensiveTracker');
+// const DatabaseTracker = require('./monitoring/DatabaseTracker');
+// const CacheTracker = require('./monitoring/CacheTracker');
+// const ApiTracker = require('./monitoring/ApiTracker');
+// const BotTracker = require('./monitoring/BotTracker');
+// const TrackingDashboard = require('./monitoring/TrackingDashboard');
 // const { RateLimiter, SecurityEnhancements, SessionManager, MemoryRateLimiter, MemorySessionManager } = require('./rateLimiter');
 const Redis = require('redis');
 
@@ -23,14 +37,17 @@ const Redis = require('redis');
 const RedisMetrics = require('./services/RedisMetrics');
 const RedisFallbackManager = require('./services/RedisFallbackManager');
 const BackgroundRefreshService = require('./services/BackgroundRefreshService');
-const TransactionSpeedOptimizer = require('./utils/transactionSpeedOptimizer');
 
 // Import handler modules
 const WalletHandlers = require('./handlers/walletHandlers');
-const TradingHandlers = require('./handlers/tradingHandlers');
+// Legacy trading handlers - REPLACED by unified system
+// const TradingHandlers = require('./handlers/tradingHandlers');
 const PortfolioHandlers = require('./handlers/portfolioHandlers');
 const NavigationHandlers = require('./handlers/navigationHandlers');
-const TradingCacheOptimizer = require('./utils/tradingCacheOptimizer');
+// Legacy trading optimizers - REPLACED by unified system
+// const TradingCacheOptimizer = require('./utils/tradingCacheOptimizer');
+const StateManager = require('./utils/stateManager');
+// const TransactionAccelerator = require('./utils/transactionAccelerator');
 
 class Area51BotModularSimple {
     constructor() {
@@ -168,35 +185,40 @@ class Area51BotModularSimple {
         
         // Cache monitoring is now integrated in the unified cache system
         
-        // Initialize Transaction Speed Optimizer for instant settings access FIRST
-        if (this.redis && this.cacheService) {
-            this.transactionSpeedOptimizer = new TransactionSpeedOptimizer(
-                this.cacheService,
-                this.database,
-                this.monitoring
-            );
-            
-            // Initialize and pre-warm caches
-            await this.transactionSpeedOptimizer.initialize();
-            this.monitoring.logInfo('Transaction Speed Optimizer initialized');
-        }
+        // NEW UNIFIED TRADING SYSTEM - Replace legacy trading handlers
+        const tradingDependencies = {
+            redis: this.redis,
+            database: this.database,
+            monorailAPI: this.monorailAPI,
+            walletManager: this.walletManager,
+            monitoring: this.monitoring
+        };
         
-        // Initialize TradingEngine with cache services
-        this.tradingEngine = new TradingEngine(this.database, this.monorailAPI, this.walletManager, this.monitoring, this.cacheService, this.transactionSpeedOptimizer);
+        this.tradingInterface = new TradingInterface(this.bot, tradingDependencies);
+        console.log('✅ Unified Trading System initialized successfully');
+        
         // this.portfolioManager = new PortfolioManager(this.monorailAPI, this.database, this.redis); // Removed - using portfolioService instead
         this.portfolioService = new (require('./portfolioService'))(this.monorailAPI, this.redis, this.monitoring);
             
         if (this.redis && this.cacheService) {
+            // Initialize background refresh service
             this.backgroundRefreshService = new BackgroundRefreshService(
                 this.cacheService,
-                this.database,
-                this.monorailAPI,
+                this.database, 
+                this.monorailAPI, 
                 this.monitoring
             );
-            
-            // Start background refresh service
             this.backgroundRefreshService.start();
-            this.monitoring.logInfo('Background refresh service started');
+            this.monitoring?.logInfo('Background refresh service started', {});
+
+            // Initialize state manager for automatic cleanup
+            this.stateManager = new StateManager(this.database, this.cacheService, this.monitoring);
+            this.stateManager.startAutoCleanup(5); // Clean every 5 minutes
+            this.monitoring?.logInfo('State manager initialized', {});
+
+            // Legacy transaction accelerator - REPLACED by unified system
+            // this.transactionAccelerator = new TransactionAccelerator(this.database, this.cacheService, this.monitoring);
+            // this.monitoring?.logInfo('Transaction accelerator initialized', {});
         }
         
         // Initialize security and rate limiting - DISABLED
@@ -227,18 +249,7 @@ class Area51BotModularSimple {
             this.cacheService
         );
         
-        this.tradingHandlers = new TradingHandlers(
-            this.bot, 
-            this.database, 
-            this.tradingEngine, 
-            this.monorailAPI, 
-            this.monitoring, 
-            this.walletManager, 
-            this.portfolioService,
-            this.redis,
-            this.cacheService,
-            this.transactionSpeedOptimizer
-        );
+        // Unified Trading System already initialized above
         
         this.portfolioHandlers = new PortfolioHandlers(
             this.bot, 
@@ -259,12 +270,12 @@ class Area51BotModularSimple {
             this.cacheService
         );
         
-        // Initialize TradingCacheOptimizer
-        this.tradingCacheOptimizer = new TradingCacheOptimizer(
-            this.database,
-            this.cacheService,
-            this.monitoring
-        );
+        // Legacy trading cache optimizer - REPLACED by unified system
+        // this.tradingCacheOptimizer = new TradingCacheOptimizer(
+        //     this.database,
+        //     this.cacheService,
+        //     this.monitoring
+        // );
         
         this.monitoring.logInfo('All components initialized successfully');
     }
@@ -298,6 +309,13 @@ class Area51BotModularSimple {
             const middlewares = createBotMiddleware(this.database, this.monitoring, this.redis, this.cacheService);
             middlewares.forEach(middleware => this.bot.use(middleware));
         }
+
+        // Legacy transaction acceleration middleware - REPLACED by unified system
+        // if (this.transactionAccelerator) {
+        //     const transactionMiddleware = new TransactionMiddleware(this.transactionAccelerator, this.monitoring);
+        //     this.bot.use(transactionMiddleware.middleware());
+        //     console.log('🚀 Transaction acceleration middleware enabled');
+        // }
 
         // User activity tracking
         this.bot.use(async (ctx, next) => {
@@ -369,8 +387,11 @@ class Area51BotModularSimple {
         // Setup handlers for each module
         this.navigationHandlers.setupHandlers();
         this.walletHandlers.setupHandlers();
-        this.tradingHandlers.setupHandlers();
+        // Legacy trading handlers - REPLACED by unified system (handlers setup in TradingInterface constructor)
+        // this.tradingHandlers.setupHandlers();
         this.portfolioHandlers.setupHandlers();
+        
+        console.log('✅ All handlers setup complete (including unified trading system)');
     }
 
     setupAdditionalHandlers() {
@@ -642,7 +663,7 @@ class Area51BotModularSimple {
         // Text message handler for custom input
         this.bot.on('text', async (ctx) => {
 
-            const userState = await this.tradingCacheOptimizer.getTradingUserState(ctx.from.id);
+            const userState = await this.database.getUserState(ctx.from.id);
             this.monitoring?.logInfo('User state retrieved', { userId: ctx.from.id, state: userState?.state });
             
             if (userState?.state === 'awaiting_custom_buy_amounts') {
@@ -660,8 +681,15 @@ class Area51BotModularSimple {
                 const buttonIndex = parseInt(userState.state.split('_').pop());
                 await this.handleEditSellPercentageInput(ctx, buttonIndex);
             } else {
-                // Delegate to navigationHandlers for all other states
-                await this.navigationHandlers.handleTextMessage(ctx);
+                // Handle token address input for auto buy
+                const message = ctx.message.text.trim();
+                if (/^0x[a-fA-F0-9]{40}$/.test(message)) {
+                    // Valid token address - trigger auto buy
+                    await this.navigationHandlers.processTokenAddress(ctx, message);
+                } else {
+                    // Delegate to navigationHandlers for all other states
+                    await this.navigationHandlers.handleTextMessage(ctx);
+                }
             }
         });
     }

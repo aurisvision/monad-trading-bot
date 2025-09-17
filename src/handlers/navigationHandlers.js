@@ -54,6 +54,11 @@ class NavigationHandlers {
             await this.showHelp(ctx);
         });
 
+        // Transfer handler
+        this.bot.action('transfer', async (ctx) => {
+            await this.handleTransfer(ctx);
+        });
+
         // Text message handler
         this.bot.on('text', async (ctx) => {
             await this.handleTextMessage(ctx);
@@ -180,7 +185,22 @@ class NavigationHandlers {
                         ]);
 
                         if (cachedBalance) {
-                            const balanceData = JSON.parse(cachedBalance);
+                            let balanceData;
+                            try {
+                                // Handle both string and object formats
+                                balanceData = typeof cachedBalance === 'string' 
+                                    ? JSON.parse(cachedBalance) 
+                                    : cachedBalance;
+                                
+                                // Ensure balanceData is an array
+                                if (!Array.isArray(balanceData)) {
+                                    console.warn('⚠️ Cached balance data is not an array:', typeof balanceData);
+                                    balanceData = [];
+                                }
+                            } catch (parseError) {
+                                console.warn('⚠️ Failed to parse cached balance data:', parseError.message);
+                                balanceData = [];
+                            }
                             const monToken = balanceData.find(token => 
                                 token.address === '0x0000000000000000000000000000000000000000' || 
                                 token.symbol === 'MON'
@@ -199,7 +219,15 @@ class NavigationHandlers {
                         }
 
                         if (cachedPrice) {
-                            monPriceData = JSON.parse(cachedPrice);
+                            try {
+                                // Handle both string and object formats
+                                monPriceData = typeof cachedPrice === 'string' 
+                                    ? JSON.parse(cachedPrice) 
+                                    : cachedPrice;
+                            } catch (parseError) {
+                                console.warn('⚠️ Failed to parse cached price data:', parseError.message);
+                                monPriceData = { price: '0' };
+                            }
                         }
                     } catch (error) {
                         console.error('Cache read error:', error);
@@ -261,6 +289,18 @@ class NavigationHandlers {
                 return;
             }
 
+            // Use Unified Trading System for data fetching
+            const TradingInterface = require('../trading/TradingInterface');
+            const tradingDependencies = {
+                redis: this.redis,
+                database: this.database,
+                monorailAPI: this.monorailAPI,
+                walletManager: this.walletManager,
+                monitoring: this.monitoring
+            };
+            
+            const tradingInterface = new TradingInterface(null, tradingDependencies);
+            
             const [monBalanceData, portfolioValueData, monPriceData] = await Promise.all([
                 this.monorailAPI.getMONBalance(user.wallet_address, false),
                 this.monorailAPI.getPortfolioValue(user.wallet_address, false),
@@ -433,6 +473,47 @@ Explore and trade tokens in the Monad ecosystem:`;
 
     // showSettings method removed - using the updated version from index-modular-simple.js
 
+    async handleTransfer(ctx) {
+        const userId = ctx.from.id;
+        
+        try {
+            await ctx.answerCbQuery();
+            
+            // Check if user exists
+            const user = await this.database.getUserByTelegramId(userId);
+            if (!user) {
+                await ctx.reply('❌ Please start the bot first with /start');
+                return;
+            }
+
+            // Get current MON balance
+            const currentBalanceData = await this.monorailAPI.getMONBalance(user.wallet_address);
+            const currentBalance = parseFloat(currentBalanceData.balance || '0');
+            
+            await ctx.editMessageText(`📤 *Transfer MON*
+
+💰 **Your Balance:** *${currentBalance.toFixed(4)} MON*
+
+Please enter the recipient address:
+
+**Example:** \`0x1234567890123456789012345678901234567890\``, {
+                parse_mode: 'Markdown',
+                reply_markup: {
+                    inline_keyboard: [
+                        [{ text: '🏠 Back to Main', callback_data: 'main' }]
+                    ]
+                }
+            });
+
+            // Set user state to await address
+            await this.database.setUserState(userId, 'awaiting_transfer_address');
+            
+        } catch (error) {
+            this.monitoring.logError('Transfer handler failed', error, { userId });
+            await ctx.reply('❌ Error starting transfer. Please try again.');
+        }
+    }
+
     async showHelp(ctx) {
         try {
             await ctx.answerCbQuery();
@@ -497,6 +578,12 @@ Explore and trade tokens in the Monad ecosystem:`;
         }
 
         // Then check if user has a specific state that needs processing
+        // Handle direct commands
+        if (messageText === '/transfer') {
+            await this.handleTransfer(ctx);
+            return;
+        }
+
         if (userState && userState.state) {
             // Process based on current user state
             switch (userState.state) {
@@ -874,15 +961,20 @@ Please try again or check your wallet balance.`);
 
 🔄 *Processing transaction...*`, { parse_mode: 'Markdown' });
             
-            // Initialize AutoBuyEngine with correct parameters
-            const AutoBuyEngine = require('../utils/autoBuyEngine');
-            const autoBuyEngine = new AutoBuyEngine(this.database, this.monorailAPI, this.walletManager, this.monitoring);
+            // Use NEW UNIFIED TRADING SYSTEM for Auto Buy with preloaded data
+            const TradingInterface = require('../trading/TradingInterface');
+            const tradingDependencies = {
+                redis: this.redis,
+                database: this.database,
+                monorailAPI: this.monorailAPI,
+                walletManager: this.walletManager,
+                monitoring: this.monitoring
+            };
             
-            // Validate token address format
-            if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) {
-                await ctx.reply('❌ Invalid token address format. Please check and try again.');
-            return;
-        }
+            const tradingInterface = new TradingInterface(null, tradingDependencies);
+            
+            // Execute auto buy trade with preloaded user and settings for speed
+            const result = await tradingInterface.executeAutoBuy(userId, tokenAddress, userSettings.auto_buy_amount, user, userSettings);
 
             // Get token info from Monorail API
             const tokenInfo = await this.monorailAPI.getTokenInfo(tokenAddress);
@@ -913,32 +1005,39 @@ Please try again or check your wallet balance.`);
                 return;
             }
             
-            // Execute auto buy transaction using AutoBuyEngine
-            const result = await autoBuyEngine.executeBuy(userId, tokenAddress, buyAmount);
+            // Execute auto buy transaction using UNIFIED TRADING SYSTEM
+            const tradeResult = await tradingInterface.engine.executeTrade({
+                type: 'auto',
+                action: 'buy',
+                userId: userId,
+                tokenAddress: tokenAddress,
+                amount: buyAmount,
+                ctx: ctx
+            });
             
-            if (result.success) {
+            if (tradeResult.success) {
                 // Clear cache after successful transaction using CacheService
                 if (this.cacheService) {
                     try {
-                        await this.cacheService.invalidateAfterBuy(userId, user.wallet_address);
+                        if (typeof this.cacheService.invalidateAfterBuy === 'function') {
+                            await this.cacheService.invalidateAfterBuy(userId, user.wallet_address);
+                        } else {
+                            // Fallback: clear individual cache entries
+                            await this.cacheService.delete('wallet_balance', user.wallet_address);
+                            await this.cacheService.delete('portfolio', user.wallet_address);
+                        }
                     } catch (cacheError) {
-                        this.monitoring.logError('Cache clear failed after auto buy', cacheError, { userId });
+                        console.warn('Cache cleanup failed after auto buy:', cacheError);
                     }
-                } else if (this.cacheService) {
-                    // Use unified cache clearing
-                    await Promise.all([
-                        this.cacheService.del('user', userId),
-                        this.cacheService.del('wallet_balance', user.wallet_address),
-                        this.cacheService.del('portfolio', userId),
-                        this.cacheService.del('main_menu', userId)
-                    ]);
                 }
                 
-                // Get token details for success message
-                const tokenSymbol = tokenInfo.token?.symbol || 'Unknown';
-                const explorerUrl = `https://testnet.monadexplorer.com/tx/${result.transactionHash}`;
+                // Calculate explorer URL
+                const explorerUrl = `https://testnet.monadexplorer.com/tx/${tradeResult.txHash}`;
                 
-                // Edit the original message with detailed success info
+                // Get token symbol for display
+                const tokenSymbol = tokenInfo.token?.symbol || 'Unknown';
+                
+                // Edit the original message with success info
                 await ctx.telegram.editMessageText(
                     ctx.chat.id,
                     message.message_id,
@@ -952,7 +1051,7 @@ Please try again or check your wallet balance.`);
 📊 *Slippage:* ${userSettings.auto_buy_slippage || 5}%
 
 🔗 *Transaction Hash:*
-\`${result.transactionHash}\`
+\`${tradeResult.txHash}\`
 
 [View on Explorer](${explorerUrl})
 
@@ -979,12 +1078,12 @@ Please try again or check your wallet balance.`);
 
 ❌ *Transaction Failed*
 
-Error: ${result.error}`,
+Error: ${tradeResult.error}`,
                     { parse_mode: 'Markdown' }
                 );
                 
                 // Log failed auto buy
-                console.error(`❌ Auto Buy Failed - User: ${userId}, Token: ${tokenAddress}, Error: ${result.error}`);
+                console.error(`❌ Auto Buy Failed - User: ${userId}, Token: ${tokenAddress}, Error: ${tradeResult.error}`);
             }
             
         } catch (error) {
@@ -1008,12 +1107,23 @@ Please try again or contact support if the issue persists.
             return;
         }
 
-            // Get token info from Monorail API
-            const tokenInfo = await this.monorailAPI.getTokenInfo(tokenAddress);
-            if (!tokenInfo.success) {
-                await ctx.reply('❌ Token not found or not supported. Please check the address and try again.');
-                return;
-            }
+            // Get token info using Unified Trading System
+        const TradingInterface = require('../trading/TradingInterface');
+        const tradingDependencies = {
+            redis: this.redis,
+            database: this.database,
+            monorailAPI: this.monorailAPI,
+            walletManager: this.walletManager,
+            monitoring: this.monitoring
+        };
+        
+        const tradingInterface = new TradingInterface(null, tradingDependencies);
+        const tokenInfo = await this.monorailAPI.getTokenInfo(tokenAddress);
+        
+        if (!tokenInfo || !tokenInfo.success) {
+            await ctx.reply('❌ Token not found or not supported. Please check the address and try again.');
+            return;
+        }
             
             // Clear any existing user state and store token info for buy actions
             await this.database.clearUserState(userId);
@@ -1023,8 +1133,24 @@ Please try again or contact support if the issue persists.
                 tokenName: tokenInfo.token.name || 'Unknown Token'
             });
             
-            // Get user wallet and MON balance
+            // Get user wallet and settings
             const user = await this.database.getUserByTelegramId(userId);
+            const userSettings = await this.database.getUserSettings(userId);
+            
+            if (!user) {
+                await ctx.reply('❌ Please start the bot first with /start');
+                return;
+            }
+            
+            // Check if auto buy is enabled and execute immediately
+            if (userSettings && userSettings.auto_buy_enabled === true) {
+                console.log(`🤖 Auto Buy is enabled for user ${userId}, executing instant auto buy`);
+                await this.executeInstantAutoBuy(ctx, tokenAddress, user, userSettings);
+                return;
+            } else {
+                console.log(`📋 Auto Buy is disabled for user ${userId}, showing manual buy interface`);
+            }
+            
             const monBalanceData = await this.monorailAPI.getMONBalance(user.wallet_address);
             const monBalance = parseFloat(monBalanceData.balance || '0');
             
@@ -1058,8 +1184,7 @@ ${tokenAddress}
 
 *💡 Select amount of MON to spend:*`;
 
-            // Get user's custom buy amounts
-            const userSettings = await this.database.getUserSettings(userId);
+            // Get user's custom buy amounts (userSettings already loaded above)
             let customAmounts = userSettings?.custom_buy_amounts || '0.1,0.5,1,5';
             
             // Handle case where custom_buy_amounts might be null or not a string

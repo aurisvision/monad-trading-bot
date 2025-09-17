@@ -1,5 +1,7 @@
 // Wallet Management Handlers
 const { Markup } = require('telegraf');
+const { ethers } = require('ethers');
+const { secureLogger } = require('../utils/secureLogger');
 const InterfaceUtils = require('../utils/interfaceUtils');
 
 class WalletHandlers {
@@ -86,6 +88,24 @@ Manage your wallet securely:`;
             await ctx.answerCbQuery();
             const userId = ctx.from.id;
             
+            // Clear any existing cache for this user first
+            if (this.cacheService) {
+                try {
+                    if (typeof this.cacheService.clearUserCache === 'function') {
+                        await this.cacheService.clearUserCache(userId);
+                    } else {
+                        // Fallback to individual delete operations
+                        await this.cacheService.delete('user', userId);
+                        await this.cacheService.delete('user_settings', userId);
+                        await this.cacheService.delete('user_state', userId);
+                        await this.cacheService.delete('main_menu', userId);
+                        await this.cacheService.delete('portfolio', userId);
+                    }
+                } catch (cacheError) {
+                    console.warn('Cache clearing failed before wallet generation (non-critical):', cacheError.message);
+                }
+            }
+            
             // Ensure user exists in database before wallet generation
             await this.database.createUser(ctx.from.id, ctx.from.username || 'Unknown');
             
@@ -96,6 +116,16 @@ Manage your wallet securely:`;
             const wallet = await walletManager.generateWallet();
             
             await this.database.updateUserWallet(userId, wallet.address, wallet.encryptedPrivateKey, wallet.mnemonic);
+            
+            // Clear cache again after wallet creation to ensure fresh data
+            if (this.cacheService) {
+                try {
+                    await this.cacheService.delete('user', userId);
+                    await this.cacheService.delete('main_menu', userId);
+                } catch (cacheError) {
+                    console.warn('Cache clearing failed after wallet generation (non-critical):', cacheError.message);
+                }
+            }
             
             // Use wallet success interface with Start Trading button
             try {
@@ -124,6 +154,25 @@ Manage your wallet securely:`;
     async handleImportWallet(ctx) {
         try {
             await ctx.answerCbQuery();
+            const userId = ctx.from.id;
+            
+            // Clear any existing cache for this user first
+            if (this.cacheService) {
+                try {
+                    if (typeof this.cacheService.clearUserCache === 'function') {
+                        await this.cacheService.clearUserCache(userId);
+                    } else {
+                        // Fallback to individual delete operations
+                        await this.cacheService.delete('user', userId);
+                        await this.cacheService.delete('user_settings', userId);
+                        await this.cacheService.delete('user_state', userId);
+                        await this.cacheService.delete('main_menu', userId);
+                        await this.cacheService.delete('portfolio', userId);
+                    }
+                } catch (cacheError) {
+                    console.warn('Cache clearing failed before wallet import (non-critical):', cacheError.message);
+                }
+            }
             
             // Ensure user exists in database before setting state
             await this.database.createUser(ctx.from.id, ctx.from.username || 'Unknown');
@@ -284,7 +333,35 @@ Are you absolutely sure?`;
             
             // Clear all Redis cache for this user
             if (this.cacheService) {
-                await this.cacheService.clearUserCache(userId);
+                try {
+                    // Try the clearUserCache method first (if available)
+                    if (typeof this.cacheService.clearUserCache === 'function') {
+                        await this.cacheService.clearUserCache(userId);
+                        secureLogger.info('User cache cleared using clearUserCache method', { userId });
+                    } else {
+                        // Fallback to individual delete operations
+                        await this.cacheService.delete('user', userId);
+                        await this.cacheService.delete('user_settings', userId);
+                        await this.cacheService.delete('user_state', userId);
+                        await this.cacheService.delete('session', userId);
+                        await this.cacheService.delete('main_menu', userId);
+                        
+                        // Clear wallet-related cache if we have user data
+                        if (ctx.user?.wallet_address) {
+                            const walletAddress = ctx.user.wallet_address;
+                            await this.cacheService.delete('wallet_balance', walletAddress);
+                            await this.cacheService.delete('portfolio', walletAddress);
+                            await this.cacheService.delete('mon_balance', walletAddress);
+                        }
+                        
+                        secureLogger.info('User cache cleared using individual delete operations', { userId });
+                    }
+                } catch (cacheError) {
+                    secureLogger.warn('Cache clearing failed in wallet handler (non-critical)', { 
+                        error: cacheError.message, 
+                        userId 
+                    });
+                }
             }
             
             await ctx.editMessageText(`🗑️ *Wallet Deleted*
@@ -298,8 +375,9 @@ Use /start to create a new wallet.`, {
             this.monitoring.logInfo('Wallet deleted', { userId });
             
         } catch (error) {
+            secureLogger.error('Confirm delete wallet failed', error, { userId: ctx.from.id });
             this.monitoring.logError('Confirm delete wallet failed', error, { userId: ctx.from.id });
-            await ctx.reply('❌ Error deleting wallet.');
+            await ctx.reply('❌ Error deleting wallet. Please try again.');
         }
     }
 
