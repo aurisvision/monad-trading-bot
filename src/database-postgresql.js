@@ -1101,7 +1101,7 @@ class DatabasePostgreSQL {
                 // Clear wallet-related cache if we have wallet address
                 if (userData?.wallet_address) {
                     const walletAddress = userData.wallet_address;
-                    await this.cacheService.delete('wallet_balance', walletAddress);
+                    // wallet_balance removed - using mon_balance only
                     await this.cacheService.delete('portfolio', walletAddress);
                     await this.cacheService.delete('mon_balance', walletAddress);
                 }
@@ -1117,7 +1117,7 @@ class DatabasePostgreSQL {
             
             // Clear additional cache keys manually
             if (userData && userData.wallet_address) {
-                await this.deleteCache(`area51:wallet_balance:${userData.wallet_address}`);
+                // wallet_balance removed - using mon_balance only
             }
             await this.deleteCache(`area51:portfolio:${telegramId}`);
             await this.deleteCache(`area51:main_menu:${telegramId}`);

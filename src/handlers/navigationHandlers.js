@@ -75,13 +75,18 @@ class NavigationHandlers {
             
             if (this.cacheService) {
                 try {
-                    user = await this.cacheService.get('user', userId, async () => {
-                        return await this.database.getUserByTelegramId(userId);
-                    });
+                    // Try cache first
+                    user = await this.cacheService.get('user', userId);
                     
                     if (user) {
                         fromCache = true;
                         this.monitoring.logInfo('User data loaded from unified cache', { userId, fromCache: true });
+                    } else {
+                        // Not in cache, get from database and cache it
+                        user = await this.database.getUserByTelegramId(userId);
+                        if (user) {
+                            await this.cacheService.set('user', userId, user);
+                        }
                     }
                 } catch (cacheError) {
                     this.monitoring.logError('Unified cache operation failed during start', cacheError, { userId });
@@ -134,144 +139,182 @@ class NavigationHandlers {
         await ctx.replyWithMarkdown(text, keyboard);
     }
 
+    /**
+     * Get main menu data with optimized caching (shared logic)
+     */
+    async getMainMenuData(ctx, fromCache = false, forceRefresh = false) {
+        const userId = ctx.from.id;
+        
+        // Check for cached main menu data first (5 minutes TTL) - skip if forceRefresh
+        let cachedData = null;
+        
+        if (this.cacheService && !forceRefresh) {
+            try {
+                cachedData = await this.cacheService.get('main_menu', userId);
+                if (cachedData) {
+                    this.monitoring.logInfo('🚀 Main menu cache HIT', { userId });
+                    const { text, keyboard } = InterfaceUtils.generateMainInterface(
+                        cachedData.user, cachedData.monBalance, cachedData.monPriceUSD, cachedData.portfolioValueUSD
+                    );
+                    return { text, keyboard };
+                }
+            } catch (cacheError) {
+                this.monitoring.logError('Main menu cache read failed', cacheError, { userId });
+            }
+        }
+
+        // Get user from cache first
+        let user;
+        if (this.cacheService) {
+            user = await this.cacheService.get('user', userId,
+                async () => await this.database.getUserByTelegramId(userId)
+            );
+        } else {
+            user = await this.database.getUserByTelegramId(userId);
+        }
+        
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        // Try to get data from cache first, with fallback values
+        let monBalanceData = { balance: '0', balanceFormatted: '0', priceUSD: '0' };
+        let portfolioValueData = { value: '0' };
+        let monPriceData = { price: '0' };
+        
+        // Declare cache variables outside try block
+        let cachedBalance = null;
+        let cachedPortfolio = null;
+        let cachedPrice = null;
+
+        // Check individual caches first
+        if (this.cacheService) {
+            try {
+                [cachedBalance, cachedPortfolio, cachedPrice] = await Promise.all([
+                    this.cacheService.get('wallet_balance', user.wallet_address),
+                    this.cacheService.get('portfolio', user.wallet_address),
+                    this.cacheService.get('mon_price_usd', 'global')
+                ]);
+                
+                this.monitoring.logInfo('🔍 Cache check results', { 
+                    userId,
+                    hasBalance: !!cachedBalance,
+                    hasPortfolio: !!cachedPortfolio,
+                    hasPrice: !!cachedPrice
+                });
+
+                if (cachedBalance) {
+                    let balanceData;
+                    try {
+                        // Handle both string and object formats
+                        balanceData = typeof cachedBalance === 'string' 
+                            ? JSON.parse(cachedBalance) 
+                            : cachedBalance;
+                        
+                        // Ensure balanceData is an array
+                        if (!Array.isArray(balanceData)) {
+                            console.warn('⚠️ Cached balance data is not an array:', typeof balanceData);
+                            balanceData = [];
+                        }
+                    } catch (parseError) {
+                        console.warn('⚠️ Failed to parse cached balance data:', parseError.message);
+                        balanceData = [];
+                    }
+                    const monToken = balanceData.find(token => 
+                        token.address === '0x0000000000000000000000000000000000000000' || 
+                        token.symbol === 'MON'
+                    );
+                    if (monToken) {
+                        monBalanceData = {
+                            balance: monToken.balance || '0',
+                            balanceFormatted: monToken.balanceFormatted || monToken.balance || '0',
+                            priceUSD: monToken.usd_per_token || monToken.priceUSD || '0'
+                        };
+                    }
+                }
+
+                if (cachedPortfolio) {
+                    portfolioValueData = JSON.parse(cachedPortfolio);
+                }
+
+                if (cachedPrice) {
+                    try {
+                        // Handle both string and object formats
+                        monPriceData = typeof cachedPrice === 'string' 
+                            ? JSON.parse(cachedPrice) 
+                            : cachedPrice;
+                    } catch (parseError) {
+                        console.warn('⚠️ Failed to parse cached price data:', parseError.message);
+                        monPriceData = { price: '0' };
+                    }
+                }
+            } catch (error) {
+                console.error('Cache read error:', error);
+                // Reset cache variables on error
+                cachedBalance = null;
+                cachedPortfolio = null;
+                cachedPrice = null;
+            }
+        }
+
+        // Only call API if no cached data found (check for null/undefined, not '0' values)
+        const needsBalance = !cachedBalance;
+        const needsPortfolio = !cachedPortfolio;
+        const needsPrice = !cachedPrice;
+        
+        if (needsBalance || needsPortfolio || needsPrice) {
+            this.monitoring.logInfo('📡 Fetching missing data from API', { 
+                userId, 
+                needsBalance, 
+                needsPortfolio, 
+                needsPrice 
+            });
+            
+            const [apiBalance, apiPortfolio, apiPrice] = await Promise.all([
+                needsBalance ? this.monorailAPI.getMONBalance(user.wallet_address, true) : Promise.resolve(monBalanceData),
+                needsPortfolio ? this.monorailAPI.getPortfolioValue(user.wallet_address, true) : Promise.resolve(portfolioValueData),
+                needsPrice ? this.monorailAPI.getMONPriceUSD(true) : Promise.resolve(monPriceData)
+            ]);
+
+            if (needsBalance) monBalanceData = apiBalance;
+            if (needsPortfolio) portfolioValueData = apiPortfolio;
+            if (needsPrice) monPriceData = apiPrice;
+        } else {
+            this.monitoring.logInfo('🚀 All data available from cache', { userId });
+        }
+
+        const monBalance = parseFloat(monBalanceData.balance || '0');
+        const monPriceUSD = parseFloat(monPriceData.price || '0');
+        const portfolioValueUSD = parseFloat(portfolioValueData.value || '0');
+        const portfolioValueMON = monPriceUSD > 0 ? portfolioValueUSD / monPriceUSD : 0;
+        const monValueUSD = monBalance * monPriceUSD;
+
+        // Cache the data for 5 minutes for faster access (same as underlying data)
+        if (this.cacheService && !forceRefresh) {
+            try {
+                const dataToCache = { monBalance, monPriceUSD, portfolioValueUSD, portfolioValueMON, monValueUSD, user };
+                await this.cacheService.set('main_menu', userId, dataToCache, 300);
+                this.monitoring.logInfo('💾 Main menu data cached', { userId, ttl: 300 });
+            } catch (redisError) {
+                this.monitoring.logError('Main menu cache write failed', redisError, { userId });
+            }
+        }
+
+        const { text, keyboard } = InterfaceUtils.generateMainInterface(
+            user, monBalance, monPriceUSD, portfolioValueUSD
+        );
+
+        return { text, keyboard };
+    }
+
     async showWelcome(ctx, fromCache = false, forceRefresh = false) {
         const userId = ctx.from.id;
         
         try {
-            // Check for cached main menu data first (15 seconds TTL) - skip if forceRefresh
-            const cacheKey = `area51:main_menu:${userId}`;
-            let cachedData = null;
-            
-            if (this.cacheService && !forceRefresh) {
-                try {
-                    cachedData = await this.cacheService.get('main_menu', userId);
-                } catch (cacheError) {
-                    this.monitoring.logError('Main menu cache read failed', cacheError, { userId });
-                }
-            }
-
-            let monBalance, monPriceUSD, portfolioValueUSD, portfolioValueMON, monValueUSD, user;
-
-            if (cachedData && !forceRefresh) {
-                // Use cached data
-                ({ monBalance, monPriceUSD, portfolioValueUSD, portfolioValueMON, monValueUSD, user } = cachedData);
-            } else {
-                // Get user from cache first
-                if (this.cacheService) {
-                    user = await this.cacheService.get('user', userId,
-                        async () => await this.database.getUserByTelegramId(userId)
-                    );
-                } else {
-                    user = await this.database.getUserByTelegramId(userId);
-                }
-                
-                if (!user) {
-                    await ctx.reply('❌ Please start the bot first with /start');
-                    return;
-                }
-
-                // Try to get data from cache first, with fallback values
-                let monBalanceData = { balance: '0', balanceFormatted: '0', priceUSD: '0' };
-                let portfolioValueData = { value: '0' };
-                let monPriceData = { price: '0' };
-
-                // Check individual caches first
-                if (this.cacheService) {
-                    try {
-                        const [cachedBalance, cachedPortfolio, cachedPrice] = await Promise.all([
-                            this.cacheService.get('wallet_balance', user.wallet_address),
-                            this.cacheService.get('portfolio', user.wallet_address),
-                            this.cacheService.get('mon_price_usd', 'global')
-                        ]);
-
-                        if (cachedBalance) {
-                            let balanceData;
-                            try {
-                                // Handle both string and object formats
-                                balanceData = typeof cachedBalance === 'string' 
-                                    ? JSON.parse(cachedBalance) 
-                                    : cachedBalance;
-                                
-                                // Ensure balanceData is an array
-                                if (!Array.isArray(balanceData)) {
-                                    console.warn('⚠️ Cached balance data is not an array:', typeof balanceData);
-                                    balanceData = [];
-                                }
-                            } catch (parseError) {
-                                console.warn('⚠️ Failed to parse cached balance data:', parseError.message);
-                                balanceData = [];
-                            }
-                            const monToken = balanceData.find(token => 
-                                token.address === '0x0000000000000000000000000000000000000000' || 
-                                token.symbol === 'MON'
-                            );
-                            if (monToken) {
-                                monBalanceData = {
-                                    balance: monToken.balance || '0',
-                                    balanceFormatted: monToken.balanceFormatted || monToken.balance || '0',
-                                    priceUSD: monToken.usd_per_token || monToken.priceUSD || '0'
-                                };
-                            }
-                        }
-
-                        if (cachedPortfolio) {
-                            portfolioValueData = JSON.parse(cachedPortfolio);
-                        }
-
-                        if (cachedPrice) {
-                            try {
-                                // Handle both string and object formats
-                                monPriceData = typeof cachedPrice === 'string' 
-                                    ? JSON.parse(cachedPrice) 
-                                    : cachedPrice;
-                            } catch (parseError) {
-                                console.warn('⚠️ Failed to parse cached price data:', parseError.message);
-                                monPriceData = { price: '0' };
-                            }
-                        }
-                    } catch (error) {
-                        console.error('Cache read error:', error);
-                    }
-                }
-
-                // Only call API if no cached data found
-                if (monBalanceData.balance === '0' || portfolioValueData.value === '0' || monPriceData.price === '0') {
-                    const [apiBalance, apiPortfolio, apiPrice] = await Promise.all([
-                        monBalanceData.balance === '0' ? this.monorailAPI.getMONBalance(user.wallet_address, false) : Promise.resolve(monBalanceData),
-                        portfolioValueData.value === '0' ? this.monorailAPI.getPortfolioValue(user.wallet_address, false) : Promise.resolve(portfolioValueData),
-                        monPriceData.price === '0' ? this.monorailAPI.getMONPriceUSD(false) : Promise.resolve(monPriceData)
-                    ]);
-
-                    if (monBalanceData.balance === '0') monBalanceData = apiBalance;
-                    if (portfolioValueData.value === '0') portfolioValueData = apiPortfolio;
-                    if (monPriceData.price === '0') monPriceData = apiPrice;
-                }
-
-                monBalance = parseFloat(monBalanceData.balance || '0');
-                monPriceUSD = parseFloat(monPriceData.price || '0');
-                portfolioValueUSD = parseFloat(portfolioValueData.value || '0');
-                portfolioValueMON = monPriceUSD > 0 ? portfolioValueUSD / monPriceUSD : 0;
-                monValueUSD = monBalance * monPriceUSD;
-
-                // Cache the data for 60 seconds for faster access
-                if (this.cacheService && !forceRefresh) {
-                    try {
-                        const dataToCache = { monBalance, monPriceUSD, portfolioValueUSD, portfolioValueMON, monValueUSD, user };
-                        await this.cacheService.set('main_menu', userId, dataToCache, 60);
-                    } catch (redisError) {
-                        // Cache error, continue without caching
-                    }
-                }
-            }
-
-            const { text, keyboard } = InterfaceUtils.generateMainInterface(
-                user, monBalance, monPriceUSD, portfolioValueUSD
-            );
-
+            const { text, keyboard } = await this.getMainMenuData(ctx, fromCache, forceRefresh);
             await ctx.replyWithMarkdown(text, keyboard);
-
         } catch (error) {
-            this.monitoring.logError('Back to main failed', error, { userId });
+            this.monitoring.logError('Show welcome failed', error, { userId });
             await ctx.reply('❌ Error loading main menu. Please try again.');
         }
     }
@@ -280,47 +323,13 @@ class NavigationHandlers {
         const userId = ctx.from.id;
         
         try {
-            let user;
-            
-            // Get user data
-            user = await this.database.getUserByTelegramId(userId);
-            if (!user) {
-                await this.showWelcomeNewUser(ctx);
-                return;
-            }
-
-            // Use Unified Trading System for data fetching
-            const TradingInterface = require('../trading/TradingInterface');
-            const tradingDependencies = {
-                redis: this.redis,
-                database: this.database,
-                monorailAPI: this.monorailAPI,
-                walletManager: this.walletManager,
-                monitoring: this.monitoring
-            };
-            
-            const tradingInterface = new TradingInterface(null, tradingDependencies);
-            
-            const [monBalanceData, portfolioValueData, monPriceData] = await Promise.all([
-                this.monorailAPI.getMONBalance(user.wallet_address, false),
-                this.monorailAPI.getPortfolioValue(user.wallet_address, false),
-                this.monorailAPI.getMONPriceUSD(false)
-            ]);
-
-            const monBalance = parseFloat(monBalanceData.balance || '0');
-            const monPriceUSD = parseFloat(monPriceData.price || '0');
-            const portfolioValueUSD = parseFloat(portfolioValueData.value || '0');
-            const portfolioValueMON = monPriceUSD > 0 ? portfolioValueUSD / monPriceUSD : 0;
-            const monValueUSD = monBalance * monPriceUSD;
-
-            const { text, keyboard } = InterfaceUtils.generateMainInterface(
-                user, monBalance, monPriceUSD, portfolioValueUSD
-            );
+            // Use the same optimized cache logic as showWelcome for consistency and speed
+            const { text, keyboard } = await this.getMainMenuData(ctx, false, false);
 
             try {
                 if (ctx.callbackQuery) {
                     await ctx.editMessageText(text, {
-                    parse_mode: 'Markdown',
+                        parse_mode: 'Markdown',
                         reply_markup: keyboard.reply_markup
                     });
                 } else {
@@ -559,22 +568,11 @@ Please enter the recipient address:
         if (tokenAddressMatch && (!userState || (userState.state !== 'importing_wallet' && userState.state !== 'awaiting_transfer_address' && userState.state !== 'awaiting_transfer_amount' && userState.state !== 'awaiting_transfer_details'))) {
             const tokenAddress = tokenAddressMatch[0];
             
-            // Check if auto buy is enabled
-            const user = await this.database.getUser(userId);
-            const userSettings = await this.database.getUserSettings(userId);
-            
             console.log(`🔍 Token address detected: ${tokenAddress}`);
-            console.log(`🔍 Auto buy enabled: ${userSettings?.auto_buy_enabled}`);
             
-            if (userSettings && userSettings.auto_buy_enabled) {
-                // Execute instant auto buy
-                await this.executeInstantAutoBuy(ctx, tokenAddress, user, userSettings);
-                return;
-            } else {
-                // Normal token address processing (show buy menu)
-                await this.processTokenAddress(ctx, tokenAddress);
-                return;
-            }
+            // Let processTokenAddress handle both auto buy and manual buy logic
+            await this.processTokenAddress(ctx, tokenAddress);
+            return;
         }
 
         // Then check if user has a specific state that needs processing
@@ -956,10 +954,10 @@ Please try again or check your wallet balance.`);
         const userId = ctx.from.id;
         
         try {
-            // Send immediate feedback to user with proper markdown formatting
-            const message = await ctx.reply(`🚀 *Auto Buy Activated*
+            // Send immediate feedback to user
+            await ctx.reply(`🚀 *Auto Buy Activated*
 
-🔄 *Processing transaction...*`, { parse_mode: 'Markdown' });
+⏳ *Processing transaction...*`, { parse_mode: 'Markdown' });
             
             // Use NEW UNIFIED TRADING SYSTEM for Auto Buy with preloaded data
             const TradingInterface = require('../trading/TradingInterface');
@@ -973,114 +971,41 @@ Please try again or check your wallet balance.`);
             
             const tradingInterface = new TradingInterface(null, tradingDependencies);
             
-            // Execute auto buy trade with preloaded user and settings for speed
-            const result = await tradingInterface.executeAutoBuy(userId, tokenAddress, userSettings.auto_buy_amount, user, userSettings);
-
-            // Get token info from Monorail API
-            const tokenInfo = await this.monorailAPI.getTokenInfo(tokenAddress);
-            if (!tokenInfo.success) {
-                await ctx.reply(`❌ Token not found or not supported.\n📍 Address: \`${tokenAddress}\`\nPlease check the address and try again.`);
-                return;
-            }
-            
-            // Check user wallet and balance
-            if (!user.wallet_address) {
-                await ctx.reply('❌ No wallet found. Please import your wallet first using /start');
-                return;
-            }
-            
-            const monBalanceData = await this.monorailAPI.getMONBalance(user.wallet_address);
-            const monBalance = parseFloat(monBalanceData.balance || '0');
-            
-            // Get auto buy amount from settings - fix NaN issue
-            const buyAmount = parseFloat(userSettings.auto_buy_amount) || 0.1; // Default 0.1 MON
-            
-            // Check if user has sufficient balance
-            if (monBalance < buyAmount) {
-                await ctx.reply(`❌ *Insufficient Balance*
-                
-💰 Required: ${buyAmount} MON
-💼 Available: ${monBalance.toFixed(6)} MON
-📈 Needed: ${(buyAmount - monBalance).toFixed(6)} MON more`);
-                return;
-            }
-            
-            // Execute auto buy transaction using UNIFIED TRADING SYSTEM
-            const tradeResult = await tradingInterface.engine.executeTrade({
-                type: 'auto',
+            // Execute as normal buy with preloaded settings for maximum speed
+            const result = await tradingInterface.engine.executeTrade({
+                type: 'normal',
                 action: 'buy',
                 userId: userId,
                 tokenAddress: tokenAddress,
-                amount: buyAmount,
-                ctx: ctx
+                amount: userSettings.auto_buy_amount,
+                preloadedUser: user,
+                preloadedSettings: userSettings
             });
             
+            // Get auto buy amount from settings for display purposes
+            const buyAmount = parseFloat(userSettings.auto_buy_amount) || 0.1; // Default 0.1 MON
+            
+            // Auto buy already executed above, just handle the result
+            const tradeResult = result;
+            
             if (tradeResult.success) {
-                // Clear cache after successful transaction using CacheService
-                if (this.cacheService) {
-                    try {
-                        if (typeof this.cacheService.invalidateAfterBuy === 'function') {
-                            await this.cacheService.invalidateAfterBuy(userId, user.wallet_address);
-                        } else {
-                            // Fallback: clear individual cache entries
-                            await this.cacheService.delete('wallet_balance', user.wallet_address);
-                            await this.cacheService.delete('portfolio', user.wallet_address);
-                        }
-                    } catch (cacheError) {
-                        console.warn('Cache cleanup failed after auto buy:', cacheError);
-                    }
-                }
-                
-                // Calculate explorer URL
+                // Send simple success message immediately (cache is handled by UnifiedTradingEngine)
                 const explorerUrl = `https://testnet.monadexplorer.com/tx/${tradeResult.txHash}`;
                 
-                // Get token symbol for display
-                const tokenSymbol = tokenInfo.token?.symbol || 'Unknown';
-                
-                // Edit the original message with success info
-                await ctx.telegram.editMessageText(
-                    ctx.chat.id,
-                    message.message_id,
-                    null,
-                    `✅ *Auto Buy Successful!*
+                await ctx.reply(`*✅ Auto Buy Successful!*
 
-🎯 *Token:* ${tokenSymbol} | ${tokenInfo.token?.name || 'Unknown Token'}
-📍 *Address:* \`${tokenAddress}\`
-💰 *Amount:* ${buyAmount} MON
-⛽ *Gas Used:* ${userSettings.auto_buy_gas ? (userSettings.auto_buy_gas / 1000000000).toFixed(0) : '50'} Gwei
-📊 *Slippage:* ${userSettings.auto_buy_slippage || 5}%
-
-🔗 *Transaction Hash:*
-\`${tradeResult.txHash}\`
-
-[View on Explorer](${explorerUrl})
-
-💡 *Auto Buy Settings Applied Automatically*`,
+[View on Explorer](${explorerUrl})`, 
                     { parse_mode: 'Markdown' }
                 );
                 
-                // Force refresh main menu data immediately after successful auto buy
-                setTimeout(async () => {
-                    try {
-                        await this.showWelcome(ctx, false, true); // Force refresh = true
-                    } catch (refreshError) {
-                        this.monitoring.logError('Auto refresh after auto buy failed', refreshError, { userId });
-                    }
-                }, 2000); // 2 second delay to allow transaction to propagate
+                // Auto buy completed successfully - no need for additional refresh
+                // The cache invalidation above will ensure fresh data on next menu access
                 
             } else {
-                // Edit the original message with failure info
-                await ctx.telegram.editMessageText(
-                    ctx.chat.id,
-                    message.message_id,
-                    null,
-                    `🚀 _Auto Buy Activated_
+                // Send failure message
+                await ctx.reply(`❌ *Auto Buy Failed*
 
-❌ *Transaction Failed*
-
-Error: ${tradeResult.error}`,
-                    { parse_mode: 'Markdown' }
-                );
+Error: ${tradeResult.error}`, { parse_mode: 'Markdown' });
                 
                 // Log failed auto buy
                 console.error(`❌ Auto Buy Failed - User: ${userId}, Token: ${tokenAddress}, Error: ${tradeResult.error}`);
@@ -1251,8 +1176,19 @@ ${tokenAddress}
                 }
             }
             
-            // Update user in database
-            await this.database.updateUserWallet(userId, wallet.address, wallet.encryptedPrivateKey);
+            // Ensure user exists in database first, then update wallet
+            await this.database.createUser(userId, ctx.from.username || 'Unknown');
+            const updatedUser = await this.database.updateUserWallet(userId, wallet.address, wallet.encryptedPrivateKey);
+            
+            // CRITICAL: Update cache with new user data immediately
+            if (this.cacheService && updatedUser) {
+                try {
+                    await this.cacheService.set('user', userId, updatedUser);
+                    console.log(`✅ User cache updated after wallet import: ${userId}`);
+                } catch (cacheError) {
+                    console.warn('Failed to update user cache after import:', cacheError.message);
+                }
+            }
             
             // Get the import message ID from user state before clearing it
             const userState = await this.database.getUserState(userId);

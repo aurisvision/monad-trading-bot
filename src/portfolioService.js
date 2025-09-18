@@ -1,28 +1,29 @@
+const UnifiedCacheManager = require('./services/UnifiedCacheManager');
+
 class PortfolioService {
     constructor(monorailAPI, redis, monitoring) {
         this.monorailAPI = monorailAPI;
-        this.redis = redis;
         this.monitoring = monitoring;
-        this.CACHE_TTL = 120; // 2 minutes
         this.TOKENS_PER_PAGE = 3;
         this.MIN_VALUE_THRESHOLD = 0.001; // Minimum MON value to show token (0.001 MON)
+        
+        // Initialize unified cache system
+        this.cache = new UnifiedCacheManager(
+            redis,
+            monitoring,
+            process.env.NODE_ENV || 'production'
+        );
+        
+        console.log('✅ PortfolioService initialized with UnifiedCacheManager');
     }
 
     /**
-     * Get portfolio key for Redis
-     */
-    getPortfolioKey(telegramId) {
-        return `user:${telegramId}:portfolio`;
-    }
-
-    /**
-     * Clear user portfolio cache
+     * Clear user portfolio cache using unified cache system
      */
     async clearUserPortfolioCache(telegramId) {
         try {
-            const key = this.getPortfolioKey(telegramId);
-            await this.redis.del(key);
-
+            await this.cache.delete('portfolio', telegramId);
+            console.log(`🗑️ Portfolio cache cleared for user ${telegramId}`);
         } catch (error) {
             console.error('Error clearing portfolio cache:', error);
         }

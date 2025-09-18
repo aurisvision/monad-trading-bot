@@ -64,9 +64,18 @@ class BotMiddleware {
                 // Try unified cache first
                 if (this.cacheService) {
                     try {
-                        user = await this.cacheService.get('user', userId, async () => {
-                            return await this.database.getUserByTelegramId(userId);
-                        });
+                        // Try cache first
+                        user = await this.cacheService.get('user', userId);
+                        
+                        // If not in cache, get from database and cache it
+                        if (!user) {
+                            user = await this.database.getUserByTelegramId(userId);
+                            if (user) {
+                                // Cache the user data for future requests
+                                await this.cacheService.set('user', userId, user);
+                                console.log(`💾 User ${userId} cached from database`);
+                            }
+                        }
                     } catch (cacheError) {
                         this.monitoring.logError('Unified cache auth read failed', cacheError, { userId });
                         // Fallback to database
@@ -78,6 +87,17 @@ class BotMiddleware {
                 }
 
                 if (!user) {
+                    // Check if user is in importing_wallet state - allow them to proceed
+                    try {
+                        const userState = await this.database.getUserState(userId);
+                        if (userState && userState.state === 'importing_wallet') {
+                            // User is importing wallet, allow them to proceed without user record
+                            return next();
+                        }
+                    } catch (stateError) {
+                        // If we can't check state, continue with normal flow
+                    }
+                    
                     await ctx.reply('❌ Please start the bot first with /start to create or import a wallet.');
                     return;
                 }

@@ -37,20 +37,6 @@ class TradingConfig {
                 timeouts: {
                     execution: 10000 // 10 seconds max
                 }
-            },
-            auto: {
-                name: 'Auto Buy',
-                validations: ['enabled', 'balance'],
-                slippage: { 
-                    source: 'auto_buy_slippage' // من إعدادات المستخدم
-                },
-                gas: { 
-                    source: 'auto_buy_gas' // من إعدادات المستخدم
-                },
-                timeouts: {
-                    validation: 2000,     // 2 seconds
-                    execution: 15000      // 15 seconds
-                }
             }
         };
 
@@ -96,18 +82,18 @@ class TradingConfig {
             }
         };
 
-        // رسائل الأخطاء الموحدة
+        // Unified error messages
         this.errorMessages = {
-            USER_NOT_FOUND: 'المستخدم غير موجود. يرجى البدء بـ /start',
-            INSUFFICIENT_BALANCE: 'الرصيد غير كافي لإتمام العملية',
-            INVALID_TOKEN: 'عنوان العملة غير صحيح',
-            INVALID_AMOUNT: 'الكمية غير صحيحة',
-            WALLET_ERROR: 'خطأ في الوصول للمحفظة',
-            NETWORK_ERROR: 'خطأ في الشبكة. يرجى المحاولة مرة أخرى',
-            SLIPPAGE_TOO_HIGH: 'انزلاق السعر عالي جداً',
-            AUTO_BUY_DISABLED: 'الشراء التلقائي غير مفعل',
-            TURBO_MODE_ERROR: 'خطأ في وضع التيربو',
-            TRANSACTION_FAILED: 'فشل في تنفيذ المعاملة'
+            USER_NOT_FOUND: 'User not found. Please start with /start',
+            INSUFFICIENT_BALANCE: 'Insufficient balance to complete transaction',
+            INVALID_TOKEN: 'Invalid token address',
+            INVALID_AMOUNT: 'Invalid amount',
+            WALLET_ERROR: 'Wallet access error',
+            NETWORK_ERROR: 'Network error. Please try again',
+            SLIPPAGE_TOO_HIGH: 'Slippage too high',
+            AUTO_BUY_DISABLED: 'Auto buy is disabled',
+            TURBO_MODE_ERROR: 'Turbo mode error',
+            TRANSACTION_FAILED: 'Transaction execution failed'
         };
 
         // إعدادات الأمان
@@ -138,10 +124,10 @@ class TradingConfig {
     }
 
     /**
-     * الحصول على رسالة خطأ
+     * Get error message
      */
     getErrorMessage(errorType) {
-        return this.errorMessages[errorType] || 'حدث خطأ غير متوقع';
+        return this.errorMessages[errorType] || 'An unexpected error occurred';
     }
 
     /**

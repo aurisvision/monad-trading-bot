@@ -24,8 +24,7 @@ class UnifiedTradingEngine {
             avgExecutionTime: 0,
             tradesByType: {
                 normal: 0,
-                turbo: 0,
-                auto: 0
+                turbo: 0
             }
         };
     }
@@ -35,18 +34,18 @@ class UnifiedTradingEngine {
      */
     async executeTrade(request) {
         const startTime = Date.now();
-        const { type, action, userId, tokenAddress, amount, ctx } = request;
+        const { type, action, userId, tokenAddress, amount, ctx, preloadedUser, preloadedSettings } = request;
         
         try {
             console.log(`🚀 Starting ${type} ${action} trade for user ${userId}`);
             
             // التحقق من صحة نوع التداول
             if (!this.config.isValidTradeType(type)) {
-                throw new Error(`نوع التداول غير صحيح: ${type}`);
+                throw new Error(`Invalid trade type: ${type}`);
             }
 
-            // 1️⃣ تحضير البيانات مرة واحدة فقط
-            const tradeData = await this.dataManager.prepareTradeData(userId, type);
+            // 1️⃣ تحضير البيانات مرة واحدة فقط (مع استخدام البيانات المحملة مسبقاً للسرعة)
+            const tradeData = await this.dataManager.prepareTradeData(userId, type, preloadedUser, preloadedSettings);
             
             // 2️⃣ تنفيذ التداول حسب النوع والإجراء
             let result;
@@ -55,7 +54,7 @@ class UnifiedTradingEngine {
             } else if (action === 'sell') {
                 result = await this.executeSellByType(type, tradeData, tokenAddress, amount);
             } else {
-                throw new Error(`إجراء غير صحيح: ${action}`);
+                throw new Error(`Invalid action: ${action}`);
             }
             
             // 3️⃣ تنظيف الكاش بعد التداول الناجح
@@ -95,15 +94,13 @@ class UnifiedTradingEngine {
      * 💰 تنفيذ عمليات الشراء حسب النوع
      */
     async executeBuyByType(type, tradeData, tokenAddress, amount) {
-        switch(type) {
+        switch (type) {
             case 'normal':
                 return await this.executeNormalBuy(tradeData, tokenAddress, amount);
             case 'turbo':
                 return await this.executeTurboBuy(tradeData, tokenAddress, amount);
-            case 'auto':
-                return await this.executeAutoBuy(tradeData, tokenAddress, amount);
             default:
-                throw new Error(`نوع شراء غير مدعوم: ${type}`);
+                throw new Error(`Unsupported buy type: ${type}`);
         }
     }
 
@@ -117,7 +114,7 @@ class UnifiedTradingEngine {
             case 'turbo':
                 return await this.executeTurboSell(tradeData, tokenAddress, amount);
             default:
-                throw new Error(`نوع بيع غير مدعوم: ${type}`);
+                throw new Error(`Unsupported sell type: ${type}`);
         }
     }
 
@@ -150,7 +147,7 @@ class UnifiedTradingEngine {
             );
             
             if (!swapResult.success) {
-                throw new Error(`فشل في تنفيذ المعاملة: ${swapResult.error}`);
+                throw new Error(`Transaction failed: ${swapResult.error}`);
             }
             
             return {
@@ -189,7 +186,7 @@ class UnifiedTradingEngine {
             );
             
             if (!swapResult.success) {
-                throw new Error(`فشل في تنفيذ التيربو: ${swapResult.error}`);
+                throw new Error(`Turbo execution failed: ${swapResult.error}`);
             }
             
             return {
@@ -208,58 +205,6 @@ class UnifiedTradingEngine {
         }
     }
 
-    /**
-     * 🟢 الشراء التلقائي - بإعدادات منفصلة
-     */
-    async executeAutoBuy(tradeData, tokenAddress, amount) {
-        try {
-            console.log(`🟢 Executing auto buy: ${amount} MON for token ${tokenAddress}`);
-            
-            // فحص تفعيل الشراء التلقائي
-            if (!tradeData.settings.auto_buy_enabled) {
-                throw new Error(this.config.getErrorMessage('AUTO_BUY_DISABLED'));
-            }
-            
-            // استخدام كمية الشراء التلقائي من الإعدادات
-            const autoBuyAmount = tradeData.settings.auto_buy_amount || amount;
-            
-            // فحص الرصيد
-            const security = this.config.getSecurityConfig();
-            const requiredAmount = parseFloat(autoBuyAmount);
-            const availableBalance = parseFloat(tradeData.balance) - security.gasBuffer;
-            
-            if (availableBalance < requiredAmount) {
-                throw new Error(this.config.getErrorMessage('INSUFFICIENT_BALANCE'));
-            }
-            
-            // تنفيذ المعاملة بإعدادات الشراء التلقائي
-            const swapResult = await this.monorailAPI.buyToken(
-                tradeData.wallet,
-                tokenAddress,
-                autoBuyAmount,
-                tradeData.effectiveSlippage,
-                { gasPrice: tradeData.effectiveGas }
-            );
-            
-            if (!swapResult.success) {
-                throw new Error(`فشل في الشراء التلقائي: ${swapResult.error}`);
-            }
-            
-            return {
-                success: true,
-                action: 'buy',
-                txHash: swapResult.txHash,
-                tokenAddress: tokenAddress,
-                monAmount: autoBuyAmount,
-                mode: 'auto',
-                slippage: tradeData.effectiveSlippage
-            };
-
-        } catch (error) {
-            console.error('❌ Auto buy failed:', error);
-            throw error;
-        }
-    }
 
     /**
      * 🔵 البيع العادي
@@ -331,7 +276,7 @@ class UnifiedTradingEngine {
             );
             
             if (!swapResult.success) {
-                throw new Error(`فشل في تنفيذ التيربو بيع: ${swapResult.error}`);
+                throw new Error(`Turbo sell failed: ${swapResult.error}`);
             }
             
             return {
@@ -370,7 +315,7 @@ class UnifiedTradingEngine {
         
         // فحص الحد الأقصى للمعاملة
         if (numAmount > security.maxTransactionAmount) {
-            throw new Error(`الكمية تتجاوز الحد الأقصى: ${security.maxTransactionAmount} MON`);
+            throw new Error(`Amount exceeds maximum limit: ${security.maxTransactionAmount} MON`);
         }
         
         // فحص الرصيد
@@ -380,14 +325,14 @@ class UnifiedTradingEngine {
         if (availableBalance < requiredAmount) {
             throw new Error(
                 `${this.config.getErrorMessage('INSUFFICIENT_BALANCE')}\n` +
-                `المطلوب: ${requiredAmount.toFixed(4)} MON\n` +
-                `المتاح: ${availableBalance.toFixed(4)} MON`
+                `Required: ${requiredAmount.toFixed(4)} MON\n` +
+                `Available: ${availableBalance.toFixed(4)} MON`
             );
         }
         
         // فحص الحد الأدنى للرصيد
         if (availableBalance < security.minBalance) {
-            throw new Error(`الرصيد أقل من الحد الأدنى: ${security.minBalance} MON`);
+            throw new Error(`Balance below minimum required: ${security.minBalance} MON`);
         }
     }
 
@@ -411,7 +356,7 @@ class UnifiedTradingEngine {
         const monBalance = parseFloat(tradeData.balance);
         
         if (monBalance < security.gasBuffer) {
-            throw new Error(`رصيد MON غير كافي لرسوم الشبكة. المطلوب: ${security.gasBuffer} MON`);
+            throw new Error(`Insufficient MON balance for network fees. Required: ${security.gasBuffer} MON`);
         }
     }
 

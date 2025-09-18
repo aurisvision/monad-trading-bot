@@ -247,33 +247,6 @@ _Proceed with the sale?_`;
         }
     }
 
-    /**
-     * Execute Auto Buy - استخدام النظام الموحد
-     */
-    async executeAutoBuy(userId, tokenAddress, amount, preloadedUser = null, preloadedSettings = null) {
-        try {
-            console.log(`🚀 Executing Auto Buy: ${amount} MON for token ${tokenAddress}`);
-            
-            const result = await this.engine.executeTrade({
-                type: 'auto',
-                action: 'buy',
-                userId: userId,
-                tokenAddress: tokenAddress,
-                amount: amount,
-                preloadedUser: preloadedUser,
-                preloadedSettings: preloadedSettings
-            });
-            
-            return result;
-            
-        } catch (error) {
-            console.error('❌ Auto Buy execution failed:', error);
-            return {
-                success: false,
-                error: error.message
-            };
-        }
-    }
 
     /**
      * Handle confirm portfolio sell - EXACT COPY from old system

@@ -9,10 +9,7 @@ const WalletManager = require('./wallet');
 // Legacy trading system - REPLACED by unified system
 // const TradingEngine = require('./trading');
 const MonorailAPI = require('./monorail');
-const CacheService = require('./services/CacheService');
-const UnifiedCacheSystem = require('./services/UnifiedCacheSystem');
-const CacheTransitionAdapter = require('./services/CacheTransitionAdapter');
-const CacheClusterAdapter = require('./services/CacheClusterAdapter');
+const UnifiedCacheManager = require('./services/UnifiedCacheManager');
 const CacheWarmer = require('./utils/cacheWarmer');
 const BackupService = require('./services/BackupService');
 const UnifiedMonitoringSystem = require('./monitoring/UnifiedMonitoringSystem');
@@ -143,12 +140,9 @@ class Area51BotModularSimple {
                 db: parseInt(process.env.REDIS_DB) || 0
             };
             
-            this.cacheAdapter = new CacheClusterAdapter(cacheConfig, this.monitoring);
-            await this.cacheAdapter.initialize();
-            
-            // Legacy cache services (for backward compatibility during transition)
-            this.cacheService = this.cacheAdapter; // Use adapter as primary cache service
-            this.unifiedCache = new UnifiedCacheSystem(this.redis, this.monitoring);
+            // Initialize unified cache system
+            this.cacheService = new UnifiedCacheManager(this.redis, this.monitoring);
+            this.unifiedCache = this.cacheService; // Unified reference
 
             // Initialize cache warmer
             this.cacheWarmer = new CacheWarmer(this.database, this.cacheService, this.monitoring);

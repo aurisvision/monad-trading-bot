@@ -1,28 +1,37 @@
 /**
- * Trading Data Manager - إدارة البيانات والكاش الموحد
- * يدير جميع عمليات الكاش والبيانات للنظام التداول الموحد
- * يستخدم Redis فقط كنظام كاش وحيد
+ * Trading Data Manager - Unified Data and Cache Management
+ * Manages all cache and data operations for the unified trading system
+ * Uses UnifiedCacheManager for consistent Redis-only caching
  */
 
 const TradingConfig = require('./TradingConfig');
+const UnifiedCacheManager = require('../services/UnifiedCacheManager');
 
 class TradingDataManager {
     constructor(dependencies) {
-        this.redis = dependencies.redis; // Redis فقط كنظام كاش
         this.database = dependencies.database;
         this.monorailAPI = dependencies.monorailAPI;
         this.walletManager = dependencies.walletManager;
         this.monitoring = dependencies.monitoring;
         
+        // Initialize unified cache system
+        this.cache = new UnifiedCacheManager(
+            dependencies.redis,
+            this.monitoring,
+            process.env.NODE_ENV || 'production'
+        );
+        
         this.config = new TradingConfig();
         
-        // إحصائيات الأداء
+        // Performance metrics
         this.metrics = {
             cacheHits: 0,
             cacheMisses: 0,
             dbQueries: 0,
             avgResponseTime: 0
         };
+        
+        console.log('✅ TradingDataManager initialized with UnifiedCacheManager');
     }
 
     /**
@@ -39,8 +48,9 @@ class TradingDataManager {
             if (preloadedUser && preloadedSettings) {
                 user = preloadedUser;
                 settings = preloadedSettings;
-                console.log(`⚡ Using preloaded data for speed optimization`);
+                console.log(`⚡ Using preloaded data for speed optimization - CACHE HIT`);
             } else {
+                console.log(`🔍 Loading user and settings from cache/database`);
                 // جلب البيانات الأساسية بالتوازي من الكاش أولاً
                 [user, settings] = await Promise.all([
                     this.getCachedUser(userId),
@@ -58,8 +68,17 @@ class TradingDataManager {
                 throw new Error('Failed to create wallet instance');
             }
 
-            // الحصول على رصيد MON
-            const balanceData = await this.monorailAPI.getMONBalance(user.wallet_address);
+            // الحصول على رصيد MON من الكاش أولاً للسرعة
+            let balanceData;
+            try {
+                balanceData = await this.cache.getOrSet('mon_balance', user.wallet_address, async () => {
+                    console.log(`🔍 Fetching MON balance from API for ${user.wallet_address}`);
+                    return await this.monorailAPI.getMONBalance(user.wallet_address);
+                }, 300); // 5 minutes cache
+            } catch (error) {
+                console.warn('⚠️ Cache failed, falling back to direct API call');
+                balanceData = await this.monorailAPI.getMONBalance(user.wallet_address);
+            }
             
             const tradeData = {
                 user,
@@ -86,66 +105,32 @@ class TradingDataManager {
     }
 
     /**
-     * 👤 الحصول على بيانات المستخدم (مع كاش دائم)
+     * Get user data with permanent caching
      */
     async getCachedUser(userId) {
-        const cacheConfig = this.config.getCacheConfig('user_data');
-        const key = `${cacheConfig.prefix}${userId}`;
-        
         try {
-            // محاولة الحصول من الكاش أولاً
-            const cached = await this.redis.get(key);
-            if (cached) {
-                this.metrics.cacheHits++;
-                return JSON.parse(cached);
-            }
-
-            // إذا لم يوجد في الكاش، جلب من قاعدة البيانات
-            this.metrics.cacheMisses++;
-            this.metrics.dbQueries++;
-            
-            const user = await this.database.getUserByTelegramId(userId);
-            if (user) {
-                // حفظ في الكاش بدون TTL (دائماً محفوظ)
-                await this.redis.set(key, JSON.stringify(user));
-                console.log(`💾 User ${userId} cached permanently`);
-            }
-            
-            return user;
-
+            return await this.cache.getOrSet('user_data', userId, async () => {
+                this.metrics.dbQueries++;
+                console.log(`🔍 Fetching user ${userId} from database`);
+                return await this.database.getUserByTelegramId(userId);
+            });
         } catch (error) {
             console.error(`❌ Error getting cached user ${userId}:`, error);
-            // fallback إلى قاعدة البيانات مباشرة
-            return await this.database.getUser(userId);
+            // Fallback to direct database query
+            return await this.database.getUserByTelegramId(userId);
         }
     }
 
     /**
-     * ⚙️ الحصول على إعدادات المستخدم (مع كاش دائم)
+     * Get user settings with permanent caching
      */
     async getCachedSettings(userId) {
-        const cacheConfig = this.config.getCacheConfig('user_settings');
-        const key = `${cacheConfig.prefix}${userId}`;
-        
         try {
-            const cached = await this.redis.get(key);
-            if (cached) {
-                this.metrics.cacheHits++;
-                return JSON.parse(cached);
-            }
-
-            this.metrics.cacheMisses++;
-            this.metrics.dbQueries++;
-            
-            const settings = await this.database.getUserSettings(userId);
-            if (settings) {
-                // حفظ في الكاش بدون TTL
-                await this.redis.set(key, JSON.stringify(settings));
-                console.log(`💾 Settings for user ${userId} cached permanently`);
-            }
-            
-            return settings;
-
+            return await this.cache.getOrSet('user_settings', userId, async () => {
+                this.metrics.dbQueries++;
+                console.log(`🔍 Fetching settings for user ${userId} from database`);
+                return await this.database.getUserSettings(userId);
+            });
         } catch (error) {
             console.error(`❌ Error getting cached settings ${userId}:`, error);
             return await this.database.getUserSettings(userId);
@@ -153,35 +138,26 @@ class TradingDataManager {
     }
 
     /**
-     * 👛 الحصول على instance المحفظة (مع كاش مؤقت)
+     * Get wallet instance with security-conscious caching
      */
     async getCachedWallet(userId, encryptedPrivateKey) {
-        const cacheConfig = this.config.getCacheConfig('wallet_instance');
-        const key = `${cacheConfig.prefix}${userId}`;
-        
         try {
-            const cached = await this.redis.get(key);
+            // Check if wallet instance is cached (security marker only)
+            const cached = await this.cache.get('wallet_instance', userId);
+            
             if (cached) {
                 this.metrics.cacheHits++;
-                // إرجاع wallet instance من الكاش
-                return await this.walletManager.getWalletWithProvider(encryptedPrivateKey);
-            }
-
-            this.metrics.cacheMisses++;
-            
-            const wallet = await this.walletManager.getWalletWithProvider(encryptedPrivateKey);
-            if (wallet) {
-                // حفظ مؤشر في الكاش (ليس الـ wallet نفسه لأسباب أمنية)
-                if (this.redis.setex) {
-                    await this.redis.setex(key, 3600, 'cached'); // ساعة واحدة
-                } else {
-                    await this.redis.set(key, 'cached', 'EX', 3600);
-                }
-                console.log(`💾 Wallet instance for user ${userId} marked as cached`);
+                console.log(`🚀 Wallet instance cache hit for user ${userId}`);
+            } else {
+                this.metrics.cacheMisses++;
+                // Mark wallet as cached (security marker, not actual wallet data)
+                await this.cache.set('wallet_instance', userId, 'cached');
+                console.log(`💾 Wallet instance marked as cached for user ${userId}`);
             }
             
-            return wallet;
-
+            // Always fetch fresh wallet instance for security
+            return await this.walletManager.getWalletWithProvider(encryptedPrivateKey);
+            
         } catch (error) {
             console.error(`❌ Error getting cached wallet ${userId}:`, error);
             throw error;
@@ -189,35 +165,14 @@ class TradingDataManager {
     }
 
     /**
-     * 💰 الحصول على رصيد MON (مع كاش قصير المدى)
+     * Get MON balance with 5-minute caching
      */
     async getCachedBalance(walletAddress) {
-        const cacheConfig = this.config.getCacheConfig('mon_balance');
-        const key = `${cacheConfig.prefix}${walletAddress}`;
-        
         try {
-            const cached = await this.redis.get(key);
-            if (cached) {
-                this.metrics.cacheHits++;
-                return JSON.parse(cached);
-            }
-
-            this.metrics.cacheMisses++;
-            
-            const balance = await this.walletManager.getBalance(walletAddress);
-            if (balance !== null) {
-                // حفظ في الكاش لمدة 30 ثانية
-                if (this.redis.setex) {
-                    await this.redis.setex(key, cacheConfig.ttl, JSON.stringify(balance));
-                } else {
-                    // Fallback for different Redis clients
-                    await this.redis.set(key, JSON.stringify(balance), 'EX', cacheConfig.ttl);
-                }
-                console.log(`💾 Balance for ${walletAddress} cached for ${cacheConfig.ttl}s`);
-            }
-            
-            return balance;
-
+            return await this.cache.getOrSet('mon_balance', walletAddress, async () => {
+                console.log(`🔍 Fetching MON balance for ${walletAddress}`);
+                return await this.walletManager.getBalance(walletAddress);
+            });
         } catch (error) {
             console.error(`❌ Error getting cached balance ${walletAddress}:`, error);
             return await this.walletManager.getBalance(walletAddress);
@@ -225,34 +180,14 @@ class TradingDataManager {
     }
 
     /**
-     * 🪙 الحصول على معلومات العملة (مع كاش متوسط المدى)
+     * Get token information with 5-minute caching
      */
     async getCachedTokenInfo(tokenAddress) {
-        const cacheConfig = this.config.getCacheConfig('token_info');
-        const key = `${cacheConfig.prefix}${tokenAddress}`;
-        
         try {
-            const cached = await this.redis.get(key);
-            if (cached) {
-                this.metrics.cacheHits++;
-                return JSON.parse(cached);
-            }
-
-            this.metrics.cacheMisses++;
-            
-            const tokenInfo = await this.monorailAPI.getTokenInfo(tokenAddress);
-            if (tokenInfo && tokenInfo.success) {
-                // حفظ في الكاش لمدة 5 دقائق
-                if (this.redis.setex) {
-                    await this.redis.setex(key, cacheConfig.ttl, JSON.stringify(tokenInfo));
-                } else {
-                    await this.redis.set(key, JSON.stringify(tokenInfo), 'EX', cacheConfig.ttl);
-                }
-                console.log(`💾 Token info for ${tokenAddress} cached for ${cacheConfig.ttl}s`);
-            }
-            
-            return tokenInfo;
-
+            return await this.cache.getOrSet('token_info', tokenAddress, async () => {
+                console.log(`🔍 Fetching token info for ${tokenAddress}`);
+                return await this.monorailAPI.getTokenInfo(tokenAddress);
+            });
         } catch (error) {
             console.error(`❌ Error getting cached token info ${tokenAddress}:`, error);
             return await this.monorailAPI.getTokenInfo(tokenAddress);
@@ -273,37 +208,28 @@ class TradingDataManager {
     }
 
     /**
-     * 🧹 تنظيف الكاش بعد التداول الناجح
+     * Clean cache after successful trading operations
      */
-    async postTradeCleanup(userId, walletAddress, result) {
+    async postTradeCleanup(userId, walletAddress, result, operationType = 'buy_operation') {
         if (!result || !result.success) {
-            return; // لا تنظف الكاش إذا فشلت المعاملة
+            console.log('⚠️ Trade was not successful, skipping cache cleanup');
+            return;
         }
 
         try {
-            console.log(`🧹 Cleaning cache after successful trade for user ${userId}`);
+            console.log(`🧹 Cleaning cache after successful ${operationType} for user ${userId}`);
             
-            // قائمة المفاتيح التي تحتاج تنظيف
-            const keysToDelete = [
-                `area51:balance:${walletAddress}`,      // رصيد MON
-                `area51:portfolio:${walletAddress}`,    // محفظة العملات
-                `area51:main_menu:${userId}`,           // القائمة الرئيسية
-                `area51:gas:network`                    // أسعار الـ gas
-            ];
+            // Use unified cache invalidation
+            await this.cache.invalidateAfterOperation(operationType, userId, walletAddress);
             
-            // حذف المفاتيح بالتوازي
-            await Promise.all(keysToDelete.map(key => this.redis.del(key)));
-            
-            console.log(`✅ Cache cleaned for ${keysToDelete.length} keys`);
-            
-            // تسجيل المعاملة في قاعدة البيانات
+            // Log successful trade
             if (result.txHash) {
                 await this.logSuccessfulTrade(userId, result);
             }
 
         } catch (error) {
             console.error('❌ Error during post-trade cleanup:', error);
-            // لا نرمي خطأ هنا لأن المعاملة نجحت
+            // Don't throw error here as the trade was successful
         }
     }
 
@@ -342,7 +268,7 @@ class TradingDataManager {
                 type: result.type || 'unknown',
                 tokenAddress: result.tokenAddress,
                 amount: amount.toString(),
-                total_value: totalValue,
+                totalValue: totalValue, // Fixed: use camelCase to match database function
                 timestamp: new Date(),
                 success: true
             });
@@ -406,7 +332,6 @@ class TradingDataManager {
     async cleanCacheAfterTrade(userId, walletAddress) {
         try {
             const keysToDelete = [
-                `area51:wallet_balance:${walletAddress}`,
                 `area51:mon_balance:${walletAddress}`,
                 `area51:portfolio:${userId}`,
                 `area51:main_menu:${userId}`,

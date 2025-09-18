@@ -44,7 +44,22 @@ class PortfolioHandlers {
             await ctx.answerCbQuery();
             const userId = ctx.from.id;
             
-            const user = await this.database.getUserByTelegramId(userId);
+            // Get user from cache first
+            let user;
+            if (this.cacheService) {
+                try {
+                    user = await this.cacheService.get('user', userId);
+                    if (!user) {
+                        user = await this.database.getUserByTelegramId(userId);
+                        if (user) await this.cacheService.set('user', userId, user);
+                    }
+                } catch (cacheError) {
+                    user = await this.database.getUserByTelegramId(userId);
+                }
+            } else {
+                user = await this.database.getUserByTelegramId(userId);
+            }
+            
             if (!user) {
                 await ctx.reply('❌ Please start the bot first with /start');
                 return;
@@ -203,9 +218,9 @@ class PortfolioHandlers {
             // For refresh button, force fresh data
             // Use cached data for faster response, only force refresh on explicit refresh button
             const [monBalanceData, portfolioValueData, monPriceData] = await Promise.all([
-                this.monorailAPI.getMONBalance(user.wallet_address, false), // Use cached data
-                this.monorailAPI.getPortfolioValue(user.wallet_address, false), // Use cached data
-                this.monorailAPI.getMONPriceUSD(false) // Use cached data
+                this.monorailAPI.getMONBalance(user.wallet_address, true), // Use cached data
+                this.monorailAPI.getPortfolioValue(user.wallet_address, true), // Use cached data
+                this.monorailAPI.getMONPriceUSD(true) // Use cached data
             ]);
 
             // Process the data
