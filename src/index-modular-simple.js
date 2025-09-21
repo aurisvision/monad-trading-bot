@@ -642,6 +642,87 @@ class Area51BotModularSimple {
 
         // Refresh handler removed - handled by navigationHandlers.js to avoid conflicts
 
+        // Command handlers - mirror button functionality
+        this.bot.command('buy', async (ctx) => {
+            try {
+                this.monitoring?.logInfo('Buy command received', { userId: ctx.from.id });
+                await this.tradingInterface.handleBuyInterface(ctx);
+            } catch (error) {
+                this.monitoring?.logError('Buy command failed', error, { userId: ctx.from.id });
+                await ctx.reply('Error accessing buy interface. Please try again.');
+            }
+        });
+
+        this.bot.command('wallet', async (ctx) => {
+            try {
+                this.monitoring?.logInfo('Wallet command received', { userId: ctx.from.id });
+                await this.walletHandlers.showWalletInterface(ctx);
+            } catch (error) {
+                this.monitoring?.logError('Wallet command failed', error, { userId: ctx.from.id });
+                await ctx.reply('Error accessing wallet interface. Please try again.');
+            }
+        });
+
+        this.bot.command('portfolio', async (ctx) => {
+            try {
+                this.monitoring?.logInfo('Portfolio command received', { userId: ctx.from.id });
+                await this.portfolioHandlers.handleNewPortfolio(ctx);
+            } catch (error) {
+                this.monitoring?.logError('Portfolio command failed', error, { userId: ctx.from.id });
+                await ctx.reply('Error accessing portfolio interface. Please try again.');
+            }
+        });
+
+        this.bot.command('categories', async (ctx) => {
+            try {
+                this.monitoring?.logInfo('Categories command received', { userId: ctx.from.id });
+                await this.navigationHandlers.showTokenCategories(ctx);
+            } catch (error) {
+                this.monitoring?.logError('Categories command failed', error, { userId: ctx.from.id });
+                await ctx.reply('Error accessing token categories. Please try again.');
+            }
+        });
+
+        this.bot.command('settings', async (ctx) => {
+            try {
+                this.monitoring?.logInfo('Settings command received', { userId: ctx.from.id });
+                await this.showSettings(ctx);
+            } catch (error) {
+                this.monitoring?.logError('Settings command failed', error, { userId: ctx.from.id });
+                await ctx.reply('Error accessing settings. Please try again.');
+            }
+        });
+
+        this.bot.command('transfer', async (ctx) => {
+            try {
+                this.monitoring?.logInfo('Transfer command received', { userId: ctx.from.id });
+                await this.navigationHandlers.handleTransfer(ctx);
+            } catch (error) {
+                this.monitoring?.logError('Transfer command failed', error, { userId: ctx.from.id });
+                await ctx.reply('Error accessing transfer interface. Please try again.');
+            }
+        });
+
+        this.bot.command('refresh', async (ctx) => {
+            try {
+                this.monitoring?.logInfo('Refresh command received', { userId: ctx.from.id });
+                await this.navigationHandlers.handleManualRefresh(ctx);
+            } catch (error) {
+                this.monitoring?.logError('Refresh command failed', error, { userId: ctx.from.id });
+                await ctx.reply('Error refreshing data. Please try again.');
+            }
+        });
+
+        this.bot.command('help', async (ctx) => {
+            try {
+                this.monitoring?.logInfo('Help command received', { userId: ctx.from.id });
+                await this.navigationHandlers.showHelp(ctx);
+            } catch (error) {
+                this.monitoring?.logError('Help command failed', error, { userId: ctx.from.id });
+                await ctx.reply('Error accessing help. Please try again.');
+            }
+        });
+
         // Start command handler
         this.bot.start(async (ctx) => {
             this.monitoring?.logInfo('Start command received', { userId: ctx.from.id });
@@ -684,7 +765,9 @@ class Area51BotModularSimple {
 
     async showSettings(ctx) {
         try {
-            await ctx.answerCbQuery();
+            if (ctx.callbackQuery) {
+                await ctx.answerCbQuery();
+            }
             
             // Get user settings to display current status
             const userSettings = await this.database.getUserSettings(ctx.from.id);

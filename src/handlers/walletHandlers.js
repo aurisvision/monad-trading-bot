@@ -54,7 +54,9 @@ class WalletHandlers {
 
     async showWalletInterface(ctx) {
         try {
-            await ctx.answerCbQuery();
+            if (ctx.callbackQuery) {
+                await ctx.answerCbQuery();
+            }
             const userId = ctx.from.id;
             
             const user = await this.database.getUserByTelegramId(userId);
@@ -91,7 +93,9 @@ Manage your wallet securely:`;
 
     async handleGenerateWallet(ctx) {
         try {
-            await ctx.answerCbQuery();
+            if (ctx.callbackQuery) {
+                await ctx.answerCbQuery();
+            }
             const userId = ctx.from.id;
             
             // Clear any existing cache for this user first
@@ -158,7 +162,9 @@ Manage your wallet securely:`;
 
     async handleImportWallet(ctx) {
         try {
-            await ctx.answerCbQuery();
+            if (ctx.callbackQuery) {
+                await ctx.answerCbQuery();
+            }
             const userId = ctx.from.id;
             
             // Clear any existing cache for this user first
@@ -218,7 +224,9 @@ Send your private key or mnemonic phrase to import your wallet.
 
     async handleExportPrivateKey(ctx) {
         try {
-            await ctx.answerCbQuery();
+            if (ctx.callbackQuery) {
+                await ctx.answerCbQuery();
+            }
             const userId = ctx.from.id;
             
             const user = await this.database.getUserByTelegramId(userId);
@@ -275,7 +283,9 @@ Click below to reveal the full key:`, {
     }
 
     async handleRevealPrivateKey(ctx) {
-        await ctx.answerCbQuery();
+        if (ctx.callbackQuery) {
+            await ctx.answerCbQuery();
+        }
         const userId = ctx.match[1];
         
         try {
@@ -387,7 +397,9 @@ _This message will be deleted in 15 seconds._`, {
 
     async handleDeleteWallet(ctx) {
         try {
-            await ctx.answerCbQuery();
+            if (ctx.callbackQuery) {
+                await ctx.answerCbQuery();
+            }
             
             const warningText = `⚠️ *DELETE WALLET*
 
@@ -419,7 +431,9 @@ Are you absolutely sure?`;
         try {
             // Answer callback query first
             try {
-                await ctx.answerCbQuery('Processing wallet deletion...');
+                if (ctx.callbackQuery) {
+                    await ctx.answerCbQuery('Processing wallet deletion...');
+                }
             } catch (cbError) {
                 secureLogger.warn('Failed to answer callback query (non-critical)', { error: cbError.message });
             }

@@ -41,7 +41,9 @@ class PortfolioHandlers {
 
     async handleNewPortfolio(ctx) {
         try {
-            await ctx.answerCbQuery();
+            if (ctx.callbackQuery) {
+                await ctx.answerCbQuery();
+            }
             const userId = ctx.from.id;
             
             // Get user from cache first
@@ -72,10 +74,23 @@ class PortfolioHandlers {
                 false // don't force refresh
             );
 
-            await ctx.editMessageText(portfolioDisplay.text, {
+            const portfolioOptions = {
                 parse_mode: 'Markdown',
                 reply_markup: portfolioDisplay.keyboard
-            });
+            };
+
+            if (ctx.callbackQuery) {
+                // For buttons - edit existing message
+                try {
+                    await ctx.editMessageText(portfolioDisplay.text, portfolioOptions);
+                } catch (error) {
+                    // Fallback if edit fails
+                    await ctx.reply(portfolioDisplay.text, portfolioOptions);
+                }
+            } else {
+                // For commands - send new message
+                await ctx.reply(portfolioDisplay.text, portfolioOptions);
+            }
 
         } catch (error) {
             this.monitoring.logError('New portfolio display failed', error, { userId: ctx.from.id });

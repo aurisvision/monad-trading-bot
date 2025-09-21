@@ -346,7 +346,9 @@ class NavigationHandlers {
 
     async showTokenCategories(ctx) {
         try {
-            await ctx.answerCbQuery();
+            if (ctx.callbackQuery) {
+                await ctx.answerCbQuery();
+            }
             
             const categoriesText = `🔥 *Monad Testnet Token Explorer*
 
@@ -486,7 +488,9 @@ Explore and trade tokens in the Monad ecosystem:`;
         const userId = ctx.from.id;
         
         try {
-            await ctx.answerCbQuery();
+            if (ctx.callbackQuery) {
+                await ctx.answerCbQuery();
+            }
             
             // Check if user exists
             const user = await this.database.getUserByTelegramId(userId);
@@ -499,20 +503,35 @@ Explore and trade tokens in the Monad ecosystem:`;
             const currentBalanceData = await this.monorailAPI.getMONBalance(user.wallet_address);
             const currentBalance = parseFloat(currentBalanceData.balance || '0');
             
-            await ctx.editMessageText(`📤 *Transfer MON*
+            const transferText = `📤 *Transfer MON*
 
 💰 **Your Balance:** *${currentBalance.toFixed(4)} MON*
 
 Please enter the recipient address:
 
-**Example:** \`0x1234567890123456789012345678901234567890\``, {
+**Example:** \`0x1234567890123456789012345678901234567890\``;
+
+            const transferOptions = {
                 parse_mode: 'Markdown',
                 reply_markup: {
                     inline_keyboard: [
                         [{ text: '🏠 Back to Main', callback_data: 'main' }]
                     ]
                 }
-            });
+            };
+
+            if (ctx.callbackQuery) {
+                // For buttons - edit existing message
+                try {
+                    await ctx.editMessageText(transferText, transferOptions);
+                } catch (error) {
+                    // Fallback if edit fails
+                    await ctx.reply(transferText, transferOptions);
+                }
+            } else {
+                // For commands - send new message
+                await ctx.reply(transferText, transferOptions);
+            }
 
             // Set user state to await address
             await this.database.setUserState(userId, 'awaiting_transfer_address');
@@ -525,25 +544,32 @@ Please enter the recipient address:
 
     async showHelp(ctx) {
         try {
-            await ctx.answerCbQuery();
+            if (ctx.callbackQuery) {
+                await ctx.answerCbQuery();
+            }
             
-            const helpText = `🛸 *Area51 Trading Bot Help*
+            const helpText = `🤖 *Area51 Trading Bot Help*
 
-*Commands:*
-/start - Initialize bot and wallet
-/buy - Buy tokens with MON
-/sell - Sell tokens for MON
-/portfolio - View portfolio and P&L
-/wallet - Wallet management
-/transfer - Send MON to address
+*Available Commands:*
+/buy - Open trading interface
+/wallet - View wallet details
+/portfolio - Check your portfolio
 /categories - Browse token categories
-/settings - Configure preferences
-/help - Show this help
+/settings - Bot configuration
+/transfer - Send tokens
+/refresh - Update data
+/help - Show this help message
 
-*Quick Actions:*
-• Click Buy/Sell for instant trading
-• Use Portfolio to track gains/losses
-• Settings to customize slippage & fees
+*How to Use:*
+• Click buttons in the main menu
+• Or type commands directly (e.g., /buy)
+• Send token addresses for quick trading
+
+*Features:*
+• Real-time token tracking
+• Automated trading options
+• Portfolio management
+• Secure wallet integration
 
 *Support:* Contact admin for help`;
 
@@ -1298,7 +1324,9 @@ Proceed with this purchase?`, {
         const userId = ctx.from.id;
         
         try {
-            await ctx.answerCbQuery('🔄 Refreshing data...');
+            if (ctx.callbackQuery) {
+                await ctx.answerCbQuery('🔄 Refreshing data...');
+            }
             
             // Get user first
             let user;

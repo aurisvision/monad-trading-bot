@@ -421,7 +421,9 @@ _Proceed with the purchase?_`;
      * Handle buy interface - EXACT COPY from old system
      */
     async handleBuyInterface(ctx) {
-        await ctx.answerCbQuery();
+        if (ctx.callbackQuery) {
+            await ctx.answerCbQuery();
+        }
         
         const buyText = `💰 *Buy Tokens*
 
@@ -431,10 +433,23 @@ Please enter the token contract address you want to buy:`;
             [Markup.button.callback('🔙 Back to Main', 'back_to_main')]
         ]);
 
-        await ctx.editMessageText(buyText, {
+        const buyOptions = {
             parse_mode: 'Markdown',
             reply_markup: keyboard.reply_markup
-        });
+        };
+
+        if (ctx.callbackQuery) {
+            // For buttons - edit existing message
+            try {
+                await ctx.editMessageText(buyText, buyOptions);
+            } catch (error) {
+                // Fallback if edit fails
+                await ctx.reply(buyText, buyOptions);
+            }
+        } else {
+            // For commands - send new message
+            await ctx.reply(buyText, buyOptions);
+        }
 
         // Set user state to expect token address input
         await this.database.setUserState(ctx.from.id, 'awaiting_token_address', {});
