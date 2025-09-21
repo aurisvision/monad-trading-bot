@@ -90,11 +90,21 @@ class SecureLogger {
      * @returns {string} - Sanitized string
      */
     sanitizeString(str) {
+        // Handle null, undefined, or non-string values
+        if (typeof str !== 'string') {
+            return String(str || '');
+        }
+        
         let sanitized = str;
         
         // Apply all sensitive patterns
         this.sensitivePatterns.forEach((pattern, index) => {
-            sanitized = sanitized.replace(pattern, this.replacements[index]);
+            try {
+                sanitized = sanitized.replace(pattern, this.replacements[index]);
+            } catch (error) {
+                // Skip pattern if it causes error
+                console.warn('Pattern replacement error:', error.message);
+            }
         });
 
         return sanitized;

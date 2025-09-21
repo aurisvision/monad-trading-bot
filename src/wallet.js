@@ -1,24 +1,14 @@
 const { ethers } = require('ethers');
 const bip39 = require('bip39');
-const crypto = require('crypto');
 const { secureLogger } = require('./utils/secureLogger');
+const UnifiedSecuritySystem = require('./security/UnifiedSecuritySystem');
 
 class WalletManager {
-    constructor() {
-        const key = process.env.ENCRYPTION_KEY;
-        if (!key) {
-            throw new Error('ENCRYPTION_KEY environment variable is required');
-        }
+    constructor(redis, database) {
+        // Use unified security system instead of duplicate encryption
+        this.security = new UnifiedSecuritySystem(redis, database);
         
-        if (typeof key !== 'string') {
-            throw new Error('ENCRYPTION_KEY must be a string');
-        }
-        
-        if (key.length !== 32) {
-            throw new Error(`ENCRYPTION_KEY must be exactly 32 characters long, got ${key.length}`);
-        }
-        
-        this.encryptionKey = key;
+        secureLogger.info('WalletManager initialized with unified security system');
     }
 
     // Generate a new wallet
@@ -30,15 +20,23 @@ class WalletManager {
             // Create wallet from mnemonic
             const wallet = ethers.Wallet.fromPhrase(mnemonic);
             
-            // Encrypt private key
-            const encryptedPrivateKey = this.encrypt(wallet.privateKey);
+            // Encrypt private key using unified security system
+            const encryptedPrivateKey = this.security.encrypt(wallet.privateKey, 'wallet_generation');
             
-            return {
+            // ✅ SECURITY: Never return unencrypted private keys or mnemonics
+            const result = {
                 address: wallet.address,
-                privateKey: wallet.privateKey,
                 encryptedPrivateKey,
-                mnemonic
+                encryptedMnemonic: this.security.encrypt(mnemonic, 'wallet_generation')
+                // privateKey: REMOVED for security - never expose raw private keys
+                // mnemonic: REMOVED for security - never expose raw mnemonics
             };
+            
+            // Secure memory wipe using unified security system
+            this.security.secureWipeMemory(wallet.privateKey);
+            this.security.secureWipeMemory(mnemonic);
+            
+            return result;
         } catch (error) {
             secureLogger.error('Error generating wallet', error);
             throw new Error('Failed to generate wallet');
@@ -53,15 +51,21 @@ class WalletManager {
             }
             
             const wallet = new ethers.Wallet(privateKey);
-            const encryptedPrivateKey = this.encrypt(wallet.privateKey);
+            const encryptedPrivateKey = this.security.encrypt(wallet.privateKey, 'wallet_import');
             
-            return {
+            // ✅ SECURITY FIX: Never return unencrypted private keys
+            const result = {
                 address: wallet.address,
-                privateKey: wallet.privateKey,
                 encryptedPrivateKey,
-                mnemonic: null,
-                encryptedMnemonic: null
+                encryptedMnemonic: null // No mnemonic for private key imports
+                // privateKey: REMOVED for security - never expose raw private keys
             };
+            
+            // Secure memory wipe using unified security system
+            this.security.secureWipeMemory(wallet.privateKey);
+            this.security.secureWipeMemory(privateKey);
+            
+            return result;
         } catch (error) {
             secureLogger.error('Error importing from private key', error);
             throw new Error('Failed to import from private key: ' + error.message);
@@ -77,16 +81,23 @@ class WalletManager {
             }
             
             const wallet = ethers.Wallet.fromPhrase(mnemonic);
-            const encryptedPrivateKey = this.encrypt(wallet.privateKey);
-            const encryptedMnemonic = this.encrypt(mnemonic);
+            const encryptedPrivateKey = this.security.encrypt(wallet.privateKey, 'wallet_import');
+            const encryptedMnemonic = this.security.encrypt(mnemonic, 'wallet_import');
             
-            return {
+            // ✅ SECURITY FIX: Never return unencrypted private keys or mnemonics
+            const result = {
                 address: wallet.address,
-                privateKey: wallet.privateKey,
                 encryptedPrivateKey,
-                mnemonic: mnemonic,
-                encryptedMnemonic: encryptedMnemonic
+                encryptedMnemonic
+                // privateKey: REMOVED for security - never expose raw private keys
+                // mnemonic: REMOVED for security - never expose raw mnemonics
             };
+            
+            // Secure memory wipe of sensitive data
+            this.security.secureWipeMemory(wallet.privateKey);
+            this.security.secureWipeMemory(mnemonic);
+            
+            return result;
         } catch (error) {
             secureLogger.error('Error importing from mnemonic', error);
             throw new Error('Failed to import from mnemonic: ' + error.message);
@@ -109,18 +120,25 @@ class WalletManager {
                 throw new Error('Invalid private key or mnemonic phrase');
             }
 
-            // Encrypt private key and mnemonic if available
-            const encryptedPrivateKey = this.encrypt(wallet.privateKey);
+            // Encrypt private key and mnemonic if available using unified security
+            const encryptedPrivateKey = this.security.encrypt(wallet.privateKey, 'wallet_import');
             const mnemonic = (words.length === 12 || words.length === 24) ? input : null;
-            const encryptedMnemonic = mnemonic ? this.encrypt(mnemonic) : null;
+            const encryptedMnemonic = mnemonic ? this.security.encrypt(mnemonic, 'wallet_import') : null;
             
-            return {
+            // ✅ SECURITY FIX: Never return unencrypted private keys or mnemonics
+            const result = {
                 address: wallet.address,
-                privateKey: wallet.privateKey,
                 encryptedPrivateKey,
-                mnemonic: mnemonic,
                 encryptedMnemonic: encryptedMnemonic
+                // privateKey: REMOVED for security - never expose raw private keys
+                // mnemonic: REMOVED for security - never expose raw mnemonics
             };
+            
+            // Secure memory wipe of sensitive data
+            this.security.secureWipeMemory(wallet.privateKey);
+            this.security.secureWipeMemory(mnemonic);
+            
+            return result;
         } catch (error) {
             secureLogger.error('Error importing wallet', error);
             throw new Error('Failed to import wallet: ' + error.message);
@@ -130,7 +148,7 @@ class WalletManager {
     // Get wallet instance from encrypted private key
     async getWallet(encryptedPrivateKey) {
         try {
-            const privateKey = this.decrypt(encryptedPrivateKey);
+            const privateKey = this.security.decrypt(encryptedPrivateKey, 'wallet_access');
             
             // Check if decryption failed
             if (privateKey === 'DECRYPTION_FAILED_PLEASE_REGENERATE_WALLET') {
@@ -177,51 +195,7 @@ class WalletManager {
         }
     }
 
-    // Encrypt private key
-    encrypt(text) {
-        try {
-            const iv = crypto.randomBytes(16);
-            const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(this.encryptionKey), iv);
-            let encrypted = cipher.update(text, 'utf8', 'hex');
-            encrypted += cipher.final('hex');
-            return iv.toString('hex') + ':' + encrypted;
-        } catch (error) {
-            secureLogger.error('Error encrypting', error);
-            throw new Error('Encryption failed');
-        }
-    }
-
-    // Decrypt private key
-    decrypt(encryptedData) {
-        try {
-            // Handle both old and new encryption formats
-            if (!encryptedData || typeof encryptedData !== 'string') {
-                throw new Error('Invalid encrypted data');
-            }
-
-            // Check if it's the new format (iv:encrypted)
-            if (encryptedData.includes(':')) {
-                const parts = encryptedData.split(':');
-                if (parts.length !== 2) {
-                    throw new Error('Invalid encrypted data format');
-                }
-                
-                const iv = Buffer.from(parts[0], 'hex');
-                const encrypted = parts[1];
-                const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(this.encryptionKey), iv);
-                let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-                decrypted += decipher.final('utf8');
-                return decrypted;
-            } else {
-                // Old format - return as is (assuming it's already decrypted or plain text)
-                return encryptedData;
-            }
-        } catch (error) {
-            secureLogger.error('Error decrypting', error);
-            // Return a placeholder for failed decryption
-            return 'DECRYPTION_FAILED_PLEASE_REGENERATE_WALLET';
-        }
-    }
+    // ✅ REMOVED: Encryption functions moved to UnifiedSecuritySystem to avoid duplication
 
     // Validate Ethereum address
     isValidAddress(address) {
@@ -340,6 +314,8 @@ class WalletManager {
             throw new Error('Transaction confirmation failed');
         }
     }
+
+    // ✅ REMOVED: secureWipeMemory moved to UnifiedSecuritySystem to avoid duplication
 }
 
 module.exports = WalletManager;

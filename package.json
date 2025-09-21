@@ -15,6 +15,7 @@
     "monitoring:logs": "docker-compose -f docker/docker-compose.monitoring.yml logs -f",
     "health": "curl http://localhost:3001/health || echo 'Health check failed'",
     "security:check": "node scripts/security-check.js",
+    "security:test": "node scripts/run-security-test.js",
     "setup": "cp .env.example .env && echo 'Please edit .env with your configuration'",
     "bot:stop": "node scripts/stop-all-bots.js",
     "bot:restart": "npm run bot:stop && npm start",

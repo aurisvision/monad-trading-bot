@@ -442,7 +442,7 @@ Please enter the token contract address you want to buy:`;
 
 
     /**
-     * Send success message - EXACT COPY from old system
+     * Send success message - Simplified version
      */
     async sendSuccessMessage(ctx, result, operationType) {
         let message = '';
@@ -454,44 +454,20 @@ Please enter the token contract address you want to buy:`;
         
         switch(operationType) {
             case 'buy':
-                if (result.mode === 'turbo') {
-                    message = `🚀 ***Turbo Buy Completed!***\n\n`;
-                } else {
-                    message = `✅ ***Purchase Successful!***\n\n`;
-                    if (result.tokenSymbol) {
-                        message += `🪙 ***Token:*** ${result.tokenSymbol}\n`;
-                    }
-                    if (result.monAmount) {
-                        message += `💰 ***Amount:*** ${result.monAmount} MON\n`;
-                    }
-                }
+                message = `**✅ Buy Success!**`;
                 break;
                 
             case 'sell':
-                if (result.mode === 'turbo') {
-                    message = `🚀 ***Turbo Sale Completed!***\n\n`;
-                } else {
-                    message = `✅ ***Sale Successful!***\n\n`;
-                    if (result.monReceived) {
-                        message += `💰 ***Received:*** ${parseFloat(result.monReceived).toFixed(4)} MON\n`;
-                    }
-                }
+                message = `**✅ Sell Success!**`;
                 break;
                 
             case 'auto_buy':
-                message = `🤖 ***Auto Buy Completed!***\n\n`;
-                if (result.monAmount) {
-                    message += `💰 ***Amount:*** ${result.monAmount} MON\n`;
-                }
+                message = `**✅ Auto Buy Success!**`;
                 break;
         }
         
-        if (result.executionTime) {
-            message += `⚡ ***Execution Time:*** ${result.executionTime}ms\n`;
-        }
-        
         if (explorerUrl) {
-            message += `\n[🔍 ***View Transaction***](${explorerUrl})`;
+            message += `\n\n[🔍 View Transaction](${explorerUrl})`;
         }
         
         await ctx.editMessageText(message, { parse_mode: 'Markdown' });

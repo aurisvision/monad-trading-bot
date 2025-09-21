@@ -106,48 +106,7 @@ class BotUtils {
         return crypto.randomBytes(length).toString('hex');
     }
 
-    // Encrypt sensitive data
-    encryptData(data, key) {
-        try {
-            const algorithm = 'aes-256-gcm';
-            const iv = crypto.randomBytes(16);
-            const cipher = crypto.createCipher(algorithm, key);
-            
-            let encrypted = cipher.update(data, 'utf8', 'hex');
-            encrypted += cipher.final('hex');
-            
-            const authTag = cipher.getAuthTag();
-            
-            return {
-                encrypted,
-                iv: iv.toString('hex'),
-                authTag: authTag.toString('hex')
-            };
-        } catch (error) {
-            this.monitoring.logError('Encryption failed', error);
-            throw new Error('Encryption failed');
-        }
-    }
-
-    // Decrypt sensitive data
-    decryptData(encryptedData, key) {
-        try {
-            const algorithm = 'aes-256-gcm';
-            const decipher = crypto.createDecipher(algorithm, key);
-            
-            if (encryptedData.authTag) {
-                decipher.setAuthTag(Buffer.from(encryptedData.authTag, 'hex'));
-            }
-            
-            let decrypted = decipher.update(encryptedData.encrypted, 'hex', 'utf8');
-            decrypted += decipher.final('utf8');
-            
-            return decrypted;
-        } catch (error) {
-            this.monitoring.logError('Decryption failed', error);
-            throw new Error('Decryption failed');
-        }
-    }
+    // ✅ REMOVED: Encryption functions moved to UnifiedSecuritySystem to avoid duplication
 
     // Sanitize user input
     sanitizeInput(input) {

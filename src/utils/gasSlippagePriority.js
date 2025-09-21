@@ -143,7 +143,7 @@ class GasSlippagePriority {
             
             // Force immediate cache invalidation
             if (this.cacheService) {
-                await this.cacheService.invalidateUserSettings(userId);
+                await this.cacheService.delete('user_settings', userId);
                 console.log(`✅ Gas settings updated and cache cleared for user ${userId}`);
             }
         } catch (error) {
@@ -173,7 +173,7 @@ class GasSlippagePriority {
             
             // Force immediate cache invalidation
             if (this.cacheService) {
-                await this.cacheService.invalidateUserSettings(userId);
+                await this.cacheService.delete('user_settings', userId);
                 console.log(`✅ Slippage settings updated and cache cleared for user ${userId}`);
             }
         } catch (error) {
@@ -195,7 +195,7 @@ class GasSlippagePriority {
             
             // Force immediate cache invalidation for user settings
             if (this.cacheService) {
-                await this.cacheService.invalidateUserSettings(userId);
+                await this.cacheService.delete('user_settings', userId);
                 console.log(`✅ Auto buy amount updated and cache cleared for user ${userId}`);
             }
         } catch (error) {

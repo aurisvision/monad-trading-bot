@@ -65,6 +65,9 @@ typings/
 .env
 .env.test
 .env.local
+.env.development
+.env.production
+.env.staging
 
 # Security-sensitive files
 *.key

@@ -1,8 +1,11 @@
 // Wallet Management Handlers
 const { Markup } = require('telegraf');
-const { ethers } = require('ethers');
-const { secureLogger } = require('../utils/secureLogger');
+const WalletManager = require('../wallet');
+const UnifiedSecuritySystem = require('../security/UnifiedSecuritySystem');
+const { validateInput } = require('../utils/index');
+const { formatBalance } = require('../utils/interfaceUtils');
 const InterfaceUtils = require('../utils/interfaceUtils');
+const { secureLogger } = require('../utils/secureLogger');
 
 class WalletHandlers {
     constructor(bot, database, walletManager, monitoring, redis = null, cacheService = null) {
@@ -12,6 +15,9 @@ class WalletHandlers {
         this.monitoring = monitoring;
         this.redis = redis;
         this.cacheService = cacheService;
+        
+        // Initialize unified security system
+        this.security = new UnifiedSecuritySystem(redis, database);
     }
 
     setupHandlers() {
@@ -109,13 +115,12 @@ Manage your wallet securely:`;
             // Ensure user exists in database before wallet generation
             await this.database.createUser(ctx.from.id, ctx.from.username || 'Unknown');
             
-            // Import required modules
-            const WalletManager = require('../wallet');
-            const walletManager = new WalletManager();
+            // Use existing wallet manager with unified security
+            const walletManager = this.walletManager;
             
             const wallet = await walletManager.generateWallet();
             
-            await this.database.updateUserWallet(userId, wallet.address, wallet.encryptedPrivateKey, wallet.mnemonic);
+            await this.database.updateUserWallet(userId, wallet.address, wallet.encryptedPrivateKey, wallet.encryptedMnemonic);
             
             // Clear cache again after wallet creation to ensure fresh data
             if (this.cacheService) {
@@ -221,9 +226,25 @@ Send your private key or mnemonic phrase to import your wallet.
                 return ctx.reply('❌ No wallet found.');
             }
 
-            const WalletManager = require('../wallet');
-            const walletManager = new WalletManager();
-            const privateKey = walletManager.decrypt(user.encrypted_private_key);
+            // ✅ SECURITY: Advanced verification for private key access
+            const verificationResult = await this.security.verifyUserForSensitiveOperation(
+                userId, 
+                'private_key_access',
+                {
+                    userTelegramId: ctx.from.id,
+                    username: ctx.from.username,
+                    operation: 'export_private_key'
+                }
+            );
+            
+            if (!verificationResult.allowed) {
+                await this.security.logSecurityEvent('PRIVATE_KEY_ACCESS_DENIED', userId, {
+                    reason: verificationResult.reason,
+                    riskScore: verificationResult.riskScore
+                }, 'HIGH');
+                
+                return ctx.reply(`🚨 **Access Denied**\n\n❌ ${verificationResult.reason}\n\n⚠️ **Security Notice:**\nFor your protection, private key access is limited and monitored.`);
+            }
             
             const keyboard = Markup.inlineKeyboard([
                 [Markup.button.callback('🔓 Reveal Full Key', `reveal_key_${userId}`)],
@@ -232,7 +253,7 @@ Send your private key or mnemonic phrase to import your wallet.
 
             await ctx.editMessageText(`🔑 *Private Key Export*
 
-*Masked Key:* \`${this.maskPrivateKey(privateKey)}\`
+*Masked Key:* [PRIVATE_KEY_AVAILABLE]
 
 ⚠️ *SECURITY WARNING*
 • Never share your private key
@@ -245,7 +266,10 @@ Click below to reveal the full key:`, {
             });
             
         } catch (error) {
-            this.monitoring.logError('Export private key failed', error, { userId: ctx.from.id });
+            this.monitoring.logError('Export private key failed', { 
+                message: error.message,
+                userId: ctx.from.id 
+            });
             await ctx.reply('❌ Error exporting private key.');
         }
     }
@@ -255,9 +279,33 @@ Click below to reveal the full key:`, {
         const userId = ctx.match[1];
         
         try {
-            // Security check
+            // Security check - user ownership
             if (parseInt(userId) !== ctx.from.id) {
-                return ctx.reply('❌ Access denied.');
+                await this.security.logSecurityEvent('UNAUTHORIZED_KEY_ACCESS', ctx.from.id, {
+                    requestedUserId: userId,
+                    actualUserId: ctx.from.id
+                }, 'CRITICAL');
+                return ctx.reply('❌ Access denied - unauthorized access attempt.');
+            }
+            
+            // ✅ SECURITY: Advanced verification for private key reveal
+            const verificationResult = await this.security.verifyUserForSensitiveOperation(
+                ctx.from.id, 
+                'private_key_reveal',
+                {
+                    userTelegramId: ctx.from.id,
+                    username: ctx.from.username,
+                    operation: 'reveal_private_key'
+                }
+            );
+            
+            if (!verificationResult.allowed) {
+                await this.security.logSecurityEvent('PRIVATE_KEY_REVEAL_DENIED', ctx.from.id, {
+                    reason: verificationResult.reason,
+                    riskScore: verificationResult.riskScore
+                }, 'CRITICAL');
+                
+                return ctx.reply(`🚨 **PRIVATE KEY ACCESS DENIED**\n\n❌ ${verificationResult.reason}\n\n⚠️ **Security Notice:**\n• Private key access is strictly limited\n• Maximum 1 access per day\n• All attempts are logged and monitored\n\n🛡️ This protects your funds from unauthorized access.`);
             }
             
             const user = await this.database.getUserByTelegramId(ctx.from.id);
@@ -265,30 +313,74 @@ Click below to reveal the full key:`, {
                 return ctx.reply('❌ No wallet found.');
             }
 
-            const privateKey = this.walletManager.decrypt(user.encrypted_private_key);
+            // Record this sensitive operation
+            await this.security.recordSensitiveOperation(ctx.from.id);
             
-            const message = await ctx.editMessageText(`🔑 *Private Key*
+            // Log successful private key access
+            await this.security.logSecurityEvent('PRIVATE_KEY_REVEALED', ctx.from.id, {
+                operation: 'reveal_private_key',
+                riskScore: verificationResult.riskScore,
+                verificationSteps: verificationResult.verificationSteps
+            }, 'CRITICAL');
+            
+            // Decrypt private key securely
+            const decryptedPrivateKey = this.security.decrypt(user.encrypted_private_key, ctx.from.id);
+            
+            if (decryptedPrivateKey === 'DECRYPTION_FAILED_PLEASE_REGENERATE_WALLET') {
+                return ctx.reply('❌ Unable to decrypt private key. Please regenerate your wallet.');
+            }
+            
+            // Show private key with strong security warnings
+            const message = await ctx.editMessageText(`🔑 **PRIVATE KEY REVEALED**
 
-\`${privateKey}\`
+⚠️ **CRITICAL SECURITY WARNING** ⚠️
 
-⚠️ *KEEP THIS SECURE!*
-_Never share your private key with anyone._
+🔐 **Your Private Key:**
+\`${decryptedPrivateKey}\`
+
+🚨 **IMPORTANT SECURITY NOTICES:**
+• **NEVER share this key with anyone**
+• **Screenshot will be auto-deleted in 30 seconds**
+• **This key gives FULL access to your wallet**
+• **Store it securely offline**
+• **This access is logged and monitored**
+
+🛡️ **Next access available in 24 hours**
 
 _This message will be deleted in 15 seconds._`, {
                 parse_mode: 'Markdown'
             });
 
+            // Securely wipe the private key from memory
+            this.security.secureWipeMemory(decryptedPrivateKey);
+            
             // Auto-delete after 15 seconds
             setTimeout(async () => {
                 try {
                     await ctx.deleteMessage();
+                    
+                    // Send confirmation that message was deleted
+                    const confirmMsg = await ctx.reply('🛡️ Private key message deleted for security.');
+                    
+                    // Delete confirmation after 3 seconds
+                    setTimeout(async () => {
+                        try {
+                            await ctx.telegram.deleteMessage(ctx.chat.id, confirmMsg.message_id);
+                        } catch (e) {
+                            // Ignore deletion errors
+                        }
+                    }, 3000);
+                    
                 } catch (error) {
                     // Silent error handling
                 }
             }, 15000);
             
         } catch (error) {
-            this.monitoring.logError('Reveal private key failed', error, { userId: ctx.from.id });
+            this.monitoring.logError('Reveal private key failed', { 
+                message: error.message,
+                userId: ctx.from.id 
+            });
             await ctx.reply('❌ Error revealing private key.');
         }
     }
@@ -325,11 +417,32 @@ Are you absolutely sure?`;
 
     async handleConfirmDeleteWallet(ctx) {
         try {
-            await ctx.answerCbQuery();
+            // Answer callback query first
+            try {
+                await ctx.answerCbQuery('Processing wallet deletion...');
+            } catch (cbError) {
+                secureLogger.warn('Failed to answer callback query (non-critical)', { error: cbError.message });
+            }
+            
             const userId = ctx.from.id;
             
+            // Check if user still exists (prevent double deletion)
+            const existingUser = await this.database.getUserByTelegramId(userId);
+            if (!existingUser) {
+                await ctx.editMessageText(`🗑️ *Wallet Already Deleted*
+
+Your wallet has already been deleted.
+
+Use /start to create a new wallet.`, {
+                    parse_mode: 'Markdown'
+                });
+                return;
+            }
+            
             // Delete user from database
+            secureLogger.info('Starting wallet deletion process', { userId });
             await this.database.deleteUser(userId);
+            secureLogger.info('Database deletion completed', { userId });
             
             // Clear all Redis cache for this user
             if (this.cacheService) {
@@ -364,20 +477,47 @@ Are you absolutely sure?`;
                 }
             }
             
-            await ctx.editMessageText(`🗑️ *Wallet Deleted*
+            try {
+                await ctx.editMessageText(`🗑️ *Wallet Deleted*
 
 Your wallet has been permanently deleted.
 
 Use /start to create a new wallet.`, {
-                parse_mode: 'Markdown'
-            });
+                    parse_mode: 'Markdown'
+                });
+            } catch (editError) {
+                // If edit fails, send new message
+                await ctx.reply(`🗑️ *Wallet Deleted*
+
+Your wallet has been permanently deleted.
+
+Use /start to create a new wallet.`, {
+                    parse_mode: 'Markdown'
+                });
+            }
             
             this.monitoring.logInfo('Wallet deleted', { userId });
+            secureLogger.info('Wallet deletion process completed successfully', { userId });
+            
+            // Ensure no further processing happens
+            return;
             
         } catch (error) {
-            secureLogger.error('Confirm delete wallet failed', error, { userId: ctx.from.id });
+            secureLogger.error('Confirm delete wallet failed', error, { 
+                userId: ctx.from.id,
+                errorMessage: error.message,
+                errorStack: error.stack
+            });
             this.monitoring.logError('Confirm delete wallet failed', error, { userId: ctx.from.id });
-            await ctx.reply('❌ Error deleting wallet. Please try again.');
+            
+            // More specific error handling
+            if (error.message && error.message.includes('database')) {
+                await ctx.reply('❌ Database error while deleting wallet. Please try again.');
+            } else if (error.message && error.message.includes('cache')) {
+                await ctx.reply('❌ Cache error while deleting wallet. Please try again.');
+            } else {
+                await ctx.reply('❌ Error deleting wallet. Please try again.');
+            }
         }
     }
 

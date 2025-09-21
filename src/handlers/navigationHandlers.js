@@ -815,8 +815,8 @@ Please try again or check your wallet balance.`);
             
             // Force immediate cache refresh using CacheService
             if (this.cacheService) {
-                await this.cacheService.invalidateUserSettings(userId);
-                await this.cacheService.invalidateMainMenu(userId);
+                await this.cacheService.delete('user_settings', userId);
+                await this.cacheService.delete('main_menu', userId);
             }
             
             await ctx.reply(`✅ ${type.charAt(0).toUpperCase() + type.slice(1)} gas price set to ${gasPrice} Gwei`);
@@ -880,8 +880,8 @@ Please try again or check your wallet balance.`);
 
             // Force immediate cache refresh using CacheService
             if (this.cacheService) {
-                await this.cacheService.invalidateUserSettings(userId);
-                await this.cacheService.invalidateMainMenu(userId);
+                await this.cacheService.delete('user_settings', userId);
+                await this.cacheService.delete('main_menu', userId);
             }
             
             await ctx.reply(`✅ ${type.charAt(0).toUpperCase() + type.slice(1)} slippage set to ${slippage}%`);
@@ -929,8 +929,8 @@ Please try again or check your wallet balance.`);
             
             // Force immediate cache refresh using CacheService
             if (this.cacheService) {
-                await this.cacheService.invalidateUserSettings(userId);
-                await this.cacheService.invalidateMainMenu(userId);
+                await this.cacheService.delete('user_settings', userId);
+                await this.cacheService.delete('main_menu', userId);
             }
             
             await ctx.reply(`✅ Auto buy amount set to ${amount} MON`);
@@ -1150,8 +1150,9 @@ ${tokenAddress}
             // Delete the user's message for security
             await ctx.deleteMessage();
             
+            // Use existing wallet manager instance
             const WalletManager = require('../wallet');
-            const walletManager = new WalletManager();
+            const walletManager = new WalletManager(this.redis, this.database);
             
             let wallet;
             
@@ -1205,6 +1206,25 @@ ${tokenAddress}
                 } catch (deleteError) {
                     // Failed to delete import message
                 }
+            }
+            
+            // Cancel any active force reply by sending a message with remove_keyboard
+            try {
+                await ctx.reply('✅ Wallet imported successfully!', {
+                    reply_markup: {
+                        remove_keyboard: true
+                    }
+                });
+                // Delete this temporary message immediately
+                setTimeout(async () => {
+                    try {
+                        await ctx.telegram.deleteMessage(ctx.chat.id, ctx.message.message_id + 1);
+                    } catch (e) {
+                        // Ignore deletion errors
+                    }
+                }, 100);
+            } catch (e) {
+                // Ignore if can't cancel force reply
             }
             
             // Send success message

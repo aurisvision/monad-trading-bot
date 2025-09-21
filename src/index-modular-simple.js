@@ -21,12 +21,6 @@ const TransactionMiddleware = require('./middleware/transactionMiddleware');
 const TradingInterface = require('./trading/TradingInterface');
 
 // Comprehensive Tracking System - DISABLED
-// const ComprehensiveTracker = require('./monitoring/ComprehensiveTracker');
-// const DatabaseTracker = require('./monitoring/DatabaseTracker');
-// const CacheTracker = require('./monitoring/CacheTracker');
-// const ApiTracker = require('./monitoring/ApiTracker');
-// const BotTracker = require('./monitoring/BotTracker');
-// const TrackingDashboard = require('./monitoring/TrackingDashboard');
 // const { RateLimiter, SecurityEnhancements, SessionManager, MemoryRateLimiter, MemorySessionManager } = require('./rateLimiter');
 const Redis = require('redis');
 
@@ -175,7 +169,7 @@ class Area51BotModularSimple {
         
         // Initialize services
         this.monorailAPI = new MonorailAPI(this.redis, this.cacheService);
-        this.walletManager = new WalletManager(this.database, this.monitoring);
+        this.walletManager = new WalletManager(this.redis, this.database);
         
         // Cache monitoring is now integrated in the unified cache system
         
