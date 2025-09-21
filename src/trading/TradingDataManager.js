@@ -88,9 +88,19 @@ class TradingDataManager {
                 walletAddress: user.wallet_address
             };
 
-            // إعدادات التداول المحسوبة
+            // إعدادات التداول المحسوبة مع تسجيل للتأكد
             tradeData.effectiveSlippage = this.config.getSlippageValue(tradeType, settings);
             tradeData.effectiveGas = this.config.getGasValue(tradeType, settings);
+            
+            // تسجيل الإعدادات المطبقة للتأكد
+            console.log(`🔧 Trade settings applied for ${tradeType}:`, {
+                userId,
+                effectiveGas: `${Math.round(tradeData.effectiveGas / 1000000000)} Gwei`,
+                effectiveSlippage: `${tradeData.effectiveSlippage}%`,
+                userGasSetting: settings?.gas_price ? `${Math.round(settings.gas_price / 1000000000)} Gwei` : 'default',
+                userSlippageSetting: settings?.slippage_tolerance ? `${settings.slippage_tolerance}%` : 'default',
+                turboMode: settings?.turbo_mode || false
+            });
 
             const responseTime = Date.now() - startTime;
             this.updateMetrics('prepareTradeData', responseTime);

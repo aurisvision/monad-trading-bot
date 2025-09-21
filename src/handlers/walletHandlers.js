@@ -251,7 +251,31 @@ Send your private key or mnemonic phrase to import your wallet.
                     riskScore: verificationResult.riskScore
                 }, 'HIGH');
                 
-                return ctx.reply(`🚨 **Access Denied**\n\n❌ ${verificationResult.reason}\n\n⚠️ **Security Notice:**\nFor your protection, private key access is limited and monitored.`);
+                // Get user trust level for better messaging
+                const trustLevel = await this.security.getUserTrustLevel(userId);
+                const baseLimit = this.security.config.rateLimits.private_key_access.limit;
+                const adjustedLimit = this.security.getAdjustedLimit(baseLimit, trustLevel);
+                
+                const friendlyMessage = `🔐 **Private Key Access**
+
+⏰ You've reached your access limit for now.
+
+📊 **Your Account Status:**
+• Trust Level: ${this.getTrustLevelEmoji(trustLevel)} ${trustLevel.toUpperCase()}
+• Access Limit: ${adjustedLimit} per hour
+• Next reset: In ${Math.ceil(this.security.config.rateLimits.private_key_access.window / 60000)} minutes
+
+🚀 **Increase Your Limits:**
+• New users: 5 per hour
+• Regular users (3+ days): 10 per hour  
+• Trusted users (14+ days): 15 per hour
+• VIP users (30+ days): 20 per hour
+
+💡 **Tip:** Keep trading to build trust and increase your limits!
+
+🛡️ This system protects your wallet from potential attacks while giving you reasonable access.`;
+                
+                return ctx.reply(friendlyMessage);
             }
             
             const keyboard = Markup.inlineKeyboard([
@@ -315,7 +339,31 @@ Click below to reveal the full key:`, {
                     riskScore: verificationResult.riskScore
                 }, 'CRITICAL');
                 
-                return ctx.reply(`🚨 **PRIVATE KEY ACCESS DENIED**\n\n❌ ${verificationResult.reason}\n\n⚠️ **Security Notice:**\n• Private key access is strictly limited\n• Maximum 1 access per day\n• All attempts are logged and monitored\n\n🛡️ This protects your funds from unauthorized access.`);
+                // Get user trust level for better messaging
+                const trustLevel = await this.security.getUserTrustLevel(ctx.from.id);
+                const baseLimit = this.security.config.rateLimits.private_key_reveal.limit;
+                const adjustedLimit = this.security.getAdjustedLimit(baseLimit, trustLevel);
+                
+                const friendlyMessage = `🔐 **Private Key Reveal**
+
+⏰ You've reached your reveal limit for now.
+
+📊 **Your Account Status:**
+• Trust Level: ${this.getTrustLevelEmoji(trustLevel)} ${trustLevel.toUpperCase()}
+• Reveal Limit: ${adjustedLimit} per hour
+• Next reset: In ${Math.ceil(this.security.config.rateLimits.private_key_reveal.window / 60000)} minutes
+
+🚀 **Your Benefits by Trust Level:**
+• New users: 2-3 reveals per hour
+• Regular users: 5 reveals per hour  
+• Trusted users: 7-8 reveals per hour
+• VIP users: 10 reveals per hour
+
+💡 **Build Trust:** Keep using the bot and trading to unlock higher limits!
+
+🛡️ This balanced system protects you while giving reasonable access to your own funds.`;
+                
+                return ctx.reply(friendlyMessage);
             }
             
             const user = await this.database.getUserByTelegramId(ctx.from.id);
@@ -340,24 +388,30 @@ Click below to reveal the full key:`, {
                 return ctx.reply('❌ Unable to decrypt private key. Please regenerate your wallet.');
             }
             
+            // Get user trust level for personalized message
+            const trustLevel = await this.security.getUserTrustLevel(ctx.from.id);
+            const baseLimit = this.security.config.rateLimits.private_key_reveal.limit;
+            const adjustedLimit = this.security.getAdjustedLimit(baseLimit, trustLevel);
+            
             // Show private key with strong security warnings
             const message = await ctx.editMessageText(`🔑 **PRIVATE KEY REVEALED**
 
-⚠️ **CRITICAL SECURITY WARNING** ⚠️
+${this.getTrustLevelEmoji(trustLevel)} **${trustLevel.toUpperCase()} USER ACCESS**
 
 🔐 **Your Private Key:**
 \`${decryptedPrivateKey}\`
 
-🚨 **IMPORTANT SECURITY NOTICES:**
+🚨 **SECURITY REMINDERS:**
 • **NEVER share this key with anyone**
-• **Screenshot will be auto-deleted in 30 seconds**
 • **This key gives FULL access to your wallet**
 • **Store it securely offline**
-• **This access is logged and monitored**
+• **Screenshot responsibly**
 
-🛡️ **Next access available in 24 hours**
+📊 **Your Remaining Access:**
+• ${adjustedLimit - 1} reveals left this hour
+• Trust Level: ${this.getTrustLevelEmoji(trustLevel)} ${trustLevel.toUpperCase()}
 
-_This message will be deleted in 15 seconds._`, {
+_This message will be deleted in 15 seconds for your security._`, {
                 parse_mode: 'Markdown'
             });
 
@@ -533,6 +587,16 @@ Use /start to create a new wallet.`, {
                 await ctx.reply('❌ Error deleting wallet. Please try again.');
             }
         }
+    }
+
+    getTrustLevelEmoji(trustLevel) {
+        const emojis = {
+            'new': '🆕',
+            'regular': '👤', 
+            'trusted': '⭐',
+            'vip': '💎'
+        };
+        return emojis[trustLevel] || '👤';
     }
 
     maskPrivateKey(privateKey) {

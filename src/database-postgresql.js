@@ -1127,6 +1127,22 @@ class DatabasePostgreSQL {
         return result;
     }
 
+    // Get user transaction count for trust level calculation
+    async getUserTransactionCount(telegramId) {
+        const query = `
+            SELECT COUNT(*) as transaction_count 
+            FROM transactions 
+            WHERE telegram_id = $1 AND status = 'completed'`;
+        
+        try {
+            const result = await this.getOne(query, [telegramId]);
+            return parseInt(result?.transaction_count || 0);
+        } catch (error) {
+            console.warn('Failed to get user transaction count:', error);
+            return 0; // Default to 0 on error
+        }
+    }
+
     // Track user activity for monitoring
     async trackUserActivity(telegramId) {
         const query = `

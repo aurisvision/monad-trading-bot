@@ -141,9 +141,10 @@ class GasSlippagePriority {
 
             await this.database.updateUserSettings(userId, update);
             
-            // Force immediate cache invalidation
+            // Force immediate cache invalidation using proper operation
             if (this.cacheService) {
-                await this.cacheService.delete('user_settings', userId);
+                // Use settings_change operation to clear all related cache
+                await this.cacheService.invalidateAfterOperation('settings_change', userId, null);
                 console.log(`✅ Gas settings updated and cache cleared for user ${userId}`);
             }
         } catch (error) {
@@ -171,9 +172,10 @@ class GasSlippagePriority {
 
             await this.database.updateUserSettings(userId, update);
             
-            // Force immediate cache invalidation
+            // Force immediate cache invalidation using proper operation
             if (this.cacheService) {
-                await this.cacheService.delete('user_settings', userId);
+                // Use settings_change operation to clear all related cache
+                await this.cacheService.invalidateAfterOperation('settings_change', userId, null);
                 console.log(`✅ Slippage settings updated and cache cleared for user ${userId}`);
             }
         } catch (error) {
@@ -193,9 +195,10 @@ class GasSlippagePriority {
 
             await this.database.updateUserSettings(userId, update);
             
-            // Force immediate cache invalidation for user settings
+            // Force immediate cache invalidation using proper operation
             if (this.cacheService) {
-                await this.cacheService.delete('user_settings', userId);
+                // Use settings_change operation to clear all related cache
+                await this.cacheService.invalidateAfterOperation('settings_change', userId, null);
                 console.log(`✅ Auto buy amount updated and cache cleared for user ${userId}`);
             }
         } catch (error) {

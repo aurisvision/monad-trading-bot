@@ -19,14 +19,14 @@ class UnifiedSecuritySystem {
                 ivLength: 12
             },
             
-            // Rate limiting for sensitive operations
+            // Rate limiting for sensitive operations - More user-friendly
             rateLimits: {
-                'private_key_access': { limit: 1, window: 3600000 }, // 1/hour - CONTROLLED ACCESS
-                'private_key_reveal': { limit: 1, window: 86400000 }, // 1/day - VERY LIMITED
-                'wallet_export': { limit: 2, window: 3600000 }, // 2/hour
-                'wallet_import': { limit: 3, window: 3600000 }, // 3/hour
-                'wallet_delete': { limit: 1, window: 86400000 }, // 1/day
-                'large_transaction': { limit: 10, window: 3600000 } // 10/hour
+                'private_key_access': { limit: 10, window: 3600000 }, // 10/hour - More flexible for users
+                'private_key_reveal': { limit: 5, window: 3600000 }, // 5/hour - Reasonable access
+                'wallet_export': { limit: 5, window: 3600000 }, // 5/hour
+                'wallet_import': { limit: 5, window: 3600000 }, // 5/hour
+                'wallet_delete': { limit: 2, window: 86400000 }, // 2/day - Still protected
+                'large_transaction': { limit: 20, window: 3600000 } // 20/hour - More trading freedom
             },
             
             // Security monitoring thresholds
@@ -238,18 +238,23 @@ class UnifiedSecuritySystem {
                 return { allowed: true }; // Fail open for availability
             }
 
-            if (attempts >= config.limit) {
+            // Smart rate limiting - check user trust level
+            const userTrustLevel = await this.getUserTrustLevel(userId);
+            const adjustedLimit = this.getAdjustedLimit(config.limit, userTrustLevel);
+            
+            if (attempts >= adjustedLimit) {
                 secureLogger.warn('Rate limit exceeded', {
                     userId,
                     operation,
                     attempts,
-                    limit: config.limit
+                    limit: adjustedLimit,
+                    trustLevel: userTrustLevel
                 });
                 
                 this.metrics.blockedOperations++;
                 return { 
                     allowed: false, 
-                    reason: `Rate limit exceeded. Maximum ${config.limit} attempts per ${Math.floor(config.window / 60000)} minutes` 
+                    reason: `Rate limit exceeded. Maximum ${adjustedLimit} attempts per ${Math.floor(config.window / 60000)} minutes` 
                 };
             }
 
@@ -696,6 +701,58 @@ class UnifiedSecuritySystem {
             timestamp: new Date().toISOString(),
             systemHealth: 'HEALTHY' // Will be updated by monitoring
         };
+    }
+
+    /**
+     * Get user trust level based on activity and behavior
+     * @param {number} userId - User ID
+     * @returns {Promise<string>} Trust level: 'new', 'regular', 'trusted', 'vip'
+     */
+    async getUserTrustLevel(userId) {
+        try {
+            // Get user data from database
+            const user = await this.database.getUserByTelegramId(userId);
+            if (!user) return 'new';
+            
+            const now = new Date();
+            const accountAge = now - new Date(user.created_at);
+            const daysSinceCreation = accountAge / (1000 * 60 * 60 * 24);
+            
+            // Get transaction count
+            const transactionCount = await this.database.getUserTransactionCount(userId);
+            
+            // Calculate trust level
+            if (daysSinceCreation >= 30 && transactionCount >= 100) {
+                return 'vip'; // VIP users get highest limits
+            } else if (daysSinceCreation >= 14 && transactionCount >= 20) {
+                return 'trusted'; // Trusted users get increased limits
+            } else if (daysSinceCreation >= 3 && transactionCount >= 5) {
+                return 'regular'; // Regular users get standard limits
+            } else {
+                return 'new'; // New users get restricted limits
+            }
+        } catch (error) {
+            secureLogger.warn('Failed to get user trust level', { userId, error: error.message });
+            return 'regular'; // Default to regular on error
+        }
+    }
+
+    /**
+     * Adjust rate limit based on user trust level
+     * @param {number} baseLimit - Base rate limit
+     * @param {string} trustLevel - User trust level
+     * @returns {number} Adjusted limit
+     */
+    getAdjustedLimit(baseLimit, trustLevel) {
+        const multipliers = {
+            'new': 0.5,      // New users: 50% of base limit
+            'regular': 1.0,   // Regular users: 100% of base limit
+            'trusted': 1.5,   // Trusted users: 150% of base limit
+            'vip': 2.0        // VIP users: 200% of base limit
+        };
+        
+        const multiplier = multipliers[trustLevel] || 1.0;
+        return Math.ceil(baseLimit * multiplier);
     }
 
     /**

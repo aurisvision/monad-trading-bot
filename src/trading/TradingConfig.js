@@ -153,34 +153,49 @@ class TradingConfig {
     }
 
     /**
-     * الحصول على قيمة الـ slippage لنوع التداول
+     * الحصول على قيمة الـ slippage لنوع التداول مع استخدام إعدادات المستخدم
      */
     getSlippageValue(type, userSettings = null) {
         const config = this.getTradeConfig(type);
         
+        // للتيربو: استخدام 20% ثابت
         if (config.slippage.fixed !== undefined) {
             return config.slippage.fixed;
         }
         
-        if (config.slippage.source && userSettings) {
-            return userSettings[config.slippage.source] || config.slippage.default;
+        // للعادي: استخدام إعدادات المستخدم
+        if (userSettings) {
+            // استخدام slippage_tolerance من إعدادات المستخدم
+            return userSettings.slippage_tolerance || config.slippage.default;
         }
         
         return config.slippage.default || 1;
     }
 
     /**
-     * الحصول على قيمة الـ gas لنوع التداول
+     * الحصول على قيمة الـ gas لنوع التداول مع استخدام إعدادات المستخدم
      */
     getGasValue(type, userSettings = null) {
         const config = this.getTradeConfig(type);
         
+        // للتيربو: استخدام 100 Gwei ثابت
         if (config.gas.fixed !== undefined) {
             return config.gas.fixed;
         }
         
-        if (config.gas.source && userSettings) {
-            return userSettings[config.gas.source] || config.gas.default;
+        // للعادي: استخدام إعدادات المستخدم مع منطق الأولوية
+        if (userSettings) {
+            // فحص إذا كان التيربو مفعل ومحدث مؤخراً
+            const turboUpdated = new Date(userSettings.turbo_mode_updated_at || userSettings.created_at);
+            const gasUpdated = new Date(userSettings.gas_settings_updated_at || userSettings.created_at);
+            
+            // إذا كان التيربو مفعل ومحدث أحدث من إعدادات الغاز
+            if (userSettings.turbo_mode && turboUpdated >= gasUpdated) {
+                return 100000000000; // 100 Gwei للتيربو
+            }
+            
+            // وإلا استخدم إعدادات الغاز المخصصة
+            return userSettings.gas_price || config.gas.default;
         }
         
         return config.gas.default || 50000000000;
