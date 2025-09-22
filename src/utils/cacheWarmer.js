@@ -16,17 +16,15 @@ class CacheWarmer {
      */
     async warmActiveUsersCache() {
         if (this.isWarming) {
-            console.log('🔥 Cache warming already in progress...');
+
             return;
         }
 
         this.isWarming = true;
-        console.log('🔥 Starting cache warming for active users...');
 
         try {
             // الحصول على المستخدمين النشطين (آخر 24 ساعة)
             const activeUsers = await this.getActiveUsers();
-            console.log(`📊 Found ${activeUsers.length} active users to warm cache for`);
 
             let warmedUsers = 0;
             let warmedSettings = 0;
@@ -51,12 +49,10 @@ class CacheWarmer {
                     await this.sleep(10);
 
                 } catch (error) {
-                    console.error(`❌ Error warming cache for user ${user.telegram_id}:`, error.message);
+
                 }
             }
 
-            console.log(`✅ Cache warming completed: ${warmedUsers} users, ${warmedSettings} settings`);
-            
             if (this.monitoring) {
                 this.monitoring.logInfo('Cache warming completed', {
                     activeUsers: activeUsers.length,
@@ -66,7 +62,7 @@ class CacheWarmer {
             }
 
         } catch (error) {
-            console.error('❌ Cache warming failed:', error);
+
         } finally {
             this.isWarming = false;
         }
@@ -83,11 +79,11 @@ class CacheWarmer {
             ORDER BY last_activity DESC
             LIMIT 100
         `;
-        
+
         try {
             return await this.database.getAll(query);
         } catch (error) {
-            console.error('❌ Error getting active users:', error);
+
             return [];
         }
     }
@@ -97,7 +93,6 @@ class CacheWarmer {
      */
     async warmUserCache(telegramId) {
         try {
-            console.log(`🔥 Warming cache for user ${telegramId}...`);
 
             // تسخين بيانات المستخدم
             const userData = await this.database.getUserByTelegramId(telegramId);
@@ -111,10 +106,8 @@ class CacheWarmer {
                 await this.cacheService.set('user_settings', telegramId, userSettings);
             }
 
-            console.log(`✅ Cache warmed for user ${telegramId}`);
-
         } catch (error) {
-            console.error(`❌ Error warming cache for user ${telegramId}:`, error.message);
+
         }
     }
 
@@ -122,11 +115,11 @@ class CacheWarmer {
      * جدولة تسخين الكاش كل ساعة
      */
     startScheduledWarming() {
-        console.log('⏰ Starting scheduled cache warming (every hour)...');
-        
+        ...');
+
         // تسخين فوري
         this.warmActiveUsersCache();
-        
+
         // جدولة كل ساعة
         setInterval(() => {
             this.warmActiveUsersCache();
@@ -148,7 +141,7 @@ class CacheWarmer {
             const keys = await this.cacheService.redis.keys('area51:*');
             const userKeys = keys.filter(key => key.includes(':user:'));
             const settingsKeys = keys.filter(key => key.includes(':user_settings:'));
-            
+
             return {
                 totalKeys: keys.length,
                 userKeys: userKeys.length,
@@ -156,7 +149,7 @@ class CacheWarmer {
                 timestamp: new Date().toISOString()
             };
         } catch (error) {
-            console.error('❌ Error getting cache stats:', error);
+
             return null;
         }
     }

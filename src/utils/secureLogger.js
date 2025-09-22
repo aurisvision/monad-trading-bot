@@ -1,6 +1,5 @@
 // 🔒 Secure Logger - Prevents sensitive data leakage in logs
 // Area51 Bot Security Enhancement
-
 class SecureLogger {
     constructor() {
         // Patterns to detect and sanitize sensitive data
@@ -22,7 +21,6 @@ class SecureLogger {
             // Email addresses (partial masking)
             /([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g
         ];
-
         // Replacement patterns
         this.replacements = [
             '0x[PRIVATE_KEY_REDACTED]',
@@ -34,7 +32,6 @@ class SecureLogger {
             '[CARD_NUMBER_REDACTED]',
             '$1***@$2'
         ];
-
         // Sensitive object keys to redact
         this.sensitiveKeys = [
             'privateKey',
@@ -53,7 +50,6 @@ class SecureLogger {
             'passphrase'
         ];
     }
-
     /**
      * Sanitize sensitive data from any input
      * @param {any} data - Data to sanitize
@@ -63,27 +59,21 @@ class SecureLogger {
         if (data === null || data === undefined) {
             return data;
         }
-
         // Handle different data types
         if (typeof data === 'string') {
             return this.sanitizeString(data);
         }
-
         if (typeof data === 'object') {
             if (data instanceof Error) {
                 return this.sanitizeError(data);
             }
-            
             if (Array.isArray(data)) {
                 return data.map(item => this.sanitize(item));
             }
-            
             return this.sanitizeObject(data);
         }
-
         return data;
     }
-
     /**
      * Sanitize string content
      * @param {string} str - String to sanitize
@@ -94,22 +84,17 @@ class SecureLogger {
         if (typeof str !== 'string') {
             return String(str || '');
         }
-        
         let sanitized = str;
-        
         // Apply all sensitive patterns
         this.sensitivePatterns.forEach((pattern, index) => {
             try {
                 sanitized = sanitized.replace(pattern, this.replacements[index]);
             } catch (error) {
                 // Skip pattern if it causes error
-                console.warn('Pattern replacement error:', error.message);
             }
         });
-
         return sanitized;
     }
-
     /**
      * Sanitize object properties
      * @param {object} obj - Object to sanitize
@@ -117,7 +102,6 @@ class SecureLogger {
      */
     sanitizeObject(obj) {
         const sanitized = {};
-        
         for (const [key, value] of Object.entries(obj)) {
             // Check if key is sensitive
             if (this.sensitiveKeys.some(sensitiveKey => 
@@ -127,10 +111,8 @@ class SecureLogger {
                 sanitized[key] = this.sanitize(value);
             }
         }
-        
         return sanitized;
     }
-
     /**
      * Sanitize error objects
      * @param {Error} error - Error to sanitize
@@ -145,17 +127,14 @@ class SecureLogger {
             stack: process.env.NODE_ENV === 'development' ? 
                 this.sanitizeString(error.stack || '') : '[STACK_TRACE_REDACTED]'
         };
-
         // Add any additional error properties (sanitized)
         Object.keys(error).forEach(key => {
             if (!['name', 'message', 'code', 'stack'].includes(key)) {
                 sanitized[key] = this.sanitize(error[key]);
             }
         });
-
         return sanitized;
     }
-
     /**
      * Create secure log entry
      * @param {string} level - Log level
@@ -167,7 +146,6 @@ class SecureLogger {
         const timestamp = new Date().toISOString();
         const sanitizedMessage = this.sanitizeString(message);
         const sanitizedMeta = this.sanitize(meta);
-
         return {
             timestamp,
             level: level.toUpperCase(),
@@ -177,7 +155,6 @@ class SecureLogger {
             security_sanitized: true
         };
     }
-
     /**
      * Safe console logging methods
      */
@@ -185,12 +162,10 @@ class SecureLogger {
         const logEntry = this.createLogEntry('info', message, meta);
         console.log(JSON.stringify(logEntry));
     }
-
     warn(message, meta = {}) {
         const logEntry = this.createLogEntry('warn', message, meta);
         console.warn(JSON.stringify(logEntry));
     }
-
     error(message, error = null, meta = {}) {
         const logEntry = this.createLogEntry('error', message, {
             error: error ? this.sanitizeError(error) : null,
@@ -198,22 +173,17 @@ class SecureLogger {
         });
         console.error(JSON.stringify(logEntry));
     }
-
     debug(message, meta = {}) {
         if (process.env.NODE_ENV === 'development') {
             const logEntry = this.createLogEntry('debug', message, meta);
             console.debug(JSON.stringify(logEntry));
         }
     }
-
     /**
      * Test the sanitizer with sample sensitive data
      */
     static test() {
         const logger = new SecureLogger();
-        
-        console.log('🧪 Testing Secure Logger...');
-        
         // Test cases
         const testCases = [
             {
@@ -232,16 +202,13 @@ class SecureLogger {
                 expected: 'privateKey and password should be redacted'
             }
         ];
-
         testCases.forEach(testCase => {
-            console.log(`\n📝 Test: ${testCase.name}`);
-            console.log('Input:', testCase.input);
-            console.log('Sanitized:', logger.sanitize(testCase.input));
+            console.log(`Testing: ${testCase.name}`);
+            const sanitized = logger.sanitize(testCase.input);
+            console.log(`Result: ${JSON.stringify(sanitized)}`);
         });
     }
 }
-
 module.exports = SecureLogger;
-
 // Export singleton instance
-module.exports.secureLogger = new SecureLogger();
+module.exports.secureLogger = new SecureLogger();

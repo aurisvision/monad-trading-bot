@@ -1,34 +1,26 @@
 const UnifiedCacheManager = require('./services/UnifiedCacheManager');
-
 class PortfolioService {
     constructor(monorailAPI, redis, monitoring) {
         this.monorailAPI = monorailAPI;
         this.monitoring = monitoring;
         this.TOKENS_PER_PAGE = 3;
         this.MIN_VALUE_THRESHOLD = 0.001; // Minimum MON value to show token (0.001 MON)
-        
         // Initialize unified cache system
         this.cache = new UnifiedCacheManager(
             redis,
             monitoring,
             process.env.NODE_ENV || 'production'
         );
-        
-        console.log('✅ PortfolioService initialized with UnifiedCacheManager');
     }
-
     /**
      * Clear user portfolio cache using unified cache system
      */
     async clearUserPortfolioCache(telegramId) {
         try {
             await this.cache.delete('portfolio', telegramId);
-            console.log(`🗑️ Portfolio cache cleared for user ${telegramId}`);
         } catch (error) {
-            console.error('Error clearing portfolio cache:', error);
         }
     }
-
     /**
      * Fetch portfolio from Monorail API and filter data
      */
@@ -36,7 +28,6 @@ class PortfolioService {
         try {
             // Direct call to monorailAPI.getWalletBalance (no duplication)
             const tokens = await this.monorailAPI.getWalletBalance(walletAddress, false);
-            
             // Filter and transform tokens for portfolio display
             const filteredTokens = tokens
                 .filter(token => {
@@ -47,7 +38,6 @@ class PortfolioService {
                     // Check if token value meets minimum threshold
                     const monValue = parseFloat(token.mon_value || '0');
                     const meetsThreshold = monValue >= this.MIN_VALUE_THRESHOLD;
-                    
                     return isNotMON && hasBalance && meetsThreshold;
                 })
                 .map(token => ({
@@ -59,26 +49,21 @@ class PortfolioService {
                     address: token.address,
                     last_updated: Date.now()
                 }));
-
             return filteredTokens;
         } catch (error) {
             this.monitoring?.logError('Portfolio API fetch failed', error);
             return [];
         }
     }
-
     /**
      * Store portfolio in Redis using hash structure
      */
     async storePortfolioInRedis(telegramId, tokens) {
         if (!this.redis) return;
-
         try {
             const portfolioKey = this.getPortfolioKey(telegramId);
-
             // Clear existing portfolio
             await this.redis.del(portfolioKey);
-
             // Store each token as a hash field
             for (const token of tokens) {
                 await this.redis.hSet(portfolioKey, token.symbol, JSON.stringify({
@@ -89,10 +74,8 @@ class PortfolioService {
                     address: token.address
                 }));
             }
-
             // Set TTL
             await this.redis.expire(portfolioKey, this.CACHE_TTL);
-            
             this.monitoring?.logInfo('Portfolio cached in Redis', { 
                 telegramId, 
                 tokenCount: tokens.length 
@@ -101,21 +84,17 @@ class PortfolioService {
             this.monitoring?.logError('Redis portfolio storage failed', error);
         }
     }
-
     /**
      * Get portfolio from Redis cache
      */
     async getPortfolioFromRedis(telegramId) {
         if (!this.redis) return null;
-
         try {
             const portfolioKey = this.getPortfolioKey(telegramId);
             const tokenData = await this.redis.hGetAll(portfolioKey);
-
             if (!tokenData || Object.keys(tokenData).length === 0) {
                 return null;
             }
-
             const tokens = [];
             for (const [symbol, data] of Object.entries(tokenData)) {
                 try {
@@ -128,14 +107,12 @@ class PortfolioService {
                     this.monitoring?.logError('Token data parse error', parseError);
                 }
             }
-
             return tokens;
         } catch (error) {
             this.monitoring?.logError('Redis portfolio retrieval failed', error);
             return null;
         }
     }
-
     /**
      * Get user portfolio with caching
      */
@@ -149,21 +126,17 @@ class PortfolioService {
                     return cachedPortfolio;
                 }
             }
-
             // Fetch from API
             this.monitoring?.logInfo('Fetching portfolio from API', { telegramId, walletAddress });
             const tokens = await this.fetchPortfolioFromAPI(walletAddress);
-
             // Store in cache
             await this.storePortfolioInRedis(telegramId, tokens);
-
             return tokens;
         } catch (error) {
             this.monitoring?.logError('Get user portfolio failed', error);
             return [];
         }
     }
-
     /**
      * Format portfolio message for Telegram
      */
@@ -172,7 +145,6 @@ class PortfolioService {
         const startIndex = (page - 1) * this.TOKENS_PER_PAGE;
         const endIndex = startIndex + this.TOKENS_PER_PAGE;
         const pageTokens = tokens.slice(startIndex, endIndex);
-
         if (pageTokens.length === 0) {
             return {
                 text: `*📊 Portfolio*\n\n_No tokens found in your portfolio._`,
@@ -181,30 +153,24 @@ class PortfolioService {
                 currentPage: page
             };
         }
-
         let message = `*📊 Portfolio*\n\n`;
-
         pageTokens.forEach(token => {
             const balance = parseFloat(token.balance || '0').toFixed(6);
             const monValue = parseFloat(token.mon_value || '0').toFixed(4);
             const usdPrice = token.usd_price || null;
-            
             message += `🟣 *${token.symbol}* _(${token.name})_\n`;
             message += `• *Balance:* ${balance} ${token.symbol}\n`;
             message += `• *Value in MON:* ${monValue}\n`;
-            
             if (usdPrice !== null && usdPrice > 0) {
                 message += `• *Price:* ${this.formatPrice(usdPrice)}\n\n`;
             } else {
                 message += `• *Price:* $0.00000\n\n`;
             }
         });
-
         // Add pagination info if multiple pages
         if (totalPages > 1) {
             message += `*📄 Page ${page} of ${totalPages}*\n\n`;
         }
-
         // Add last updated timestamp
         const now = new Date();
         const timeString = now.toLocaleTimeString('en-US', { 
@@ -214,7 +180,6 @@ class PortfolioService {
             second: '2-digit'
         });
         message += `_🕒 Last updated: ${timeString}_`;
-
         return {
             text: message,
             hasTokens: true,
@@ -223,7 +188,6 @@ class PortfolioService {
             tokens: pageTokens
         };
     }
-
     /**
      * Format price for display
      */
@@ -231,9 +195,7 @@ class PortfolioService {
         if (!price || price <= 0) {
             return '$0.00000';
         }
-        
         const numPrice = parseFloat(price);
-        
         if (numPrice >= 1) {
             return `$${numPrice.toFixed(2)}`;
         } else if (numPrice >= 0.01) {
@@ -244,14 +206,12 @@ class PortfolioService {
             return '$0.00000';
         }
     }
-
     /**
      * Create inline keyboard for portfolio
      */
     createPortfolioKeyboard(tokens, currentPage, totalPages) {
         const { Markup } = require('telegraf');
         const buttons = [];
-
         // Add sell buttons for tokens (2 in first row, 1 in second row for 3 tokens per page)
         if (tokens && tokens.length > 0) {
             // First row: 2 tokens
@@ -265,7 +225,6 @@ class PortfolioService {
                     Markup.button.callback(`Sell ${tokens[0].symbol}`, `sell:${tokens[0].symbol}`)
                 ]);
             }
-            
             // Second row: 1 token (if exists)
             if (tokens.length === 3) {
                 buttons.push([
@@ -273,10 +232,8 @@ class PortfolioService {
                 ]);
             }
         }
-
         // Add navigation buttons
         const navButtons = [];
-        
         if (totalPages > 1) {
             if (currentPage > 1) {
                 navButtons.push(Markup.button.callback('⬅️ Prev', `portfolio:page:${currentPage - 1}`));
@@ -285,20 +242,15 @@ class PortfolioService {
                 navButtons.push(Markup.button.callback('Next ➡️', `portfolio:page:${currentPage + 1}`));
             }
         }
-
         if (navButtons.length > 0) {
             buttons.push(navButtons);
         }
-
         // Add refresh button
         buttons.push([Markup.button.callback('🔄 Refresh', 'portfolio:refresh')]);
-
         // Add back button
         buttons.push([Markup.button.callback('🏠 Back to Main', 'main')]);
-
         return Markup.inlineKeyboard(buttons);
     }
-
     /**
      * Get portfolio display data
      */
@@ -311,7 +263,6 @@ class PortfolioService {
                 messageData.currentPage, 
                 messageData.totalPages
             );
-
             return {
                 text: messageData.text,
                 keyboard: keyboard.reply_markup,
@@ -321,7 +272,6 @@ class PortfolioService {
             };
         } catch (error) {
             this.monitoring?.logError('Portfolio display generation failed', error);
-            
             const { Markup } = require('telegraf');
             return {
                 text: '❌ Failed to load portfolio. Please try again.',
@@ -335,13 +285,11 @@ class PortfolioService {
             };
         }
     }
-
     /**
      * Clear portfolio cache
      */
     async clearPortfolioCache(telegramId) {
         if (!this.redis) return;
-
         try {
             const portfolioKey = this.getPortfolioKey(telegramId);
             await this.redis.del(portfolioKey);
@@ -351,5 +299,4 @@ class PortfolioService {
         }
     }
 }
-
-module.exports = PortfolioService;
+module.exports = PortfolioService;

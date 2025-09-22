@@ -1,0 +1,64 @@
+{
+  "created": [
+    {
+      "name": "idx_transactions_token",
+      "table": "transactions",
+      "columns": [
+        "token_address"
+      ],
+      "priority": "MEDIUM",
+      "duration": 26,
+      "reason": "Important for token-specific queries",
+      "expectedImprovement": "90% faster token searches"
+    },
+    {
+      "name": "idx_user_states_user",
+      "table": "user_states",
+      "columns": [
+        "telegram_id"
+      ],
+      "priority": "MEDIUM",
+      "duration": 20,
+      "reason": "Important for user state management",
+      "expectedImprovement": "90% faster state queries"
+    },
+    {
+      "name": "idx_users_registration",
+      "table": "users",
+      "columns": [
+        "created_at DESC"
+      ],
+      "priority": "LOW",
+      "duration": 27,
+      "reason": "Useful for user growth analytics",
+      "expectedImprovement": "Better registration analytics"
+    }
+  ],
+  "failed": [
+    {
+      "name": "idx_rate_limits_cleanup",
+      "table": "rate_limits",
+      "error": "column \"expires_at\" does not exist",
+      "priority": "MEDIUM"
+    },
+    {
+      "name": "idx_metrics_analytics",
+      "table": "system_metrics",
+      "error": "column \"timestamp\" does not exist",
+      "priority": "LOW"
+    }
+  ],
+  "skipped": [
+    {
+      "name": "idx_rate_limits_user_operation",
+      "table": "rate_limits",
+      "reason": "Already exists"
+    },
+    {
+      "name": "idx_transactions_user_history",
+      "table": "transactions",
+      "reason": "Already exists"
+    }
+  ],
+  "executionTime": 0
+}

@@ -1,9 +1,7 @@
 // PostgreSQL Database Implementation for Area51 Bot
 // Designed for 10,000+ concurrent users with connection pooling and caching
-
 const { Pool } = require('pg');
 const Redis = require('redis');
-
 class DatabasePostgreSQL {
     constructor(monitoring = null, redisClient = null) {
         this.monitoring = monitoring;
@@ -12,7 +10,6 @@ class DatabasePostgreSQL {
         this.reconnectDelay = 5000; // 5 seconds
         this.healthCheckInterval = null;
         this.isConnected = false;
-        
         // PostgreSQL connection pool configuration - Optimized for 100 concurrent users
         this.pool = new Pool({
             user: process.env.POSTGRES_USER || 'area51_user',
@@ -29,11 +26,9 @@ class DatabasePostgreSQL {
             statement_timeout: 5000,
             ssl: this.getSSLConfig()
         });
-
         // Use shared Redis client or null
         this.redis = redisClient;
         this.cacheEnabled = process.env.CACHE_ENABLED === 'true' && this.redis !== null;
-        
         // Event-driven caching for static data (User & Settings)
         // TTL only for dynamic data (Portfolio & Transactions)
         this.cacheTTL = {
@@ -41,43 +36,34 @@ class DatabasePostgreSQL {
             transactions: 60, // 1 minute - transaction lists change often
             default: 300    // 5 minutes fallback for other data
         };
-        
         // Cache keys for static data (no TTL) - Match CacheService key structure
         this.staticCacheKeys = {
             user: 'area51:user:',
             settings: 'area51:user_settings:'
         };
     }
-
     // 🔒 SSL Configuration for secure database connections
     getSSLConfig() {
         const sslMode = process.env.POSTGRES_SSL_MODE || 'prefer';
-        
         // Development mode or disabled SSL - allow non-SSL connections
         if (sslMode === 'disable' || process.env.NODE_ENV === 'development') {
-            console.warn('⚠️  WARNING: SSL disabled for database connection');
             return false;
         }
-        
         // Production mode - enforce SSL (only if SSL is explicitly required)
         if (process.env.NODE_ENV === 'production' && sslMode === 'require') {
             const fs = require('fs');
-            
             try {
                 const sslConfig = {
                     rejectUnauthorized: process.env.POSTGRES_SSL_REJECT_UNAUTHORIZED !== 'false',
                     sslmode: 'require'
                 };
-                
                 // Add CA certificate if provided
                 if (process.env.POSTGRES_SSL_CA_CERT_PATH) {
                     if (fs.existsSync(process.env.POSTGRES_SSL_CA_CERT_PATH)) {
                         sslConfig.ca = fs.readFileSync(process.env.POSTGRES_SSL_CA_CERT_PATH).toString();
                     } else {
-                        console.warn('⚠️  SSL CA certificate file not found:', process.env.POSTGRES_SSL_CA_CERT_PATH);
                     }
                 }
-                
                 // Add client certificate if provided
                 if (process.env.POSTGRES_SSL_CERT_PATH && process.env.POSTGRES_SSL_KEY_PATH) {
                     if (fs.existsSync(process.env.POSTGRES_SSL_CERT_PATH) && 
@@ -85,82 +71,59 @@ class DatabasePostgreSQL {
                         sslConfig.cert = fs.readFileSync(process.env.POSTGRES_SSL_CERT_PATH).toString();
                         sslConfig.key = fs.readFileSync(process.env.POSTGRES_SSL_KEY_PATH).toString();
                     } else {
-                        console.warn('⚠️  SSL client certificate files not found');
                     }
                 }
-                
-                console.log('✅ SSL enabled for database connection');
                 return sslConfig;
-                
             } catch (error) {
-                console.error('❌ Error configuring SSL for database:', error.message);
                 // Fallback to basic SSL in production
                 return { rejectUnauthorized: false, sslmode: 'require' };
             }
         }
-        
         // Handle different SSL modes
         switch (sslMode) {
             case 'disable':
-                console.warn('⚠️  WARNING: SSL disabled for database connection');
                 return false;
-            
             case 'require':
-                console.log('✅ SSL required for database connection');
                 return { 
                     rejectUnauthorized: false,
                     sslmode: 'require' 
                 };
-            
             case 'prefer':
             default:
                 // Try SSL first, fallback to non-SSL if server doesn't support it
-                console.log('ℹ️  SSL preferred for database connection (with fallback)');
                 return { 
                     rejectUnauthorized: false,
                     sslmode: 'prefer' 
                 };
         }
     }
-
     async initialize() {
         try {
             // Test PostgreSQL connection with timeout
-
             const connectionPromise = this.pool.connect();
             const timeoutPromise = new Promise((_, reject) => {
                 setTimeout(() => reject(new Error('PostgreSQL connection timeout')), 8000);
             });
-            
             const client = await Promise.race([connectionPromise, timeoutPromise]);
-            
             if (this.monitoring) {
                 this.monitoring.logInfo('PostgreSQL connected successfully');
             } else {
-
             }
             client.release();
-
             // Redis is managed externally, just log status
             if (this.cacheEnabled && this.redis) {
                 if (this.monitoring) {
                     this.monitoring.logInfo('Redis cache available for database operations');
                 } else {
-
                 }
             }
-
-
             await this.createTables();
             await this.createIndexes();
             await this.createIndexes();
-
         } catch (error) {
-            console.error('Database initialization failed:', error);
             throw error;
         }
     }
-
     async createTables() {
         const queries = [
             // Users table with optimizations
@@ -176,7 +139,6 @@ class DatabasePostgreSQL {
                 last_activity TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 is_active BOOLEAN DEFAULT true
             )`,
-            
             // User settings with JSON for flexibility
             `CREATE TABLE IF NOT EXISTS user_settings (
                 id BIGSERIAL PRIMARY KEY,
@@ -198,7 +160,6 @@ class DatabasePostgreSQL {
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
             )`,
-            
             // Transactions with partitioning support
             `CREATE TABLE IF NOT EXISTS transactions (
                 id BIGSERIAL PRIMARY KEY,
@@ -218,7 +179,6 @@ class DatabasePostgreSQL {
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 confirmed_at TIMESTAMPTZ
             )`,
-            
             // Portfolio entries with better data types
             `CREATE TABLE IF NOT EXISTS portfolio_entries (
                 id BIGSERIAL PRIMARY KEY,
@@ -235,7 +195,6 @@ class DatabasePostgreSQL {
                 updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE(telegram_id, token_address)
             )`,
-            
             // User states with TTL
             `CREATE TABLE IF NOT EXISTS user_states (
                 telegram_id BIGINT UNIQUE NOT NULL REFERENCES users(telegram_id) ON DELETE CASCADE,
@@ -245,7 +204,6 @@ class DatabasePostgreSQL {
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (telegram_id)
             )`,
-            
             // Temporary sell data with automatic cleanup
             `CREATE TABLE IF NOT EXISTS temp_sell_data (
                 id VARCHAR(100) PRIMARY KEY,
@@ -257,7 +215,6 @@ class DatabasePostgreSQL {
                 expires_at TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP + INTERVAL '10 minutes'),
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
             )`,
-
             // System metrics for monitoring
             `CREATE TABLE IF NOT EXISTS system_metrics (
                 id BIGSERIAL PRIMARY KEY,
@@ -266,7 +223,6 @@ class DatabasePostgreSQL {
                 metadata JSONB DEFAULT '{}',
                 recorded_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
             )`,
-
             // Rate limiting table
             `CREATE TABLE IF NOT EXISTS rate_limits (
                 id BIGSERIAL PRIMARY KEY,
@@ -277,12 +233,10 @@ class DatabasePostgreSQL {
                 UNIQUE(telegram_id, action, window_start)
             )`
         ];
-
         for (const query of queries) {
             await this.query(query);
         }
     }
-
     async createIndexes() {
         // Check if tables exist before creating indexes
         try {
@@ -292,51 +246,38 @@ class DatabasePostgreSQL {
                 WHERE table_schema = 'public' 
                 AND table_name IN ('users', 'transactions', 'portfolio_entries', 'user_states', 'temp_sell_data', 'user_settings')
             `);
-            
             if (tableCheck.rows.length === 0) {
-
                 return;
             }
-
         } catch (error) {
-            console.warn('⚠️ Could not check table existence, attempting index creation anyway');
         }
-
         const indexes = [
             // Critical indexes for 100 concurrent users - High Priority
             'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_telegram_active ON users(telegram_id) WHERE is_active = true',
             'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_transactions_user_recent ON transactions(telegram_id, created_at DESC)',
             'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_portfolio_user_balance ON portfolio_entries(telegram_id) WHERE current_balance > 0',
-            
             // Existing performance indexes - Medium Priority
             'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_telegram_id ON users(telegram_id)',
             'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_wallet_address ON users(wallet_address)',
             'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_last_activity ON users(last_activity)',
-            
             'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_transactions_telegram_id ON transactions(telegram_id)',
             'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_transactions_tx_hash ON transactions(tx_hash)',
             'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_transactions_created_at ON transactions(created_at DESC)',
             'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_transactions_status ON transactions(status)',
-            
             'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_portfolio_telegram_id ON portfolio_entries(telegram_id)',
             'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_portfolio_token_address ON portfolio_entries(token_address)',
             'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_portfolio_updated_at ON portfolio_entries(updated_at DESC)',
-            
             'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_user_states_expires_at ON user_states(expires_at)',
             'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_temp_sell_expires_at ON temp_sell_data(expires_at)',
-            
             // Composite indexes for complex queries
             'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_transactions_user_type ON transactions(telegram_id, type, created_at DESC)',
             'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_portfolio_user_token ON portfolio_entries(telegram_id, token_address)',
-            
             // JSONB indexes for fast JSON queries
             'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_temp_sell_quote_data ON temp_sell_data USING GIN(quote_data)'
         ];
-
         let successCount = 0;
         let skipCount = 0;
         let errorCount = 0;
-
         for (const index of indexes) {
             try {
                 await this.query(index);
@@ -348,53 +289,45 @@ class DatabasePostgreSQL {
                     skipCount++;
                 } else if (error.message.includes('permission denied') || 
                           error.message.includes('must be owner')) {
-                    console.warn(`⚠️ Permission issue creating index: ${error.message.split('\n')[0]}`);
+                    [0]}`);
                     errorCount++;
                 } else if (error.message.includes('does not exist')) {
-                    console.warn(`⚠️ Table does not exist for index: ${error.message.split('\n')[0]}`);
+                    [0]}`);
                     errorCount++;
                 } else {
-                    console.warn(`⚠️ Index creation warning: ${error.message.split('\n')[0]}`);
+                    [0]}`);
                     errorCount++;
                 }
             }
         }
-
         // Don't throw error if some indexes failed - database can still function
         if (successCount > 0 || skipCount > 0) {
-            console.log('✅ Database indexes ready (some may have been skipped due to permissions)');
+            ');
         }
     }
-
     // Core query methods with connection pooling
     async query(text, params = []) {
         const start = Date.now();
         try {
             const result = await this.pool.query(text, params);
             const duration = Date.now() - start;
-            
             // Log slow queries
             if (duration > 1000) {
-                console.warn(`Slow query (${duration}ms):`, text.substring(0, 100));
+                :`, text.substring(0, 100));
             }
-            
             return result;
         } catch (error) {
-            console.error('Database query error:', error);
             throw error;
         }
     }
-
     async getOne(text, params = []) {
         const result = await this.query(text, params);
         return result.rows[0] || null;
     }
-
     async getMany(text, params = []) {
         const result = await this.query(text, params);
         return result.rows;
     }
-
     // Cache helper methods
     async getFromCache(key) {
         if (!this.cacheEnabled) return null;
@@ -402,22 +335,18 @@ class DatabasePostgreSQL {
             const cached = await this.redis.get(key);
             return cached ? JSON.parse(cached) : null;
         } catch (error) {
-            console.warn('Cache get error:', error);
             return null;
         }
     }
-
     // Set cache with TTL for dynamic data only
     async setCache(key, value, ttl = null) {
         if (!this.cacheEnabled) return;
-        
         // TTL only for dynamic data (portfolio, transactions)
         if (!ttl) {
             if (key.includes('portfolio:')) ttl = this.cacheTTL.portfolio;
             else if (key.includes('transactions:')) ttl = this.cacheTTL.transactions;
             else ttl = this.cacheTTL.default;
         }
-        
         try {
             if (typeof this.redis.setEx === 'function') {
                 await this.redis.setEx(key, ttl, JSON.stringify(value));
@@ -426,67 +355,51 @@ class DatabasePostgreSQL {
             } else if (typeof this.redis.setex === 'function') {
                 await this.redis.setex(key, ttl, JSON.stringify(value));
             } else {
-                console.warn('No compatible Redis SET method available for cache');
             }
         } catch (error) {
-            console.warn('Cache set error:', error);
         }
     }
-
     // Set static cache without TTL (for user data & settings)
     async setStaticCache(key, value) {
         if (!this.cacheEnabled) return;
-        
         try {
             if (typeof this.redis.set === 'function') {
                 await this.redis.set(key, JSON.stringify(value));
             } else {
-                console.warn('No compatible Redis SET method available for static cache');
             }
         } catch (error) {
-            console.warn('Static cache set error:', error);
         }
     }
-
     // Invalidate static cache (manual cache invalidation)
     async invalidateStaticCache(telegramId, type) {
         if (!this.cacheEnabled) return;
-        
         try {
             const key = `${this.staticCacheKeys[type]}${telegramId}`;
             await this.redis.del(key);
-
         } catch (error) {
-            console.warn(`Static cache invalidation error for ${type}:`, error);
         }
     }
-
     async deleteCache(key) {
         if (!this.cacheEnabled) return;
         try {
             await this.redis.del(key);
         } catch (error) {
-            console.warn('Cache delete error:', error);
         }
     }
-
     // User management with caching - Create user without wallet first
     async createUser(telegramId, username = null) {
         // Generate default username if not provided
         const defaultUsername = username || `user_${telegramId}`;
-        
         // Check if user already exists
         const existingUser = await this.getUser(telegramId);
         if (existingUser) {
             return existingUser;
         }
-        
         // Create user with placeholder wallet data to satisfy NOT NULL constraints
         const query = `
             INSERT INTO users (telegram_id, username, wallet_address, encrypted_private_key, encrypted_mnemonic, updated_at)
             VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
             RETURNING *`;
-        
         const result = await this.getOne(query, [
             telegramId, 
             defaultUsername, 
@@ -494,35 +407,27 @@ class DatabasePostgreSQL {
             'pending_key_creation',    // Placeholder for encrypted_private_key
             null                       // mnemonic can be null
         ]);
-        
         // Create default settings
         await this.createUserSettings(telegramId);
-        
         // Cache the user (static cache - no TTL)
         const userCacheKey = `${this.staticCacheKeys.user}${telegramId}`;
         await this.setStaticCache(userCacheKey, result);
-        
         return result;
     }
-
     async getUser(telegramId) {
         // Try cache first (static cache)
         const cacheKey = `${this.staticCacheKeys.user}${telegramId}`;
         let user = await this.getFromCache(cacheKey);
-        
         if (!user) {
             const query = 'SELECT * FROM users WHERE telegram_id = $1';
             user = await this.getOne(query, [telegramId]);
-            
             if (user) {
                 // Cache without TTL (static cache)
                 await this.setStaticCache(cacheKey, user);
             }
         }
-        
         return user;
     }
-
     async updateUserWallet(telegramId, walletAddress, encryptedPrivateKey, encryptedMnemonic) {
         const query = `
             UPDATE users 
@@ -530,19 +435,15 @@ class DatabasePostgreSQL {
                 updated_at = CURRENT_TIMESTAMP, last_activity = CURRENT_TIMESTAMP
             WHERE telegram_id = $4
             RETURNING *`;
-        
         const result = await this.getOne(query, [walletAddress, encryptedPrivateKey, encryptedMnemonic, telegramId]);
-        
         // Event-driven cache update (invalidate then set new data)
         if (result) {
             await this.invalidateStaticCache(telegramId, 'user');
             const userCacheKey = `${this.staticCacheKeys.user}${telegramId}`;
             await this.setStaticCache(userCacheKey, result);
         }
-        
         return result;
     }
-
     // User settings with JSON support
     async createUserSettings(telegramId) {
         const query = `
@@ -563,7 +464,6 @@ class DatabasePostgreSQL {
             RETURNING *`;
         return await this.getOne(query, [telegramId]);
     }
-
     async getUserSettings(telegramId) {
         // Try Redis cache first if available
         if (this.cacheService) {
@@ -573,63 +473,50 @@ class DatabasePostgreSQL {
                     return cachedSettings;
                 }
             } catch (cacheError) {
-                console.error('Cache read error for user settings:', cacheError);
             }
         }
-        
         // Fallback to legacy cache
         const cacheKey = `${this.staticCacheKeys.settings}${telegramId}`;
         let settings = await this.getFromCache(cacheKey);
-        
         if (!settings) {
             const query = 'SELECT * FROM user_settings WHERE telegram_id = $1';
             settings = await this.getOne(query, [telegramId]);
-            
             if (!settings) {
                 settings = await this.createUserSettings(telegramId);
             }
-            
             if (settings) {
                 // Cache in both systems
                 if (this.cacheService) {
                     try {
                         await this.cacheService.set('user_settings', telegramId, settings);
                     } catch (cacheError) {
-                        console.error('Cache set error for user settings:', cacheError);
                     }
                 }
                 await this.setStaticCache(cacheKey, settings);
             }
         }
-        
         return settings;
     }
-
     async updateUserSettings(telegramId, settings) {
         const updateFields = [];
         const values = [];
         let paramIndex = 1;
-
         // Build dynamic query based on provided settings
         for (const [key, value] of Object.entries(settings)) {
             updateFields.push(`${key} = $${paramIndex}`);
             values.push(value);
             paramIndex++;
         }
-
         if (updateFields.length === 0) {
             return null;
         }
-
         values.push(telegramId);
         const query = `
             UPDATE user_settings 
             SET ${updateFields.join(', ')}, updated_at = CURRENT_TIMESTAMP
             WHERE telegram_id = $${paramIndex}
             RETURNING *`;
-
         const result = await this.getOne(query, values);
-        
         // Instant cache update - set new data immediately
         if (result && this.cacheService) {
             await this.cacheService.set('user_settings', telegramId, result);
@@ -643,10 +530,8 @@ class DatabasePostgreSQL {
             // Fallback: Invalidate settings cache
             await this.invalidateStaticCache(telegramId, 'settings');
         }
-        
         return result;
     }
-
     // Transaction management with batch operations
     async addTransaction(telegramId, txData) {
         const query = `
@@ -655,45 +540,36 @@ class DatabasePostgreSQL {
              price_per_token, total_value, gas_used, gas_price, status, block_number, network) 
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
             RETURNING *`;
-        
         const params = [
             telegramId, txData.txHash, txData.type, txData.tokenAddress,
             txData.tokenSymbol, txData.amount, txData.pricePerToken,
             txData.totalValue, txData.gasUsed, txData.gasPrice, 
             txData.status, txData.blockNumber, txData.network || 'monad'
         ];
-        
         return await this.getOne(query, params);
     }
-
     async updateTransactionStatus(txHash, status, blockNumber = null, confirmedAt = null) {
         const query = `
             UPDATE transactions 
             SET status = $1, block_number = $2, confirmed_at = $3
             WHERE tx_hash = $4
             RETURNING *`;
-        
         return await this.getOne(query, [status, blockNumber, confirmedAt, txHash]);
     }
-
     async getUserTransactions(telegramId, limit = 50, offset = 0) {
         const cacheKey = `transactions:${telegramId}:${limit}:${offset}`;
         let transactions = await this.getFromCache(cacheKey);
-        
         if (!transactions) {
             const query = `
                 SELECT * FROM transactions 
                 WHERE telegram_id = $1 
                 ORDER BY created_at DESC 
                 LIMIT $2 OFFSET $3`;
-            
             transactions = await this.getMany(query, [telegramId, limit, offset]);
             await this.setCache(cacheKey, transactions, 60); // 1 minute cache
         }
-        
         return transactions;
     }
-
     // Portfolio management with atomic updates
     async updatePortfolioEntry(telegramId, tokenAddress, tokenSymbol, buyAmount, buyPrice) {
         const query = `
@@ -711,32 +587,24 @@ class DatabasePostgreSQL {
                 token_symbol = EXCLUDED.token_symbol,
                 updated_at = CURRENT_TIMESTAMP
             RETURNING *`;
-        
         const result = await this.getOne(query, [telegramId, tokenAddress, tokenSymbol, buyAmount, buyPrice]);
-        
         // Invalidate portfolio cache
         await this.deleteCache(`portfolio:${telegramId}`);
-        
         return result;
     }
-
     async getPortfolioEntries(telegramId) {
         const cacheKey = `portfolio:${telegramId}`;
         let portfolio = await this.getFromCache(cacheKey);
-        
         if (!portfolio) {
             const query = `
                 SELECT * FROM portfolio_entries 
                 WHERE telegram_id = $1 
                 ORDER BY updated_at DESC`;
-            
             portfolio = await this.getMany(query, [telegramId]);
             await this.setCache(cacheKey, portfolio, 120); // 2 minutes cache
         }
-        
         return portfolio;
     }
-
     // User states with TTL
     async setUserState(telegramId, state, data = null) {
         // First try to update existing record
@@ -745,10 +613,8 @@ class DatabasePostgreSQL {
             SET state = $2, data = $3, expires_at = CURRENT_TIMESTAMP + INTERVAL '1 hour', created_at = CURRENT_TIMESTAMP
             WHERE telegram_id = $1
             RETURNING *`;
-        
         const serializedData = data ? JSON.stringify(data) : null;
         let result = await this.getOne(updateQuery, [telegramId, state, serializedData]);
-        
         // If no record exists, insert new one
         if (!result) {
             const insertQuery = `
@@ -757,17 +623,13 @@ class DatabasePostgreSQL {
                 RETURNING *`;
             result = await this.getOne(insertQuery, [telegramId, state, serializedData]);
         }
-        
         return result;
     }
-
     async getUserState(telegramId) {
         const query = `
             SELECT * FROM user_states 
             WHERE telegram_id = $1 AND expires_at > CURRENT_TIMESTAMP`;
-        
         const result = await this.getOne(query, [telegramId]);
-        
         if (result && result.data) {
             try {
                 // Check if data is already an object or needs parsing
@@ -779,19 +641,16 @@ class DatabasePostgreSQL {
                     }
                 }
             } catch (error) {
-                console.error('Error parsing user state data:', error);
                 // Keep data as string if JSON parsing fails
                 result.data = typeof result.data === 'string' ? result.data : null;
             }
         }
         return result;
     }
-
     async clearUserState(telegramId) {
         const query = `DELETE FROM user_states WHERE telegram_id = $1`;
         return await this.query(query, [telegramId]);
     }
-
     // Temporary sell data with automatic cleanup
     async storeTempSellData(id, telegramId, tokenAddress, tokenSymbol, amount, quoteData) {
         const query = `
@@ -799,34 +658,26 @@ class DatabasePostgreSQL {
             (id, telegram_id, token_address, token_symbol, amount, quote_data, expires_at)
             VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP + INTERVAL '10 minutes')
             RETURNING *`;
-        
         return await this.getOne(query, [id, telegramId, tokenAddress, tokenSymbol, amount, JSON.stringify(quoteData)]);
     }
-
     async getTempSellData(id) {
         const query = `
             SELECT * FROM temp_sell_data 
             WHERE id = $1 AND expires_at > CURRENT_TIMESTAMP`;
-        
         const result = await this.getOne(query, [id]);
-        
         if (result && result.quote_data) {
             try {
                 result.quote_data = JSON.parse(result.quote_data);
             } catch (error) {
-                console.error('Error parsing quote data:', error);
                 result.quote_data = null;
             }
         }
-        
         return result;
     }
-
     async deleteTempSellData(id) {
         const query = 'DELETE FROM temp_sell_data WHERE id = $1';
         return await this.query(query, [id]);
     }
-
     // Cleanup expired data (run periodically)
     async cleanupExpiredData() {
         const queries = [
@@ -834,25 +685,20 @@ class DatabasePostgreSQL {
             'DELETE FROM temp_sell_data WHERE expires_at < CURRENT_TIMESTAMP',
             'DELETE FROM rate_limits WHERE window_start < CURRENT_TIMESTAMP - INTERVAL \'1 hour\''
         ];
-        
         for (const query of queries) {
             try {
                 const result = await this.query(query);
                 if (result.rowCount > 0) {
-
                 }
             } catch (error) {
-                console.error('Cleanup error:', error);
             }
         }
     }
-
     // Health check and monitoring
     async healthCheck() {
         try {
             const dbResult = await this.query('SELECT 1 as healthy');
             const redisHealthy = this.cacheEnabled ? await this.redis.ping() === 'PONG' : true;
-            
             return {
                 database: dbResult.rows[0]?.healthy === 1,
                 cache: redisHealthy,
@@ -867,13 +713,11 @@ class DatabasePostgreSQL {
             };
         }
     }
-
     // Database health monitoring and reconnection
     async startHealthMonitoring() {
         if (this.healthCheckInterval) {
             clearInterval(this.healthCheckInterval);
         }
-        
         this.healthCheckInterval = setInterval(async () => {
             try {
                 await this.checkDatabaseHealth();
@@ -884,12 +728,10 @@ class DatabasePostgreSQL {
                 await this.handleConnectionFailure();
             }
         }, 30000); // Check every 30 seconds
-        
         if (this.monitoring) {
             this.monitoring.logInfo('Database health monitoring started');
         }
     }
-
     async checkDatabaseHealth() {
         try {
             const result = await this.pool.query('SELECT 1 as health_check');
@@ -901,7 +743,6 @@ class DatabasePostgreSQL {
             throw error;
         }
     }
-
     async handleConnectionFailure() {
         if (this.reconnectAttempts >= this.maxReconnectAttempts) {
             if (this.monitoring) {
@@ -911,16 +752,13 @@ class DatabasePostgreSQL {
             }
             return;
         }
-
         this.reconnectAttempts++;
-        
         if (this.monitoring) {
             this.monitoring.logWarn('Database connection failed, attempting reconnection', {
                 attempt: this.reconnectAttempts,
                 maxAttempts: this.maxReconnectAttempts
             });
         }
-
         setTimeout(async () => {
             try {
                 // Create new pool
@@ -935,9 +773,7 @@ class DatabasePostgreSQL {
                     idleTimeoutMillis: 30000,
                     connectionTimeoutMillis: 5000,
                 });
-
                 await this.checkDatabaseHealth();
-                
                 if (this.monitoring) {
                     this.monitoring.logInfo('Database reconnection successful', {
                         attempt: this.reconnectAttempts
@@ -953,32 +789,26 @@ class DatabasePostgreSQL {
             }
         }, this.reconnectDelay * this.reconnectAttempts); // Exponential backoff
     }
-
     async stopHealthMonitoring() {
         if (this.healthCheckInterval) {
             clearInterval(this.healthCheckInterval);
             this.healthCheckInterval = null;
-            
             if (this.monitoring) {
                 this.monitoring.logInfo('Database health monitoring stopped');
             }
         }
     }
-
     // Enhanced query method with retry logic
     async queryWithRetry(text, params = [], maxRetries = 3) {
         let lastError;
-        
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
                 if (!this.isConnected) {
                     await this.checkDatabaseHealth();
                 }
-                
                 return await this.pool.query(text, params);
             } catch (error) {
                 lastError = error;
-                
                 if (this.monitoring) {
                     this.monitoring.logWarn('Query failed, retrying', {
                         attempt,
@@ -986,17 +816,14 @@ class DatabasePostgreSQL {
                         error: error.message
                     });
                 }
-                
                 if (attempt < maxRetries) {
                     await this.handleConnectionFailure();
                     await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
                 }
             }
         }
-        
         throw lastError;
     }
-
     // Execute single query and return one result
     async getOne(query, params = []) {
         const client = await this.pool.connect();
@@ -1012,7 +839,6 @@ class DatabasePostgreSQL {
             client.release();
         }
     }
-
     // Execute query and return all results
     async getAll(query, params = []) {
         const client = await this.pool.connect();
@@ -1028,7 +854,6 @@ class DatabasePostgreSQL {
             client.release();
         }
     }
-
     // Add missing methods for metrics
     async getUserCount() {
         try {
@@ -1041,7 +866,6 @@ class DatabasePostgreSQL {
             return 0;
         }
     }
-
     async getActiveUserCount() {
         try {
             const result = await this.getAll(`
@@ -1056,7 +880,6 @@ class DatabasePostgreSQL {
             return 0;
         }
     }
-
     async getConnectionStats() {
         try {
             if (this.pool) {
@@ -1071,23 +894,18 @@ class DatabasePostgreSQL {
             return { total: 0, active: 0, waiting: 0 };
         }
     }
-
     async getUserByTelegramId(telegramId) {
         return await this.getUser(telegramId);
     }
-
     async getUserByWalletAddress(walletAddress) {
         const query = 'SELECT * FROM users WHERE wallet_address = $1';
         return await this.getOne(query, [walletAddress]);
     }
-
     async deleteUser(telegramId) {
         // Get user data first to find wallet address
         const userData = await this.getUserByTelegramId(telegramId);
-        
         const query = 'DELETE FROM users WHERE telegram_id = $1';
         const result = await this.query(query, [telegramId]);
-        
         // Clear all user-related cache entries
         if (this.cacheService) {
             try {
@@ -1097,7 +915,6 @@ class DatabasePostgreSQL {
                 await this.cacheService.delete('user_state', telegramId);
                 await this.cacheService.delete('session', telegramId);
                 await this.cacheService.delete('main_menu', telegramId);
-                
                 // Clear wallet-related cache if we have wallet address
                 if (userData?.wallet_address) {
                     const walletAddress = userData.wallet_address;
@@ -1105,16 +922,13 @@ class DatabasePostgreSQL {
                     await this.cacheService.delete('portfolio', walletAddress);
                     await this.cacheService.delete('mon_balance', walletAddress);
                 }
-                
-                console.log('✅ User cache cleared successfully', { telegramId });
             } catch (cacheError) {
-                console.warn('⚠️ Cache clearing failed (non-critical)', { error: cacheError.message });
+                ', { error: cacheError.message });
             }
         } else {
             // Fallback to legacy cache invalidation
             await this.invalidateStaticCache(telegramId, 'user');
             await this.invalidateStaticCache(telegramId, 'settings');
-            
             // Clear additional cache keys manually
             if (userData && userData.wallet_address) {
                 // wallet_balance removed - using mon_balance only
@@ -1123,36 +937,29 @@ class DatabasePostgreSQL {
             await this.deleteCache(`area51:main_menu:${telegramId}`);
             await this.deleteCache(`area51:user_state:${telegramId}`);
         }
-        
         return result;
     }
-
     // Get user transaction count for trust level calculation
     async getUserTransactionCount(telegramId) {
         const query = `
             SELECT COUNT(*) as transaction_count 
             FROM transactions 
             WHERE telegram_id = $1 AND status = 'completed'`;
-        
         try {
             const result = await this.getOne(query, [telegramId]);
             return parseInt(result?.transaction_count || 0);
         } catch (error) {
-            console.warn('Failed to get user transaction count:', error);
             return 0; // Default to 0 on error
         }
     }
-
     // Track user activity for monitoring
     async trackUserActivity(telegramId) {
         const query = `
             UPDATE users 
             SET last_activity = CURRENT_TIMESTAMP 
             WHERE telegram_id = $1`;
-        
         try {
             await this.query(query, [telegramId]);
-            
             // Invalidate user cache to ensure fresh data
             await this.invalidateStaticCache(telegramId, 'user');
         } catch (error) {
@@ -1160,29 +967,21 @@ class DatabasePostgreSQL {
             if (this.monitoring) {
                 this.monitoring.logWarn('User activity tracking failed', { telegramId, error: error.message });
             } else {
-                console.warn('User activity tracking failed:', error);
             }
         }
     }
-
     // Graceful shutdown
     async close() {
         try {
             await this.stopHealthMonitoring();
-            
             if (this.cacheEnabled && this.redis) {
                 await this.redis.quit();
-
             }
-            
             if (this.pool) {
                 await this.pool.end();
-
             }
         } catch (error) {
-            console.error('Error during database shutdown:', error);
         }
     }
 }
-
-module.exports = DatabasePostgreSQL;
+module.exports = DatabasePostgreSQL;

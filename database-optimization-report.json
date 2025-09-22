@@ -1,0 +1,268 @@
+{
+  "currentIndexes": [
+    {
+      "table": "portfolio_entries",
+      "index": "idx_portfolio_telegram_id",
+      "definition": "CREATE INDEX idx_portfolio_telegram_id ON public.portfolio_entries USING btree (telegram_id)",
+      "size": "8192 bytes"
+    },
+    {
+      "table": "portfolio_entries",
+      "index": "idx_portfolio_token_address",
+      "definition": "CREATE INDEX idx_portfolio_token_address ON public.portfolio_entries USING btree (token_address)",
+      "size": "8192 bytes"
+    },
+    {
+      "table": "portfolio_entries",
+      "index": "idx_portfolio_updated_at",
+      "definition": "CREATE INDEX idx_portfolio_updated_at ON public.portfolio_entries USING btree (updated_at DESC)",
+      "size": "8192 bytes"
+    },
+    {
+      "table": "portfolio_entries",
+      "index": "idx_portfolio_user_balance",
+      "definition": "CREATE INDEX idx_portfolio_user_balance ON public.portfolio_entries USING btree (telegram_id) WHERE (current_balance > (0)::numeric)",
+      "size": "8192 bytes"
+    },
+    {
+      "table": "portfolio_entries",
+      "index": "idx_portfolio_user_token",
+      "definition": "CREATE INDEX idx_portfolio_user_token ON public.portfolio_entries USING btree (telegram_id, token_address)",
+      "size": "8192 bytes"
+    },
+    {
+      "table": "portfolio_entries",
+      "index": "portfolio_entries_pkey",
+      "definition": "CREATE UNIQUE INDEX portfolio_entries_pkey ON public.portfolio_entries USING btree (id)",
+      "size": "8192 bytes"
+    },
+    {
+      "table": "portfolio_entries",
+      "index": "portfolio_entries_telegram_id_token_address_key",
+      "definition": "CREATE UNIQUE INDEX portfolio_entries_telegram_id_token_address_key ON public.portfolio_entries USING btree (telegram_id, token_address)",
+      "size": "8192 bytes"
+    },
+    {
+      "table": "rate_limits",
+      "index": "idx_rate_limits_user_operation",
+      "definition": "CREATE INDEX idx_rate_limits_user_operation ON public.rate_limits USING btree (telegram_id, action)",
+      "size": "8192 bytes"
+    },
+    {
+      "table": "rate_limits",
+      "index": "rate_limits_pkey",
+      "definition": "CREATE UNIQUE INDEX rate_limits_pkey ON public.rate_limits USING btree (id)",
+      "size": "8192 bytes"
+    },
+    {
+      "table": "rate_limits",
+      "index": "rate_limits_telegram_id_action_window_start_key",
+      "definition": "CREATE UNIQUE INDEX rate_limits_telegram_id_action_window_start_key ON public.rate_limits USING btree (telegram_id, action, window_start)",
+      "size": "8192 bytes"
+    },
+    {
+      "table": "system_metrics",
+      "index": "system_metrics_pkey",
+      "definition": "CREATE UNIQUE INDEX system_metrics_pkey ON public.system_metrics USING btree (id)",
+      "size": "8192 bytes"
+    },
+    {
+      "table": "temp_sell_data",
+      "index": "idx_temp_sell_expires_at",
+      "definition": "CREATE INDEX idx_temp_sell_expires_at ON public.temp_sell_data USING btree (expires_at)",
+      "size": "8192 bytes"
+    },
+    {
+      "table": "temp_sell_data",
+      "index": "idx_temp_sell_quote_data",
+      "definition": "CREATE INDEX idx_temp_sell_quote_data ON public.temp_sell_data USING gin (quote_data)",
+      "size": "16 kB"
+    },
+    {
+      "table": "temp_sell_data",
+      "index": "temp_sell_data_pkey",
+      "definition": "CREATE UNIQUE INDEX temp_sell_data_pkey ON public.temp_sell_data USING btree (id)",
+      "size": "8192 bytes"
+    },
+    {
+      "table": "transactions",
+      "index": "idx_transactions_created_at",
+      "definition": "CREATE INDEX idx_transactions_created_at ON public.transactions USING btree (created_at DESC)",
+      "size": "16 kB"
+    },
+    {
+      "table": "transactions",
+      "index": "idx_transactions_status",
+      "definition": "CREATE INDEX idx_transactions_status ON public.transactions USING btree (status)",
+      "size": "16 kB"
+    },
+    {
+      "table": "transactions",
+      "index": "idx_transactions_telegram_id",
+      "definition": "CREATE INDEX idx_transactions_telegram_id ON public.transactions USING btree (telegram_id)",
+      "size": "16 kB"
+    },
+    {
+      "table": "transactions",
+      "index": "idx_transactions_token",
+      "definition": "CREATE INDEX idx_transactions_token ON public.transactions USING btree (token_address)",
+      "size": "16 kB"
+    },
+    {
+      "table": "transactions",
+      "index": "idx_transactions_tx_hash",
+      "definition": "CREATE INDEX idx_transactions_tx_hash ON public.transactions USING btree (tx_hash)",
+      "size": "16 kB"
+    },
+    {
+      "table": "transactions",
+      "index": "idx_transactions_user_history",
+      "definition": "CREATE INDEX idx_transactions_user_history ON public.transactions USING btree (telegram_id, created_at DESC)",
+      "size": "16 kB"
+    },
+    {
+      "table": "transactions",
+      "index": "idx_transactions_user_recent",
+      "definition": "CREATE INDEX idx_transactions_user_recent ON public.transactions USING btree (telegram_id, created_at DESC)",
+      "size": "16 kB"
+    },
+    {
+      "table": "transactions",
+      "index": "idx_transactions_user_type",
+      "definition": "CREATE INDEX idx_transactions_user_type ON public.transactions USING btree (telegram_id, type, created_at DESC)",
+      "size": "16 kB"
+    },
+    {
+      "table": "transactions",
+      "index": "transactions_pkey",
+      "definition": "CREATE UNIQUE INDEX transactions_pkey ON public.transactions USING btree (id)",
+      "size": "16 kB"
+    },
+    {
+      "table": "user_settings",
+      "index": "user_settings_pkey",
+      "definition": "CREATE UNIQUE INDEX user_settings_pkey ON public.user_settings USING btree (id)",
+      "size": "16 kB"
+    },
+    {
+      "table": "user_settings",
+      "index": "user_settings_telegram_id_key",
+      "definition": "CREATE UNIQUE INDEX user_settings_telegram_id_key ON public.user_settings USING btree (telegram_id)",
+      "size": "16 kB"
+    },
+    {
+      "table": "user_states",
+      "index": "idx_user_states_expires_at",
+      "definition": "CREATE INDEX idx_user_states_expires_at ON public.user_states USING btree (expires_at)",
+      "size": "16 kB"
+    },
+    {
+      "table": "user_states",
+      "index": "idx_user_states_user",
+      "definition": "CREATE INDEX idx_user_states_user ON public.user_states USING btree (telegram_id)",
+      "size": "16 kB"
+    },
+    {
+      "table": "user_states",
+      "index": "user_states_pkey",
+      "definition": "CREATE UNIQUE INDEX user_states_pkey ON public.user_states USING btree (telegram_id)",
+      "size": "16 kB"
+    },
+    {
+      "table": "users",
+      "index": "idx_users_last_activity",
+      "definition": "CREATE INDEX idx_users_last_activity ON public.users USING btree (last_activity)",
+      "size": "16 kB"
+    },
+    {
+      "table": "users",
+      "index": "idx_users_registration",
+      "definition": "CREATE INDEX idx_users_registration ON public.users USING btree (created_at DESC)",
+      "size": "16 kB"
+    },
+    {
+      "table": "users",
+      "index": "idx_users_telegram_active",
+      "definition": "CREATE INDEX idx_users_telegram_active ON public.users USING btree (telegram_id) WHERE (is_active = true)",
+      "size": "16 kB"
+    },
+    {
+      "table": "users",
+      "index": "idx_users_telegram_id",
+      "definition": "CREATE INDEX idx_users_telegram_id ON public.users USING btree (telegram_id)",
+      "size": "16 kB"
+    },
+    {
+      "table": "users",
+      "index": "idx_users_wallet_address",
+      "definition": "CREATE INDEX idx_users_wallet_address ON public.users USING btree (wallet_address)",
+      "size": "16 kB"
+    },
+    {
+      "table": "users",
+      "index": "users_pkey",
+      "definition": "CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id)",
+      "size": "16 kB"
+    },
+    {
+      "table": "users",
+      "index": "users_telegram_id_key",
+      "definition": "CREATE UNIQUE INDEX users_telegram_id_key ON public.users USING btree (telegram_id)",
+      "size": "16 kB"
+    }
+  ],
+  "recommendedIndexes": [
+    {
+      "table": "rate_limits",
+      "columns": [
+        "user_id",
+        "operation"
+      ],
+      "type": "btree",
+      "reason": "Rate limit checks"
+    },
+    {
+      "table": "rate_limits",
+      "columns": [
+        "expires_at"
+      ],
+      "type": "btree",
+      "reason": "Cleanup expired limits"
+    },
+    {
+      "table": "system_metrics",
+      "columns": [
+        "timestamp",
+        "metric_type"
+      ],
+      "type": "btree",
+      "reason": "Metrics analytics queries"
+    },
+    {
+      "table": "transactions",
+      "columns": [
+        "user_id",
+        "created_at"
+      ],
+      "type": "btree",
+      "reason": "Transaction history queries"
+    },
+    {
+      "table": "user_states",
+      "columns": [
+        "user_id"
+      ],
+      "type": "btree",
+      "reason": "User state management"
+    }
+  ],
+  "slowQueries": [],
+  "optimizationSuggestions": [
+    {
+      "type": "extension",
+      "message": "Consider enabling pg_stat_statements for query performance monitoring",
+      "priority": "medium"
+    }
+  ],
+  "executionTime": 0
+}

@@ -159,7 +159,6 @@ archive/
 
 # Test files
 test-*.js
-*.test.js
 
 # Backup files
 *.backup

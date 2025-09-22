@@ -3,13 +3,11 @@
  * Implements the priority logic for determining which gas/slippage settings to use
  * based on the last action (turbo mode vs custom settings)
  */
-
 class GasSlippagePriority {
     constructor(database, cacheService = null) {
         this.database = database;
         this.cacheService = cacheService;
     }
-
     /**
      * Get effective gas price for buy/sell transactions
      * Priority: Last updated setting wins (turbo vs custom)
@@ -17,34 +15,27 @@ class GasSlippagePriority {
     async getEffectiveGasPrice(userId, type = 'buy') {
         try {
             const settings = await this.database.getUserSettings(userId);
-            
             if (!settings) {
                 // Default: 50 Gwei
                 return 50000000000;
             }
-
             // Compare timestamps to determine priority
             const turboUpdated = new Date(settings.turbo_mode_updated_at || settings.created_at);
             const gasUpdated = new Date(settings.gas_settings_updated_at || settings.created_at);
-
             // If turbo was updated more recently and is enabled
             if (settings.turbo_mode && turboUpdated >= gasUpdated) {
                 return 100000000000; // 100 Gwei for turbo
             }
-
             // Otherwise use custom/default gas settings
             if (type === 'sell') {
                 return settings.sell_gas_price || 50000000000;
             } else {
                 return settings.gas_price || 50000000000;
             }
-
         } catch (error) {
-            console.error('Error getting effective gas price:', error);
             return 50000000000; // Default fallback
         }
     }
-
     /**
      * Get effective slippage for buy/sell transactions
      * Priority: Last updated setting wins (turbo vs custom)
@@ -52,16 +43,13 @@ class GasSlippagePriority {
     async getEffectiveSlippage(userId, type = 'buy') {
         try {
             const settings = await this.database.getUserSettings(userId);
-            
             if (!settings) {
                 // Default: 5%
                 return 5.0;
             }
-
             // Compare timestamps to determine priority
             const turboUpdated = new Date(settings.turbo_mode_updated_at || settings.created_at);
             const slippageUpdated = new Date(settings.slippage_settings_updated_at || settings.created_at);
-
             // Turbo mode doesn't change slippage, only gas
             // So always use the custom slippage settings
             if (type === 'sell') {
@@ -69,20 +57,16 @@ class GasSlippagePriority {
             } else {
                 return settings.slippage_tolerance || 5.0;
             }
-
         } catch (error) {
-            console.error('Error getting effective slippage:', error);
             return 5.0; // Default fallback
         }
     }
-
     /**
      * Get auto buy settings (completely separate from regular buy/sell)
      */
     async getAutoBuySettings(userId) {
         try {
             const settings = await this.database.getUserSettings(userId);
-            
             if (!settings) {
                 return {
                     gas: 50000000000,    // 50 Gwei
@@ -90,15 +74,12 @@ class GasSlippagePriority {
                     amount: 0.1          // 0.1 MON
                 };
             }
-
             return {
                 gas: settings.auto_buy_gas || 50000000000,
                 slippage: settings.auto_buy_slippage || 5.0,
                 amount: settings.auto_buy_amount || 0.1
             };
-
         } catch (error) {
-            console.error('Error getting auto buy settings:', error);
             return {
                 gas: 50000000000,
                 slippage: 5.0,
@@ -106,7 +87,6 @@ class GasSlippagePriority {
             };
         }
     }
-
     /**
      * Update turbo mode and timestamp
      */
@@ -117,11 +97,9 @@ class GasSlippagePriority {
                 turbo_mode_updated_at: new Date()
             });
         } catch (error) {
-            console.error('Error updating turbo mode:', error);
             throw error;
         }
     }
-
     /**
      * Update gas settings and timestamp
      */
@@ -130,7 +108,6 @@ class GasSlippagePriority {
             const update = {
                 gas_settings_updated_at: new Date()
             };
-
             if (type === 'sell') {
                 update.sell_gas_price = gasPrice;
             } else if (type === 'auto_buy') {
@@ -138,21 +115,16 @@ class GasSlippagePriority {
             } else {
                 update.gas_price = gasPrice;
             }
-
             await this.database.updateUserSettings(userId, update);
-            
             // Force immediate cache invalidation using proper operation
             if (this.cacheService) {
                 // Use settings_change operation to clear all related cache
                 await this.cacheService.invalidateAfterOperation('settings_change', userId, null);
-                console.log(`✅ Gas settings updated and cache cleared for user ${userId}`);
             }
         } catch (error) {
-            console.error('Error updating gas settings:', error);
             throw error;
         }
     }
-
     /**
      * Update slippage settings and timestamp
      */
@@ -161,7 +133,6 @@ class GasSlippagePriority {
             const update = {
                 slippage_settings_updated_at: new Date()
             };
-
             if (type === 'sell') {
                 update.sell_slippage_tolerance = slippage;
             } else if (type === 'auto_buy') {
@@ -169,21 +140,16 @@ class GasSlippagePriority {
             } else {
                 update.slippage_tolerance = slippage;
             }
-
             await this.database.updateUserSettings(userId, update);
-            
             // Force immediate cache invalidation using proper operation
             if (this.cacheService) {
                 // Use settings_change operation to clear all related cache
                 await this.cacheService.invalidateAfterOperation('settings_change', userId, null);
-                console.log(`✅ Slippage settings updated and cache cleared for user ${userId}`);
             }
         } catch (error) {
-            console.error('Error updating slippage settings:', error);
             throw error;
         }
     }
-
     /**
      * Update auto buy amount
      */
@@ -192,28 +158,22 @@ class GasSlippagePriority {
             const update = {
                 auto_buy_amount: amount
             };
-
             await this.database.updateUserSettings(userId, update);
-            
             // Force immediate cache invalidation using proper operation
             if (this.cacheService) {
                 // Use settings_change operation to clear all related cache
                 await this.cacheService.invalidateAfterOperation('settings_change', userId, null);
-                console.log(`✅ Auto buy amount updated and cache cleared for user ${userId}`);
             }
         } catch (error) {
-            console.error('Error updating auto buy amount:', error);
             throw error;
         }
     }
-
     /**
      * Get current priority status for debugging
      */
     async getPriorityStatus(userId) {
         try {
             const settings = await this.database.getUserSettings(userId);
-            
             if (!settings) {
                 return {
                     turboMode: false,
@@ -222,21 +182,17 @@ class GasSlippagePriority {
                     lastAction: 'default'
                 };
             }
-
             const turboUpdated = new Date(settings.turbo_mode_updated_at || settings.created_at);
             const gasUpdated = new Date(settings.gas_settings_updated_at || settings.created_at);
             const slippageUpdated = new Date(settings.slippage_settings_updated_at || settings.created_at);
-
             const effectiveGas = await this.getEffectiveGasPrice(userId, 'buy');
             const effectiveSlippage = await this.getEffectiveSlippage(userId, 'buy');
-
             let lastAction = 'default';
             if (settings.turbo_mode && turboUpdated >= gasUpdated) {
                 lastAction = 'turbo';
             } else if (gasUpdated > turboUpdated) {
                 lastAction = 'custom_gas';
             }
-
             return {
                 turboMode: settings.turbo_mode,
                 effectiveGas: Math.round(effectiveGas / 1000000000), // Convert to Gwei
@@ -248,9 +204,7 @@ class GasSlippagePriority {
                     slippage: slippageUpdated
                 }
             };
-
         } catch (error) {
-            console.error('Error getting priority status:', error);
             return {
                 turboMode: false,
                 effectiveGas: 50,
@@ -260,5 +214,4 @@ class GasSlippagePriority {
         }
     }
 }
-
-module.exports = GasSlippagePriority;
+module.exports = GasSlippagePriority;
