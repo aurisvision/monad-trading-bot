@@ -1,5 +1,4 @@
 const EventEmitter = require('events');
-
 class AlertManager extends EventEmitter {
     constructor(monitoring) {
         super();
@@ -9,10 +8,8 @@ class AlertManager extends EventEmitter {
         this.notificationChannels = new Map();
         this.alertHistory = [];
         this.maxHistorySize = 1000;
-        
         this.setupDefaultRules();
     }
-
     // Setup default alert rules
     setupDefaultRules() {
         // Critical system alerts
@@ -27,7 +24,6 @@ class AlertManager extends EventEmitter {
             cooldown: 300000, // 5 minutes
             actions: ['log', 'telegram']
         });
-
         this.addAlertRule('database_connection_failed', {
             condition: (metrics) => metrics.database_errors > 5,
             severity: 'critical',
@@ -35,7 +31,6 @@ class AlertManager extends EventEmitter {
             cooldown: 180000, // 3 minutes
             actions: ['log', 'telegram']
         });
-
         this.addAlertRule('redis_connection_failed', {
             condition: (metrics) => metrics.redis_errors > 3,
             severity: 'warning',
@@ -43,7 +38,6 @@ class AlertManager extends EventEmitter {
             cooldown: 300000, // 5 minutes
             actions: ['log']
         });
-
         this.addAlertRule('high_error_rate', {
             condition: (metrics) => {
                 const errorRate = metrics.error_count / Math.max(metrics.total_requests, 1);
@@ -54,7 +48,6 @@ class AlertManager extends EventEmitter {
             cooldown: 600000, // 10 minutes
             actions: ['log', 'telegram']
         });
-
         this.addAlertRule('trading_failures', {
             condition: (metrics) => metrics.trading_failures > 10,
             severity: 'warning',
@@ -62,7 +55,6 @@ class AlertManager extends EventEmitter {
             cooldown: 900000, // 15 minutes
             actions: ['log']
         });
-
         this.addAlertRule('api_response_slow', {
             condition: (metrics) => metrics.avg_api_response_time > 10,
             severity: 'warning',
@@ -71,7 +63,6 @@ class AlertManager extends EventEmitter {
             actions: ['log']
         });
     }
-
     // Add alert rule
     addAlertRule(name, rule) {
         this.alertRules.set(name, {
@@ -80,16 +71,13 @@ class AlertManager extends EventEmitter {
             triggerCount: 0
         });
     }
-
     // Add notification channel
     addNotificationChannel(name, channel) {
         this.notificationChannels.set(name, channel);
     }
-
     // Check all alert rules
     checkAlerts(metrics) {
         const currentTime = Date.now();
-        
         for (const [ruleName, rule] of this.alertRules) {
             try {
                 // Check if rule condition is met
@@ -106,7 +94,6 @@ class AlertManager extends EventEmitter {
             }
         }
     }
-
     // Trigger an alert
     triggerAlert(ruleName, rule, metrics) {
         const alert = {
@@ -118,24 +105,19 @@ class AlertManager extends EventEmitter {
             metrics: this.sanitizeMetrics(metrics),
             status: 'firing'
         };
-
         // Store alert
         this.alerts.set(alert.id, alert);
         this.addToHistory(alert);
-
         // Execute actions
         this.executeAlertActions(alert, rule.actions);
-
         // Emit event
         this.emit('alert', alert);
-
         this.monitoring.logWarning(`Alert triggered: ${ruleName}`, { 
             alertId: alert.id,
             severity: rule.severity,
             message: rule.message
         });
     }
-
     // Execute alert actions
     executeAlertActions(alert, actions) {
         for (const action of actions) {
@@ -168,7 +150,6 @@ class AlertManager extends EventEmitter {
             }
         }
     }
-
     // Log alert
     logAlert(alert) {
         const logLevel = alert.severity === 'critical' ? 'error' : 'warn';
@@ -181,7 +162,6 @@ class AlertManager extends EventEmitter {
             }
         );
     }
-
     // Send Telegram alert (if admin chat configured)
     async sendTelegramAlert(alert) {
         // This would integrate with your Telegram bot to send admin alerts
@@ -198,34 +178,26 @@ class AlertManager extends EventEmitter {
             }
         }
     }
-
     // Format Telegram alert message
     formatTelegramAlert(alert) {
         const emoji = alert.severity === 'critical' ? '🚨' : '⚠️';
         return `${emoji} *ALERT: ${alert.severity.toUpperCase()}*
-
 *Rule:* ${alert.ruleName}
 *Message:* ${alert.message}
 *Time:* ${alert.timestamp}
 *ID:* \`${alert.id}\`
-
 Please check the system status.`;
     }
-
     // Send email alert (placeholder)
     async sendEmailAlert(alert) {
         // Implement email notification
         // This would use nodemailer or similar
-        console.log('Email alert would be sent:', alert);
     }
-
     // Send webhook alert (placeholder)
     async sendWebhookAlert(alert) {
         // Implement webhook notification
         // This would make HTTP POST to configured webhook URL
-        console.log('Webhook alert would be sent:', alert);
     }
-
     // Resolve an alert
     resolveAlert(alertId, resolvedBy = 'system') {
         const alert = this.alerts.get(alertId);
@@ -233,37 +205,30 @@ Please check the system status.`;
             alert.status = 'resolved';
             alert.resolvedAt = new Date().toISOString();
             alert.resolvedBy = resolvedBy;
-            
             this.emit('alertResolved', alert);
             this.monitoring.logInfo('Alert resolved', { alertId, resolvedBy });
         }
     }
-
     // Get active alerts
     getActiveAlerts() {
         return Array.from(this.alerts.values()).filter(alert => alert.status === 'firing');
     }
-
     // Get alert history
     getAlertHistory(limit = 50) {
         return this.alertHistory.slice(-limit);
     }
-
     // Get alert statistics
     getAlertStats() {
         const activeAlerts = this.getActiveAlerts();
         const totalAlerts = this.alerts.size;
-        
         const severityCount = {
             critical: 0,
             warning: 0,
             info: 0
         };
-
         for (const alert of this.alerts.values()) {
             severityCount[alert.severity] = (severityCount[alert.severity] || 0) + 1;
         }
-
         return {
             active: activeAlerts.length,
             total: totalAlerts,
@@ -271,7 +236,6 @@ Please check the system status.`;
             ruleStats: this.getRuleStats()
         };
     }
-
     // Get rule statistics
     getRuleStats() {
         const stats = {};
@@ -283,35 +247,29 @@ Please check the system status.`;
         }
         return stats;
     }
-
     // Helper methods
     generateAlertId() {
         return `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     }
-
     sanitizeMetrics(metrics) {
         // Remove sensitive data from metrics before storing
         const sanitized = { ...metrics };
         delete sanitized.sensitive_data;
         return sanitized;
     }
-
     addToHistory(alert) {
         this.alertHistory.push(alert);
         if (this.alertHistory.length > this.maxHistorySize) {
             this.alertHistory.shift();
         }
     }
-
     // Set Telegram bot instance for admin notifications
     setTelegramBot(bot) {
         this.telegramBot = bot;
     }
-
     // Cleanup old alerts
     cleanup(maxAge = 24 * 60 * 60 * 1000) { // 24 hours
         const cutoff = Date.now() - maxAge;
-        
         for (const [alertId, alert] of this.alerts) {
             const alertTime = new Date(alert.timestamp).getTime();
             if (alertTime < cutoff && alert.status === 'resolved') {
@@ -319,14 +277,12 @@ Please check the system status.`;
             }
         }
     }
-
     // Start periodic cleanup
     startCleanup(intervalMs = 60 * 60 * 1000) { // 1 hour
         this.cleanupInterval = setInterval(() => {
             this.cleanup();
         }, intervalMs);
     }
-
     // Stop cleanup
     stopCleanup() {
         if (this.cleanupInterval) {
@@ -335,5 +291,4 @@ Please check the system status.`;
         }
     }
 }
-
-module.exports = AlertManager;
+module.exports = AlertManager;

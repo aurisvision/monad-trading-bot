@@ -1,5 +1,4 @@
 // 📊 Performance Reporter - Advanced performance tracking for trading operations
-
 class PerformanceReporter {
     constructor(monitoring) {
         this.monitoring = monitoring;
@@ -23,10 +22,8 @@ class PerformanceReporter {
                 avgPreloadTime: 0
             }
         };
-        
         this.startReporting();
     }
-
     /**
      * 📊 Record transaction performance
      */
@@ -41,17 +38,13 @@ class PerformanceReporter {
                 slowest: 0 
             };
         }
-        
         const metric = this.metrics.transactions[type];
-
         metric.count++;
         metric.totalTime += duration;
         metric.avgTime = metric.totalTime / metric.count;
         metric.fastest = Math.min(metric.fastest, duration);
         metric.slowest = Math.max(metric.slowest, duration);
-
-        console.log(`📊 ${type.toUpperCase()} Transaction: ${duration}ms (${success ? '✅' : '❌'})`);
-        
+        } Transaction: ${duration}ms (${success ? '✅' : '❌'})`);
         this.monitoring?.logInfo('Transaction performance recorded', {
             type,
             duration,
@@ -61,7 +54,6 @@ class PerformanceReporter {
             slowest: metric.slowest
         });
     }
-
     /**
      * 🚀 Record cache performance
      */
@@ -69,28 +61,23 @@ class PerformanceReporter {
         this.metrics.cache.hits++;
         this.updateCacheMetrics(responseTime);
     }
-
     recordCacheMiss(responseTime = 0) {
         this.metrics.cache.misses++;
         this.updateCacheMetrics(responseTime);
     }
-
     updateCacheMetrics(responseTime) {
         const total = this.metrics.cache.hits + this.metrics.cache.misses;
         this.metrics.cache.hitRatio = (this.metrics.cache.hits / total) * 100;
-        
         if (responseTime > 0) {
             this.metrics.cache.avgResponseTime = 
                 (this.metrics.cache.avgResponseTime + responseTime) / 2;
         }
     }
-
     /**
      * 🔥 Record preloading performance
      */
     recordPreloading(duration, success = true) {
         this.metrics.preloading.attempts++;
-        
         if (success) {
             this.metrics.preloading.successes++;
             this.metrics.preloading.avgPreloadTime = 
@@ -98,13 +85,10 @@ class PerformanceReporter {
         } else {
             this.metrics.preloading.failures++;
         }
-        
         this.metrics.preloading.successRate = 
             (this.metrics.preloading.successes / this.metrics.preloading.attempts) * 100;
-
-        console.log(`🔥 Preload: ${duration}ms (${success ? '✅' : '❌'}) - Success Rate: ${this.metrics.preloading.successRate.toFixed(1)}%`);
+        - Success Rate: ${this.metrics.preloading.successRate.toFixed(1)}%`);
     }
-
     /**
      * 📈 Generate performance report
      */
@@ -116,7 +100,6 @@ class PerformanceReporter {
             preloading: { ...this.metrics.preloading },
             summary: {}
         };
-
         // Process transaction metrics
         for (const [type, metric] of Object.entries(this.metrics.transactions)) {
             if (metric.count > 0) {
@@ -129,16 +112,13 @@ class PerformanceReporter {
                 };
             }
         }
-
         // Calculate summary
         const totalTransactions = Object.values(this.metrics.transactions)
             .reduce((sum, metric) => sum + metric.count, 0);
-        
         const avgTransactionTime = Object.values(this.metrics.transactions)
             .filter(metric => metric.count > 0)
             .reduce((sum, metric) => sum + metric.avgTime, 0) / 
             Object.values(this.metrics.transactions).filter(metric => metric.count > 0).length;
-
         report.summary = {
             totalTransactions,
             avgTransactionTime: Math.round(avgTransactionTime || 0),
@@ -146,10 +126,8 @@ class PerformanceReporter {
             preloadSuccessRate: Math.round(this.metrics.preloading.successRate),
             overallPerformance: this.getOverallPerformance()
         };
-
         return report;
     }
-
     /**
      * 🎯 Get performance rating
      */
@@ -159,77 +137,42 @@ class PerformanceReporter {
         if (avgTime < 5000) return '🟡 Fair';
         return '🔴 Needs Improvement';
     }
-
     /**
      * 📊 Get overall performance score
      */
     getOverallPerformance() {
         const cacheScore = this.metrics.cache.hitRatio;
         const preloadScore = this.metrics.preloading.successRate;
-        
         const avgTransactionTime = Object.values(this.metrics.transactions)
             .filter(metric => metric.count > 0)
             .reduce((sum, metric) => sum + metric.avgTime, 0) / 
             Object.values(this.metrics.transactions).filter(metric => metric.count > 0).length;
-
         const speedScore = Math.max(0, 100 - (avgTransactionTime / 100));
-        
         const overallScore = (cacheScore + preloadScore + speedScore) / 3;
-        
         if (overallScore >= 90) return '🚀 Excellent';
         if (overallScore >= 75) return '⚡ Good';
         if (overallScore >= 60) return '🟡 Fair';
         return '🔴 Needs Improvement';
     }
-
     /**
      * 📊 Print detailed report
      */
     printReport() {
         const report = this.generateReport();
-        
-        console.log('\n' + '='.repeat(60));
-        console.log('🚀 TRANSACTION ACCELERATOR PERFORMANCE REPORT');
-        console.log('='.repeat(60));
-        
+        );
+        );
         // Transaction Performance
-        console.log('\n📊 TRANSACTION PERFORMANCE:');
         for (const [type, data] of Object.entries(report.transactions)) {
-            console.log(`   ${type.toUpperCase()}:`);
-            console.log(`     Count: ${data.count}`);
-            console.log(`     Avg Time: ${data.avgTime}ms`);
-            console.log(`     Fastest: ${data.fastest}ms`);
-            console.log(`     Slowest: ${data.slowest}ms`);
-            console.log(`     Rating: ${data.performance}`);
+            }:`);
         }
-        
         // Cache Performance
-        console.log('\n🚀 CACHE PERFORMANCE:');
-        console.log(`   Hit Ratio: ${report.cache.hitRatio}%`);
-        console.log(`   Total Hits: ${report.cache.hits}`);
-        console.log(`   Total Misses: ${report.cache.misses}`);
-        console.log(`   Avg Response: ${Math.round(report.cache.avgResponseTime)}ms`);
-        
+        }ms`);
         // Preloading Performance
-        console.log('\n🔥 PRELOADING PERFORMANCE:');
-        console.log(`   Success Rate: ${report.preloading.successRate}%`);
-        console.log(`   Total Attempts: ${report.preloading.attempts}`);
-        console.log(`   Successes: ${report.preloading.successes}`);
-        console.log(`   Avg Preload Time: ${Math.round(report.preloading.avgPreloadTime)}ms`);
-        
+        }ms`);
         // Summary
-        console.log('\n🎯 SUMMARY:');
-        console.log(`   Total Transactions: ${report.summary.totalTransactions}`);
-        console.log(`   Avg Transaction Time: ${report.summary.avgTransactionTime}ms`);
-        console.log(`   Cache Hit Ratio: ${report.summary.cacheHitRatio}%`);
-        console.log(`   Preload Success Rate: ${report.summary.preloadSuccessRate}%`);
-        console.log(`   Overall Performance: ${report.summary.overallPerformance}`);
-        
-        console.log('='.repeat(60));
-        
+        );
         return report;
     }
-
     /**
      * 🔄 Start automatic reporting
      */
@@ -238,23 +181,17 @@ class PerformanceReporter {
         setInterval(() => {
             this.printReport();
         }, 5 * 60 * 1000);
-
         // Log summary every minute
         setInterval(() => {
             const report = this.generateReport();
-            console.log(`📊 Performance Summary: ${report.summary.totalTransactions} transactions, ${report.summary.avgTransactionTime}ms avg, ${report.summary.cacheHitRatio}% cache hit ratio`);
         }, 60 * 1000);
-
-        console.log('📊 Performance reporting started');
     }
-
     /**
      * 📈 Get current metrics
      */
     getMetrics() {
         return { ...this.metrics };
     }
-
     /**
      * 🔄 Reset metrics
      */
@@ -279,9 +216,6 @@ class PerformanceReporter {
                 avgPreloadTime: 0
             }
         };
-        
-        console.log('📊 Performance metrics reset');
     }
 }
-
-module.exports = PerformanceReporter;
+module.exports = PerformanceReporter;

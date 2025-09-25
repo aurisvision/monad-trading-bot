@@ -13,24 +13,23 @@ class UnifiedMonitoringSystem {
         this.database = database;
         this.redis = redis;
         this.logger = logger;
-        
+
         // Initialize components
         this.setupLogger();
         this.setupPrometheusMetrics();
         this.initializeCounters();
         this.startPeriodicTasks();
-        
+
         // Bot reference for admin notifications
         this.telegramBot = null;
-        
+
         // System start time
         this.startTime = Date.now();
-        
-        console.log('✅ Unified Monitoring System initialized');
+
     }
 
     // ==================== LOGGING SYSTEM ====================
-    
+
     setupLogger() {
         if (!this.logger) {
             this.logger = winston.createLogger({
@@ -66,7 +65,7 @@ class UnifiedMonitoringSystem {
             stack: error.stack,
             ...meta 
         } : meta;
-        
+
         this.logger.error(message, errorMeta);
         this.errorsTotal.inc({ error_type: 'general', severity: 'error' });
     }
@@ -81,12 +80,12 @@ class UnifiedMonitoringSystem {
     }
 
     // ==================== PROMETHEUS METRICS ====================
-    
+
     setupPrometheusMetrics() {
         // Create registry
         this.register = new promClient.Registry();
         this.register.setDefaultLabels({ app: 'area51-bot' });
-        
+
         // Enable default metrics (CPU, memory, etc.)
         promClient.collectDefaultMetrics({ register: this.register });
 
@@ -244,13 +243,13 @@ class UnifiedMonitoringSystem {
     initializeMetricValues() {
         // Initialize process uptime
         this.processUptimeSeconds.set(process.uptime());
-        
+
         // Initialize bot status as running
         this.botStatus.set(1);
-        
+
         // Initialize system metrics
         this.updateSystemMetrics();
-        
+
         // Initialize other gauges with default values
         this.activeUsersGauge.set(0);
         this.totalUsersGauge.set(0);
@@ -291,7 +290,7 @@ class UnifiedMonitoringSystem {
     }
 
     // ==================== COUNTERS & TRACKING ====================
-    
+
     initializeCounters() {
         this.cacheStats = {
             hits: 0,
@@ -301,7 +300,7 @@ class UnifiedMonitoringSystem {
     }
 
     // ==================== METRIC RECORDING METHODS ====================
-    
+
     // User metrics
     updateActiveUsers(count) {
         this.activeUsersGauge.set(count);
@@ -327,7 +326,7 @@ class UnifiedMonitoringSystem {
     recordDatabaseQuery(operation, status, duration) {
         this.databaseQueriesTotal.inc({ operation, status });
         this.databaseQueryDuration.observe({ operation }, duration);
-        
+
         if (duration > 1) {
             this.logWarning('Slow database query detected', { operation, duration });
         }
@@ -365,7 +364,7 @@ class UnifiedMonitoringSystem {
     recordAPIRequest(endpoint, status, duration) {
         this.apiRequestsTotal.inc({ endpoint, status });
         this.apiDuration.observe({ endpoint }, duration);
-        
+
         if (status >= 400) {
             this.logWarning('API request failed', { endpoint, status, duration });
         }
@@ -382,7 +381,7 @@ class UnifiedMonitoringSystem {
     }
 
     // ==================== OPERATION WRAPPERS ====================
-    
+
     wrapDatabaseOperation(operation, operationName) {
         return async (...args) => {
             const start = Date.now();
@@ -422,11 +421,11 @@ class UnifiedMonitoringSystem {
 
             try {
                 const result = await operation.apply(this, args);
-                
+
                 if (result && result.amount) {
                     volume = parseFloat(result.amount) || 0;
                 }
-                
+
                 return result;
             } catch (error) {
                 status = 'error';
@@ -459,7 +458,7 @@ class UnifiedMonitoringSystem {
     }
 
     // ==================== HEALTH CHECK SYSTEM ====================
-    
+
     async getHealthStatus() {
         const checks = await Promise.allSettled([
             this.checkDatabase(),
@@ -483,7 +482,7 @@ class UnifiedMonitoringSystem {
         // Determine overall status
         const hasFailures = Object.values(results.checks).some(check => check.status === 'unhealthy');
         const hasWarnings = Object.values(results.checks).some(check => check.status === 'warning');
-        
+
         if (hasFailures) {
             results.status = 'unhealthy';
         } else if (hasWarnings) {
@@ -546,7 +545,7 @@ class UnifiedMonitoringSystem {
         const totalMemory = os.totalmem();
         const freeMemory = os.freemem();
         const usedMemory = totalMemory - freeMemory;
-        
+
         const memoryUsagePercent = (usedMemory / totalMemory) * 100;
         const heapUsagePercent = (memUsage.heapUsed / memUsage.heapTotal) * 100;
 
@@ -615,12 +614,12 @@ class UnifiedMonitoringSystem {
         const hours = Math.floor(uptimeSeconds / 3600);
         const minutes = Math.floor((uptimeSeconds % 3600) / 60);
         const seconds = uptimeSeconds % 60;
-        
+
         return `${hours}h ${minutes}m ${seconds}s`;
     }
 
     // ==================== PERIODIC TASKS ====================
-    
+
     startPeriodicTasks() {
         // Update connection counts every 30 seconds
         this.connectionUpdateInterval = setInterval(() => {
@@ -691,7 +690,7 @@ class UnifiedMonitoringSystem {
     }
 
     // ==================== ENDPOINTS & MIDDLEWARE ====================
-    
+
     initializeEndpoints(app) {
         // Prometheus metrics endpoint
         app.get('/metrics', async (req, res) => {
@@ -767,7 +766,7 @@ class UnifiedMonitoringSystem {
                         const severity = alert.labels?.severity || 'warning';
                         const alertname = alert.labels?.alertname || 'Unknown';
                         const message = `Alert: ${alertname}\nStatus: ${alert.status}\nDescription: ${alert.annotations?.description || 'No description'}`;
-                        
+
                         this.sendAdminAlert(message, severity);
                     }
                 });
@@ -794,7 +793,7 @@ class UnifiedMonitoringSystem {
                     },
                     timestamp: new Date().toISOString()
                 };
-                
+
                 res.json(dashboard);
             } catch (error) {
                 this.logError('Failed to get monitoring dashboard', error);
@@ -831,7 +830,7 @@ class UnifiedMonitoringSystem {
     }
 
     // ==================== ADMIN NOTIFICATIONS ====================
-    
+
     setTelegramBot(bot) {
         this.telegramBot = bot;
     }
@@ -841,7 +840,7 @@ class UnifiedMonitoringSystem {
         if (adminChatId && this.telegramBot) {
             const emoji = severity === 'critical' ? '🚨' : '⚠️';
             const alertMessage = `${emoji} *ALERT*\n\n${message}`;
-            
+
             try {
                 await this.telegramBot.telegram.sendMessage(adminChatId, alertMessage, {
                     parse_mode: 'Markdown'
@@ -853,7 +852,7 @@ class UnifiedMonitoringSystem {
     }
 
     // ==================== UTILITY METHODS ====================
-    
+
     async getActiveUserCount() {
         try {
             if (this.database) {
@@ -877,7 +876,7 @@ class UnifiedMonitoringSystem {
     }
 
     // ==================== CLEANUP ====================
-    
+
     destroy() {
         // Clear all intervals
         if (this.systemMetricsInterval) clearInterval(this.systemMetricsInterval);
@@ -885,10 +884,10 @@ class UnifiedMonitoringSystem {
         if (this.connectionUpdateInterval) clearInterval(this.connectionUpdateInterval);
         if (this.cacheResetInterval) clearInterval(this.cacheResetInterval);
         if (this.userMetricsInterval) clearInterval(this.userMetricsInterval);
-        
+
         // Set bot status to stopped
         this.setBotStatus(false);
-        
+
         this.logInfo('Unified Monitoring System destroyed');
     }
 }
