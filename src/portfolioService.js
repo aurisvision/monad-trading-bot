@@ -143,9 +143,9 @@ class PortfolioService {
         try {
             // Try cache first unless force refresh
             if (!forceRefresh) {
-                const cachedPortfolio = await this.getPortfolioFromRedis(telegramId);
+                const cachedPortfolio = await this.cache.get('portfolio', telegramId);
                 if (cachedPortfolio && cachedPortfolio.length > 0) {
-                    this.monitoring?.logInfo('Portfolio loaded from cache', { telegramId });
+                    this.monitoring?.logInfo('Portfolio loaded from unified cache', { telegramId });
                     return cachedPortfolio;
                 }
             }
@@ -154,8 +154,8 @@ class PortfolioService {
             this.monitoring?.logInfo('Fetching portfolio from API', { telegramId, walletAddress });
             const tokens = await this.fetchPortfolioFromAPI(walletAddress);
 
-            // Store in cache
-            await this.storePortfolioInRedis(telegramId, tokens);
+            // Store in unified cache
+            await this.cache.set('portfolio', telegramId, tokens);
 
             return tokens;
         } catch (error) {

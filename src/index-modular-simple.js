@@ -265,6 +265,16 @@ class Area51BotModularSimple {
         //     this.monitoring
         // );
         
+        // Initialize Access Code System
+        const AccessCodeIntegration = require('./AccessCodeIntegration');
+        this.accessCodeIntegration = new AccessCodeIntegration(
+            this.bot,
+            this.database,
+            this.monitoring
+        );
+        await this.accessCodeIntegration.initialize();
+        this.monitoring?.logInfo('Access Code System initialized successfully');
+        
         this.monitoring.logInfo('All components initialized successfully');
     }
 

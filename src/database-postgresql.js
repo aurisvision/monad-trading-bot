@@ -742,7 +742,7 @@ class DatabasePostgreSQL {
         // First try to update existing record
         const updateQuery = `
             UPDATE user_states 
-            SET state = $2, data = $3, expires_at = CURRENT_TIMESTAMP + INTERVAL '1 hour', created_at = CURRENT_TIMESTAMP
+            SET state = $2, state_data = $3, expires_at = CURRENT_TIMESTAMP + INTERVAL '1 hour', created_at = CURRENT_TIMESTAMP
             WHERE telegram_id = $1
             RETURNING *`;
         
@@ -752,7 +752,7 @@ class DatabasePostgreSQL {
         // If no record exists, insert new one
         if (!result) {
             const insertQuery = `
-                INSERT INTO user_states (telegram_id, state, data, expires_at)
+                INSERT INTO user_states (telegram_id, state, state_data, expires_at)
                 VALUES ($1, $2, $3, CURRENT_TIMESTAMP + INTERVAL '1 hour')
                 RETURNING *`;
             result = await this.getOne(insertQuery, [telegramId, state, serializedData]);
@@ -768,20 +768,30 @@ class DatabasePostgreSQL {
         
         const result = await this.getOne(query, [telegramId]);
         
-        if (result && result.data) {
+        if (result && result.state_data) {
             try {
-                // Check if data is already an object or needs parsing
-                if (typeof result.data === 'string') {
+                // Check if state_data is already an object or needs parsing
+                if (typeof result.state_data === 'string') {
                     // Clean the string before parsing
-                    const cleanData = result.data.trim();
+                    const cleanData = result.state_data.trim();
                     if (cleanData.startsWith('{') || cleanData.startsWith('[')) {
-                        result.data = JSON.parse(cleanData);
+                        try {
+                            result.data = JSON.parse(cleanData);
+                        } catch (error) {
+                            console.error('Error parsing user state data:', error);
+                            // Keep data as string if JSON parsing fails
+                            result.data = cleanData;
+                        }
+                    } else {
+                        result.data = cleanData;
                     }
+                } else {
+                    result.data = result.state_data;
                 }
             } catch (error) {
                 console.error('Error parsing user state data:', error);
                 // Keep data as string if JSON parsing fails
-                result.data = typeof result.data === 'string' ? result.data : null;
+                result.data = typeof result.state_data === 'string' ? result.state_data : null;
             }
         }
         return result;
