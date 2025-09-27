@@ -358,7 +358,7 @@ class DatabasePostgreSQL {
             'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_temp_sell_expires_at ON temp_sell_data(expires_at)',
             
             // Composite indexes for complex queries
-            'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_transactions_user_type ON transactions(telegram_id, type, created_at DESC)',
+            // Note: idx_transactions_user_type disabled until 'type' column is confirmed in all environments
             'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_portfolio_user_token ON portfolio_entries(telegram_id, token_address)',
             
             // JSONB indexes for fast JSON queries
