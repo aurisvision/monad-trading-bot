@@ -125,3 +125,56 @@ docker logs ngsokk0c44488sss8wwsk8co --tail 20
 ## ⏱️ الوقت المتوقع: 5-10 دقائق
 
 **النتيجة:** البوت يعمل بشكل طبيعي ✅
+
+---
+
+## 🚨 EMERGENCY FIXES - الحلول الطارئة
+
+### المشاكل المكتشفة في الإنتاج:
+
+#### 1. **user_access table مفقود**
+```bash
+# الحل السريع
+psql -U postgres -d postgres -c "
+CREATE TABLE IF NOT EXISTS user_access (
+    id SERIAL PRIMARY KEY,
+    telegram_id BIGINT NOT NULL,
+    access_code VARCHAR(50) NOT NULL,
+    granted_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    used_at TIMESTAMP WITH TIME ZONE,
+    is_active BOOLEAN DEFAULT true,
+    FOREIGN KEY (telegram_id) REFERENCES users(telegram_id) ON DELETE CASCADE
+);"
+```
+
+#### 2. **Redis Connection Errors**
+```bash
+# اختبار Redis
+node fix_redis_connection.js
+
+# أو يدوياً
+docker exec -it dg088sgsw8444kgscg8s448g redis-cli ping
+```
+
+#### 3. **Database Schema Conflicts**
+```bash
+# تشغيل الإصلاح الشامل
+node emergency_production_fix.js
+
+# أو SQL مباشر
+psql -U postgres -d postgres -f emergency_fix.sql
+```
+
+### 🔧 الحل الشامل (دقيقة واحدة):
+```bash
+# تشغيل الإصلاح الطارئ
+node emergency_production_fix.js
+```
+
+### ✅ التحقق من النجاح:
+1. **البوت يرد على /start** ✅
+2. **Wallet generation يعمل** ✅  
+3. **لا توجد أخطاء Redis** ✅
+4. **Database queries تعمل** ✅
+
+---
