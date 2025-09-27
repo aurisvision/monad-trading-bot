@@ -106,10 +106,11 @@ class DatabasePostgreSQL {
                 return false;
             
             case 'require':
-                console.log('✅ SSL required for database connection');
+                console.log('✅ SSL enabled for database connection');
                 return { 
                     rejectUnauthorized: false,
-                    sslmode: 'require' 
+                    checkServerIdentity: () => undefined,
+                    sslmode: 'require'
                 };
             
             case 'prefer':
