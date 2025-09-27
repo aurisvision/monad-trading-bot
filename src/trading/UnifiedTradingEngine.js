@@ -219,7 +219,10 @@ class UnifiedTradingEngine {
                 tokenAddress,
                 tokenAmount,
                 20, // Fixed 20% slippage for turbo mode
-                { gasPrice: 100000000000 } // Fixed 100 Gwei for turbo
+                { 
+                    gasPrice: 100000000000, // Fixed 100 Gwei for turbo
+                    turboMode: true // Enable turbo mode for maximum speed
+                }
             );
             if (!swapResult.success) {
                 throw new Error('Turbo sell failed: ' + swapResult.error);

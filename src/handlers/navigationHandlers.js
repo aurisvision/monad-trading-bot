@@ -818,9 +818,10 @@ Please try again or check your wallet balance.`);
                 monitoring: this.monitoring
             };
             const tradingInterface = new TradingInterface(null, tradingDependencies);
-            // Execute as normal buy with preloaded settings for maximum speed
+            // Execute auto buy with turbo mode if enabled for maximum speed
+            const tradeType = userSettings.turbo_mode_enabled ? 'turbo' : 'normal';
             const result = await tradingInterface.engine.executeTrade({
-                type: 'normal',
+                type: tradeType,
                 action: 'buy',
                 userId: userId,
                 tokenAddress: tokenAddress,
