@@ -204,3 +204,57 @@ docker/prometheus/data/
 # Temporary scripts
 create_dashboard*.ps1
 create_grafana_dashboard.py
+
+# Development and test files
+test_*.js
+cleanup_*.js
+cleanup_*.sql
+simple_*.js
+*_test.js
+*_debug.js
+
+# Backup directories
+backup_*/
+old_*/
+archive_*/
+
+# Documentation drafts
+*_draft.md
+*_temp.md
+
+# Optimization files
+*optimization*.md
+*OPTIMIZATION*.md
+
+# Development databases
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Coolify deployment files (keep only production versions)
+.env.coolify.backup
+docker-compose.dev.yml
+docker-compose.test.yml
+
+# Git cleanup
+.git/hooks/
+.git/logs/
+.git/refs/remotes/
+
+# Project cleanup
+cleanup_project.js
+
+# Production deployment - keep these files
+!PRODUCTION_DEPLOYMENT_GUIDE.md
+!QUICK_FIX.md
+!DEPLOYMENT_README.md
+!run_production_tests.js
+!scripts/post_deployment.js
+!database/complete_migration.sql
+!database/verify_schema.sql
+!database/check_and_fix_database.js
+!database/check_and_fix_redis.js
+
+# Remove preparation scripts after use
+prepare_for_git.js
+cleanup_project.js

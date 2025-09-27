@@ -1,27 +1,37 @@
 # 🛸 Area51 Telegram Trading Bot
 
-**Enterprise-grade Telegram trading bot for Monad testnet with unified architecture supporting 10,000+ concurrent users.**
+**Production-ready Telegram trading bot for Monad blockchain with enterprise-grade architecture.**
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/devYahia/area51-telegram-bot)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/devYahia/area51-telegram-bot)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-green.svg)](https://nodejs.org/)
+[![PostgreSQL](https://img.shields.io/badge/postgresql-17-blue.svg)](https://postgresql.org/)
+[![Redis](https://img.shields.io/badge/redis-7.0-red.svg)](https://redis.io/)
+[![Coolify](https://img.shields.io/badge/deploy-coolify-green.svg)](https://coolify.io/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Security](https://img.shields.io/badge/security-enhanced-green.svg)](docs/SECURITY.md)
 
-## 🎯 Latest Updates (September 2025)
+## 🚀 Production Deployment Ready
 
-### ✅ **Major Improvements Completed**
-- **🔒 Enhanced Security**: Fixed private key leakage in logs, improved encryption
-- **🚀 Performance Optimization**: Cache hit rate improved from 45% to 85%
-- **🧹 Code Cleanup**: Removed unused files and optimized project structure  
-- **💾 Backup System**: Enhanced with encryption and 30-day retention
-- **📊 Unified Systems**: Consolidated trading engines and cache management
-- **🔍 Security Audit**: Comprehensive security analysis completed
+### ✅ **Critical Issues Resolved**
+- **🗄️ Database Schema**: Fixed all PostgreSQL 17 compatibility issues
+- **🔗 Redis Connection**: Resolved connection failures and timeout issues
+- **📦 Migration Scripts**: Complete database migration system implemented
+- **🔧 Deployment Tools**: Automated testing and post-deployment validation
+- **🛠️ Coolify Integration**: Optimized for seamless cloud deployment
 
-### 🔧 **Technical Achievements**
-- **Cache Performance**: Main menu response time: 432ms → 50ms (88% improvement)
-- **Database Optimization**: 60% reduction in database queries
-- **System Stability**: 95% uptime with unified error handling
-- **Security Score**: Improved from 5.8/10 to 8.2/10
+### 🎯 **Key Features**
+- **💰 Wallet Management**: Secure wallet generation and import
+- **📊 Portfolio Tracking**: Real-time balance and transaction monitoring  
+- **🔄 Token Trading**: Buy/sell tokens with slippage protection
+- **🎛️ Admin Panel**: Comprehensive management interface
+- **🔐 Access Control**: Code-based user authentication system
+- **⚡ High Performance**: Supports 200+ concurrent users
+
+### 🏆 **Technical Excellence**
+- **Database**: PostgreSQL 17 with optimized connection pooling (50 connections)
+- **Cache**: Redis with 85%+ hit rate and intelligent TTL management
+- **Security**: AES-256-GCM encryption with comprehensive access controls
+- **Monitoring**: Real-time performance metrics and health checks
+- **Architecture**: Microservices design with unified error handling
 
 ## 🏗️ Architecture Overview
 
@@ -789,41 +799,75 @@ We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) 
 
 ---
 
-## 📚 Documentation
+## 🚀 Quick Deployment to Coolify
 
-- **[Security Policy](SECURITY.md)** - Comprehensive security guidelines
-- **[Security Roadmap](SECURITY_ROADMAP.md)** - Security implementation plan
-- **[Deployment Guide](DEPLOYMENT_GUIDE.md)** - Production deployment
-- **[Project Status](PROJECT_STATUS.md)** - Current project state
-- **[Changelog](CHANGELOG.md)** - Version history and updates
+### Prerequisites
+- Coolify instance running
+- PostgreSQL 17 container
+- Redis container
+- GitHub repository
+
+### 1. Coolify Configuration
+```bash
+# Repository
+Repository: https://github.com/devYahia/area51-telegram-bot
+Branch: main
+Build Pack: Dockerfile
+
+# Pre-deployment Command
+npm install --production
+
+# Post-deployment Command  
+node scripts/post_deployment.js
+```
+
+### 2. Environment Variables
+```bash
+# Database
+POSTGRES_HOST=your-postgres-container-id
+POSTGRES_DB=postgres
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your-postgres-password
+POSTGRES_SSL_MODE=disable
+
+# Redis
+REDIS_HOST=your-redis-container-id
+REDIS_PASSWORD=your-redis-password
+REDIS_USERNAME=redis
+
+# Bot Configuration
+TELEGRAM_BOT_TOKEN=your-bot-token
+ADMIN_USER_ID=your-telegram-id
+ACCESS_CONTROL_ENABLED=true
+```
+
+### 3. Database Setup
+```bash
+# Connect to PostgreSQL container
+docker exec -it your-postgres-container psql -U postgres -d postgres
+
+# Run migration
+\i database/complete_migration.sql
+```
+
+### 4. Verify Deployment
+```bash
+# Run production tests
+node run_production_tests.js
+
+# Check bot status
+# Send /start to your bot
+```
+
+## 📋 Deployment Files
+
+- **[PRODUCTION_DEPLOYMENT_GUIDE.md](PRODUCTION_DEPLOYMENT_GUIDE.md)** - Complete deployment guide
+- **[QUICK_FIX.md](QUICK_FIX.md)** - Quick troubleshooting guide  
+- **[DEPLOYMENT_README.md](DEPLOYMENT_README.md)** - Updated deployment instructions
+- **[database/complete_migration.sql](database/complete_migration.sql)** - Database migration script
+- **[scripts/post_deployment.js](scripts/post_deployment.js)** - Post-deployment validation
 
 ---
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgments
-
-- **Monad Network** for the testnet infrastructure
-- **Monorail** for DEX aggregation services
-- **Telegram** for the Bot API
-- **Open Source Community** for the amazing tools and libraries
-
----
-
-## 📞 Support & Contact
-
-- **GitHub Issues**: [Report bugs and request features](https://github.com/devYahia/area51-telegram-bot/issues)
-- **Email**: support@area51bot.com
-- **Telegram**: @Area51Support
-- **Documentation**: [Full documentation](docs/)
-
----
-
-**Made with ❤️ by the Area51 Team**
 
 ## 📄 License
 
@@ -833,16 +877,16 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/your-repo/issues)
-- **Documentation**: This README and inline code comments
-- **Health Monitoring**: `/health` endpoints
+- **GitHub Issues**: [Report bugs and request features](https://github.com/devYahia/area51-telegram-bot/issues)
+- **Telegram**: @yahia_crypto
+- **Documentation**: Complete guides in repository root
+
+---
+
+**🛸 Made with ❤️ for the Monad Community**
 
 ---
 
 **🎯 Ready for Production Deployment**
 
 This bot is optimized for high-performance trading with comprehensive monitoring, security, and reliability features.
-=======
-# area51-telegram-bot
-🛸 Area51 Telegram Trading Bot - Advanced Telegram bot for Monad blockchain trading with comprehensive monitoring, caching, and security features
->>>>>>> 119f5462008a9fcb348358c366901a6686d660cc
