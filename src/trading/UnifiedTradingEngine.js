@@ -120,7 +120,9 @@ class UnifiedTradingEngine {
                 { gasPrice: tradeData.effectiveGas }
             );
             if (!swapResult.success) {
-                throw new Error(`Transaction failed: ${swapResult.error}`);
+                // تحسين رسالة الخطأ لتكون مهذبة وواضحة
+                let userFriendlyError = this.getUserFriendlyError(swapResult.error);
+                throw new Error(userFriendlyError);
             }
             return {
                 success: true,
@@ -190,12 +192,9 @@ class UnifiedTradingEngine {
                 { gasPrice: tradeData.effectiveGas }
             );
             if (!swapResult.success) {
-                // تحسين رسالة الخطأ
-                let errorMessage = swapResult.error || 'Unknown error';
-                if (errorMessage.includes('transaction execution reverted')) {
-                    errorMessage = 'Transaction reverted - possible reasons:\n1. Insufficient token balance\n2. Token not approved for spending\n3. Slippage too low\n4. Liquidity issues\n5. Invalid token pair';
-                }
-                throw new Error('Sell execution failed: ' + errorMessage);
+                // تحسين رسالة الخطأ لتكون مهذبة وواضحة
+                let userFriendlyError = this.getUserFriendlyError(swapResult.error);
+                throw new Error(userFriendlyError);
             }
             return {
                 success: true,
@@ -356,6 +355,38 @@ class UnifiedTradingEngine {
                 error: error.message
             };
         }
+    }
+
+    /**
+     * 📝 تحويل رسائل الخطأ التقنية إلى رسائل مهذبة وواضحة للمستخدم
+     */
+    getUserFriendlyError(error) {
+        if (!error) return 'حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى';
+        
+        const errorStr = error.toString().toLowerCase();
+        
+        if (errorStr.includes('transaction reverted')) {
+            return '❌ فشلت المعاملة على البلوك تشين\n\nالأسباب المحتملة:\n• رصيد غير كافي\n• سعر الغاز منخفض\n• مشكلة في السيولة\n\nيرجى المحاولة مرة أخرى';
+        }
+        
+        if (errorStr.includes('insufficient balance') || errorStr.includes('insufficient funds')) {
+            return '❌ الرصيد غير كافي\n\nيرجى التأكد من وجود رصيد كافي في محفظتك والمحاولة مرة أخرى';
+        }
+        
+        if (errorStr.includes('slippage') || errorStr.includes('price impact')) {
+            return '❌ تغير السعر بشكل كبير\n\nيرجى زيادة نسبة الـ Slippage أو المحاولة مرة أخرى';
+        }
+        
+        if (errorStr.includes('gas')) {
+            return '❌ مشكلة في رسوم الشبكة\n\nيرجى زيادة سعر الغاز والمحاولة مرة أخرى';
+        }
+        
+        if (errorStr.includes('network') || errorStr.includes('connection')) {
+            return '❌ مشكلة في الاتصال بالشبكة\n\nيرجى المحاولة مرة أخرى بعد قليل';
+        }
+        
+        // رسالة عامة للأخطاء غير المعروفة
+        return '❌ حدث خطأ أثناء تنفيذ المعاملة\n\nيرجى المحاولة مرة أخرى أو التواصل مع الدعم إذا استمرت المشكلة';
     }
 }
 module.exports = UnifiedTradingEngine;

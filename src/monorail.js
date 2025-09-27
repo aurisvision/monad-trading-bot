@@ -630,8 +630,16 @@ class MonorailAPI {
             // Send transaction
             // Sending transaction to blockchain
             const txResponse = await wallet.sendTransaction(transaction);
-            // For faster response, don't wait for confirmation - just return transaction hash
-            // Swap transaction sent successfully
+            
+            // Wait for transaction confirmation to verify success
+            const receipt = await txResponse.wait();
+            
+            // Check if transaction was successful
+            if (receipt.status === 0) {
+                throw new Error('Transaction reverted on blockchain');
+            }
+            
+            // Swap transaction confirmed successfully
             return {
                 success: true,
                 txHash: txResponse.hash,
@@ -639,7 +647,9 @@ class MonorailAPI {
                 expectedOutput: quote.outputAmount,
                 priceImpact: quote.priceImpact,
                 route: quote.route,
-                receipt: null // No receipt since we're not waiting
+                receipt: receipt,
+                gasUsed: receipt.gasUsed?.toString(),
+                effectiveGasPrice: receipt.effectiveGasPrice?.toString()
             };
         } catch (error) {
             // Enhanced error handling for insufficient balance
