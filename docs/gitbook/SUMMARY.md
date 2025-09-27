@@ -22,28 +22,6 @@
 * [Getting MON Tokens](getting-mon-tokens.md)
 * [Network Information](network-info.md)
 
-## Resources
-
-* [Official Links](#official-links)
-* [Community](#community)
-* [Support](#support)
-
----
-
-## Official Links
-
-* **Area51 Bot**: [@Area51Bot](https://t.me/Area51Bot)
-* **Developer**: [@yahia_crypto](https://t.me/yahia_crypto)
-* **Monad Network**: [monad.xyz](https://monad.xyz)
-
-## Community
-
-* **Updates Channel**: [@Area51Updates](https://t.me/Area51Updates)
-* **Community Group**: [@Area51Community](https://t.me/Area51Community)
-* **Monad Community**: [Monad Discord](https://discord.gg/monad)
-
 ## Support
 
-* **Documentation**: This guide
-* **Direct Support**: Contact [@yahia_crypto](https://t.me/yahia_crypto)
-* **Community Help**: [@Area51Community](https://t.me/Area51Community)
+* [@yahia\_crypto](https://t.me/yahia_crypto)
