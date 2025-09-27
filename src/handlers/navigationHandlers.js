@@ -1127,29 +1127,19 @@ Proceed with this purchase?`, {
                 await ctx.reply('❌ Please start the bot first with /start');
                 return;
             }
-            // Clear all relevant cache
+            // Clear all relevant cache including MON balance
             if (this.cacheService) {
                 try {
                     await Promise.all([
                         this.cacheService.delete('portfolio', userId),
                         this.cacheService.delete('wallet_balance', user.wallet_address),
-                        this.cacheService.delete('main_menu', userId)
+                        this.cacheService.delete('main_menu', userId),
+                        this.cacheService.delete('mon_balance', user.wallet_address), // أضافة مسح رصيد MON
+                        this.cacheService.delete('portfolio_value', user.wallet_address) // أضافة مسح قيمة البورتفوليو
                     ]);
                     this.monitoring.logInfo('Manual refresh cache cleared', { userId, walletAddress: user.wallet_address });
                 } catch (cacheError) {
                     this.monitoring.logError('Manual refresh cache clear failed', cacheError, { userId });
-                }
-            } else if (this.cacheService) {
-                // Use unified cache clearing
-                try {
-                    await Promise.all([
-                        this.cacheService.delete('portfolio', userId),
-                        this.cacheService.delete('wallet_balance', user.wallet_address),
-                        this.cacheService.delete('main_menu', userId)
-                    ]);
-                    this.monitoring.logInfo('Manual refresh cache cleared (legacy)', { userId, walletAddress: user.wallet_address });
-                } catch (redisError) {
-                    this.monitoring.logError('Manual refresh cache clear failed', redisError, { userId });
                 }
             }
             // Fetch fresh data with forceRefresh = true

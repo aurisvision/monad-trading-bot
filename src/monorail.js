@@ -249,7 +249,17 @@ class MonorailAPI {
     // Get MON balance for specific wallet
     async getMONBalance(walletAddress, forceRefresh = false) {
         const cacheKey = `mon_balance:${walletAddress}`;
-        // Always force refresh if forceRefresh is true, otherwise check cache
+        
+        // If force refresh, clear cache first
+        if (forceRefresh && this.cacheService) {
+            try {
+                await this.cacheService.delete('mon_balance', walletAddress);
+            } catch (error) {
+                // Ignore cache delete errors
+            }
+        }
+        
+        // Check cache only if not force refresh
         if (!forceRefresh && this.cacheService) {
             try {
                 const cached = await this.cacheService.get('mon_balance', walletAddress);
@@ -302,10 +312,20 @@ class MonorailAPI {
     // Get portfolio total value in USD
     async getPortfolioValue(walletAddress, forceRefresh = false) {
         const cacheKey = `portfolio_value:${walletAddress}`;
+        
+        // If force refresh, clear cache first
+        if (forceRefresh && this.cacheService) {
+            try {
+                await this.cacheService.delete('portfolio_value', walletAddress);
+            } catch (error) {
+                // Ignore cache delete errors
+            }
+        }
+        
         // Check cache first unless force refresh
         if (!forceRefresh && this.cacheService) {
             try {
-                const cached = await this.cacheService.get('portfolio', walletAddress);
+                const cached = await this.cacheService.get('portfolio_value', walletAddress);
                 if (cached) {
                     return cached;
                 }
@@ -324,7 +344,7 @@ class MonorailAPI {
                 };
                 // Cache for 10 minutes using unified cache
                 if (this.cacheService) {
-                    await this.cacheService.set('portfolio', walletAddress, result, 600);
+                    await this.cacheService.set('portfolio_value', walletAddress, result, 600);
                     // Portfolio value cached successfully
                 }
                 return result;
@@ -559,12 +579,30 @@ class MonorailAPI {
                 gasLimit: gasLimit || 250000,
                 nonce: nonce
             };
+            console.log('🚀 OPTIMIZED TRANSACTION VALIDATION FIX ACTIVE - Sending transaction');
             const txResponse = await wallet.sendTransaction(swapTx);
-            // Swap transaction broadcast
+            console.log('📡 Optimized transaction sent, hash:', txResponse.hash);
+            
+            // Wait for transaction confirmation
+            console.log('⏳ Waiting for optimized transaction confirmation...');
+            const receipt = await txResponse.wait();
+            console.log('📋 Optimized receipt received, status:', receipt.status);
+            
+            // Check if transaction was successful
+            if (receipt.status === 0) {
+                console.log('❌ OPTIMIZED TRANSACTION REVERTED - Status is 0');
+                throw new Error('Transaction reverted on blockchain');
+            }
+            
+            console.log('✅ OPTIMIZED TRANSACTION CONFIRMED SUCCESSFULLY - Status is 1');
+            // Swap transaction confirmed successfully
             return {
                 success: true,
                 txHash: txResponse.hash,
-                transaction: txResponse
+                transaction: txResponse,
+                receipt: receipt,
+                gasUsed: receipt.gasUsed?.toString(),
+                effectiveGasPrice: receipt.effectiveGasPrice?.toString()
             };
         } catch (error) {
             return {
@@ -628,17 +666,22 @@ class MonorailAPI {
                 throw new Error('Transaction missing required fields');
             }
             // Send transaction
-            // Sending transaction to blockchain
+            console.log('🚀 TRANSACTION VALIDATION FIX ACTIVE - Sending transaction to blockchain');
             const txResponse = await wallet.sendTransaction(transaction);
+            console.log('📡 Transaction sent, hash:', txResponse.hash);
             
             // Wait for transaction confirmation to verify success
+            console.log('⏳ Waiting for transaction confirmation...');
             const receipt = await txResponse.wait();
+            console.log('📋 Receipt received, status:', receipt.status);
             
             // Check if transaction was successful
             if (receipt.status === 0) {
+                console.log('❌ TRANSACTION REVERTED - Status is 0');
                 throw new Error('Transaction reverted on blockchain');
             }
             
+            console.log('✅ TRANSACTION CONFIRMED SUCCESSFULLY - Status is 1');
             // Swap transaction confirmed successfully
             return {
                 success: true,
