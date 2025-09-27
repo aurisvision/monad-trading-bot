@@ -85,7 +85,7 @@ class UnifiedTradingEngine {
         }
     }
     /**
-     * 💸 تنفيذ عمليات البيع حسب النوع
+     * Execute sell operations by type
      */
     async executeSellByType(type, tradeData, tokenAddress, amount) {
         switch(type) {
@@ -98,11 +98,11 @@ class UnifiedTradingEngine {
         }
     }
     /**
-     * 🔵 الشراء العادي - مع جميع الفحوصات الأمنية
+     * Normal buy execution - with all security checks
      */
     async executeNormalBuy(tradeData, tokenAddress, amount) {
         try {
-            // فحوصات الأمان والحصول على معلومات العملة بالتوازي للسرعة
+            // Security checks and token info retrieval in parallel for speed
             const [tokenInfo] = await Promise.all([
                 this.dataManager.getCachedTokenInfo(tokenAddress),
                 this.validateNormalTrade(tradeData, tokenAddress, amount)
@@ -110,8 +110,8 @@ class UnifiedTradingEngine {
             if (!tokenInfo || !tokenInfo.success) {
                 throw new Error(this.config.getErrorMessage('INVALID_TOKEN'));
             }
-            // لا نحتاج quote منفصل - سيتم الحصول عليه في buyToken
-            // تنفيذ المعاملة
+            // No separate quote needed - will be obtained in buyToken
+            // Execute transaction
             const swapResult = await this.monorailAPI.buyToken(
                 tradeData.wallet,
                 tokenAddress,
@@ -120,9 +120,8 @@ class UnifiedTradingEngine {
                 { gasPrice: tradeData.effectiveGas }
             );
             if (!swapResult.success) {
-                // تحسين رسالة الخطأ لتكون مهذبة وواضحة
-                let userFriendlyError = this.getUserFriendlyError(swapResult.error);
-                throw new Error(userFriendlyError);
+                // Enhanced error handling
+                throw new Error(`Transaction failed: ${swapResult.error}`);
             }
             return {
                 success: true,
@@ -141,16 +140,16 @@ class UnifiedTradingEngine {
         }
     }
     /**
-     * 🟡 التيربو شراء - سرعة قصوى بدون فحوصات
+     * Turbo buy execution - maximum speed with minimal checks
      */
     async executeTurboBuy(tradeData, tokenAddress, amount) {
         try {
-            // تنفيذ مباشر بدون فحوصات (للسرعة القصوى)
+            // Direct execution without extensive validation for maximum speed
             const swapResult = await this.monorailAPI.executeSwapTurbo(
                 tradeData.wallet,
                 tokenAddress,
                 amount,
-                20, // 20% slippage ثابت
+                20, // Fixed 20% slippage for turbo mode
                 tradeData.wallet.address
             );
             if (!swapResult.success) {
@@ -170,20 +169,20 @@ class UnifiedTradingEngine {
         }
     }
     /**
-     * 🔵 البيع العادي
+     * Normal sell execution
      */
     async executeNormalSell(tradeData, tokenAddress, tokenAmount) {
         try {
-            // فحوصات الأمان للبيع
+            // Security checks for sell operation
             await this.validateSellTrade(tradeData, tokenAddress, tokenAmount);
-            // تعديل الكمية للبيع - بيع 99.5% بدلاً من 100% لتجنب مشاكل الكسور
+            // Adjust sell amount - sell 99.5% instead of 100% to avoid precision issues
             let adjustedAmount = tokenAmount;
             const numAmount = parseFloat(tokenAmount);
             if (numAmount > 0) {
-                adjustedAmount = (numAmount * 0.995).toString(); // بيع 99.5%
+                adjustedAmount = (numAmount * 0.995).toString(); // Sell 99.5%
                 console.log('📉 Adjusted sell amount to 99.5% to avoid precision issues');
             }
-            // تنفيذ البيع مع معالجة أفضل للأخطاء
+            // Execute sell with enhanced error handling
             const swapResult = await this.monorailAPI.sellTokenOptimized(
                 tradeData.wallet,
                 tokenAddress,
@@ -192,9 +191,8 @@ class UnifiedTradingEngine {
                 { gasPrice: tradeData.effectiveGas }
             );
             if (!swapResult.success) {
-                // تحسين رسالة الخطأ لتكون مهذبة وواضحة
-                let userFriendlyError = this.getUserFriendlyError(swapResult.error);
-                throw new Error(userFriendlyError);
+                // Enhanced error handling
+                throw new Error(`Transaction failed: ${swapResult.error}`);
             }
             return {
                 success: true,
@@ -211,17 +209,17 @@ class UnifiedTradingEngine {
         }
     }
     /**
-     * 🟡 التيربو بيع
+     * Turbo sell execution - maximum speed with minimal checks
      */
     async executeTurboSell(tradeData, tokenAddress, tokenAmount) {
         try {
-            // بيع مباشر بدون فحوصات
+            // Direct sell without extensive validation
             const swapResult = await this.monorailAPI.sellTokenOptimized(
                 tradeData.wallet,
                 tokenAddress,
                 tokenAmount,
-                20, // 20% slippage ثابت
-                { gasPrice: 100000000000 } // 100 Gwei ثابت
+                20, // Fixed 20% slippage for turbo mode
+                { gasPrice: 100000000000 } // Fixed 100 Gwei for turbo
             );
             if (!swapResult.success) {
                 throw new Error('Turbo sell failed: ' + swapResult.error);
@@ -357,36 +355,5 @@ class UnifiedTradingEngine {
         }
     }
 
-    /**
-     * 📝 تحويل رسائل الخطأ التقنية إلى رسائل مهذبة وواضحة للمستخدم
-     */
-    getUserFriendlyError(error) {
-        if (!error) return 'حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى';
-        
-        const errorStr = error.toString().toLowerCase();
-        
-        if (errorStr.includes('transaction reverted')) {
-            return '❌ فشلت المعاملة على البلوك تشين\n\nالأسباب المحتملة:\n• رصيد غير كافي\n• سعر الغاز منخفض\n• مشكلة في السيولة\n\nيرجى المحاولة مرة أخرى';
-        }
-        
-        if (errorStr.includes('insufficient balance') || errorStr.includes('insufficient funds')) {
-            return '❌ الرصيد غير كافي\n\nيرجى التأكد من وجود رصيد كافي في محفظتك والمحاولة مرة أخرى';
-        }
-        
-        if (errorStr.includes('slippage') || errorStr.includes('price impact')) {
-            return '❌ تغير السعر بشكل كبير\n\nيرجى زيادة نسبة الـ Slippage أو المحاولة مرة أخرى';
-        }
-        
-        if (errorStr.includes('gas')) {
-            return '❌ مشكلة في رسوم الشبكة\n\nيرجى زيادة سعر الغاز والمحاولة مرة أخرى';
-        }
-        
-        if (errorStr.includes('network') || errorStr.includes('connection')) {
-            return '❌ مشكلة في الاتصال بالشبكة\n\nيرجى المحاولة مرة أخرى بعد قليل';
-        }
-        
-        // رسالة عامة للأخطاء غير المعروفة
-        return '❌ حدث خطأ أثناء تنفيذ المعاملة\n\nيرجى المحاولة مرة أخرى أو التواصل مع الدعم إذا استمرت المشكلة';
-    }
 }
 module.exports = UnifiedTradingEngine;

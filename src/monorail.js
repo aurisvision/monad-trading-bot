@@ -579,23 +579,28 @@ class MonorailAPI {
                 gasLimit: gasLimit || 250000,
                 nonce: nonce
             };
-            console.log('🚀 OPTIMIZED TRANSACTION VALIDATION FIX ACTIVE - Sending transaction');
             const txResponse = await wallet.sendTransaction(swapTx);
-            console.log('📡 Optimized transaction sent, hash:', txResponse.hash);
             
-            // Wait for transaction confirmation
-            console.log('⏳ Waiting for optimized transaction confirmation...');
+            // Check if turbo mode based on gas price
+            const isTurboMode = gasPrice && parseInt(gasPrice) >= 100000000000; // 100 Gwei
+            
+            if (isTurboMode) {
+                return {
+                    success: true,
+                    txHash: txResponse.hash,
+                    transaction: txResponse,
+                    receipt: null,
+                    mode: 'turbo'
+                };
+            }
+            
+            // Normal mode - wait for confirmation
             const receipt = await txResponse.wait();
-            console.log('📋 Optimized receipt received, status:', receipt.status);
             
-            // Check if transaction was successful
             if (receipt.status === 0) {
-                console.log('❌ OPTIMIZED TRANSACTION REVERTED - Status is 0');
                 throw new Error('Transaction reverted on blockchain');
             }
             
-            console.log('✅ OPTIMIZED TRANSACTION CONFIRMED SUCCESSFULLY - Status is 1');
-            // Swap transaction confirmed successfully
             return {
                 success: true,
                 txHash: txResponse.hash,
@@ -666,27 +671,34 @@ class MonorailAPI {
                 throw new Error('Transaction missing required fields');
             }
             // Send transaction
-            console.log('🚀 TRANSACTION VALIDATION FIX ACTIVE - Sending transaction to blockchain');
             const txResponse = await wallet.sendTransaction(transaction);
-            console.log('📡 Transaction sent, hash:', txResponse.hash);
             
-            // Wait for transaction confirmation to verify success
-            console.log('⏳ Waiting for transaction confirmation...');
+            // Check if turbo mode - return immediately without waiting
+            if (options.turboMode) {
+                return {
+                    success: true,
+                    txHash: txResponse.hash,
+                    transactionHash: txResponse.hash,
+                    expectedOutput: quote.outputAmount,
+                    priceImpact: quote.priceImpact,
+                    route: quote.route,
+                    receipt: null,
+                    mode: 'turbo'
+                };
+            }
+            
+            // Normal mode - wait for confirmation
             const receipt = await txResponse.wait();
-            console.log('📋 Receipt received, status:', receipt.status);
             
             // Check if transaction was successful
             if (receipt.status === 0) {
-                console.log('❌ TRANSACTION REVERTED - Status is 0');
                 throw new Error('Transaction reverted on blockchain');
             }
             
-            console.log('✅ TRANSACTION CONFIRMED SUCCESSFULLY - Status is 1');
-            // Swap transaction confirmed successfully
             return {
                 success: true,
                 txHash: txResponse.hash,
-                transactionHash: txResponse.hash, // Add this for compatibility
+                transactionHash: txResponse.hash,
                 expectedOutput: quote.outputAmount,
                 priceImpact: quote.priceImpact,
                 route: quote.route,
