@@ -305,6 +305,23 @@ class PortfolioService {
     async getPortfolioDisplay(telegramId, walletAddress, page = 1, forceRefresh = false) {
         try {
             const tokens = await this.getUserPortfolio(telegramId, walletAddress, forceRefresh);
+            
+            // Handle empty portfolio gracefully
+            if (!tokens || tokens.length === 0) {
+                this.monitoring?.logInfo('Empty portfolio returned', { telegramId, walletAddress });
+                const { Markup } = require('telegraf');
+                return {
+                    text: `📊 **Portfolio**\n\n_No tokens found in your portfolio._\n\n_🕒 Last updated: ${new Date().toLocaleTimeString('en-US', { hour12: true, hour: 'numeric', minute: '2-digit' })}_`,
+                    keyboard: Markup.inlineKeyboard([
+                        [Markup.button.callback('🔄 Refresh', 'portfolio:refresh')],
+                        [Markup.button.callback('🏠 Back to Main', 'main')]
+                    ]).reply_markup,
+                    hasTokens: false,
+                    totalPages: 0,
+                    currentPage: 1
+                };
+            }
+            
             const messageData = this.formatPortfolioMessage(tokens, page);
             const keyboard = this.createPortfolioKeyboard(
                 messageData.tokens, 

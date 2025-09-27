@@ -469,13 +469,21 @@ Use /start to create a new wallet.`, {
                 errorStack: error.stack
             });
             this.monitoring.logError('Confirm delete wallet failed', error, { userId: ctx.from.id });
+            
             // More specific error handling
+            let errorMessage = '❌ Error deleting wallet. Please try again.';
             if (error.message && error.message.includes('database')) {
-                await ctx.reply('❌ Database error while deleting wallet. Please try again.');
-            } else if (error.message && error.message.includes('cache')) {
-                await ctx.reply('❌ Cache error while deleting wallet. Please try again.');
-            } else {
-                await ctx.reply('❌ Error deleting wallet. Please try again.');
+                errorMessage = '❌ Database error while deleting wallet. Please try again.';
+            } else if (error.message && error.message.includes('Redis')) {
+                errorMessage = '❌ Cache error while deleting wallet. Please try again.';
+            }
+            
+            try {
+                await ctx.editMessageText(errorMessage, {
+                    parse_mode: 'Markdown'
+                });
+            } catch (editError) {
+                await ctx.reply(errorMessage);
             }
         }
     }

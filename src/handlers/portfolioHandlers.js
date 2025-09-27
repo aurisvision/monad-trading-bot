@@ -154,7 +154,15 @@ class PortfolioHandlers {
 
         } catch (error) {
             this.monitoring.logError('Portfolio refresh failed', error, { userId: ctx.from.id });
-            await ctx.reply('❌ Error refreshing portfolio. Please try again.');
+            try {
+                // Try to edit the message first
+                await ctx.editMessageText('❌ Error refreshing portfolio. Please try again.', {
+                    parse_mode: 'Markdown'
+                });
+            } catch (editError) {
+                // If edit fails, send new message
+                await ctx.reply('❌ Error refreshing portfolio. Please try again.');
+            }
         }
     }
 

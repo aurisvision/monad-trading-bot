@@ -778,9 +778,22 @@ class Area51BotModularSimple {
                 await ctx.answerCbQuery();
             }
             
-            // Get user settings to display current status
-            const userSettings = await this.database.getUserSettings(ctx.from.id);
-            const turboStatus = (userSettings?.turbo_mode || false) ? '🟢' : '🔴';
+            // Get user settings to display current status with fallback
+        let userSettings = null;
+        try {
+            userSettings = await this.database.getUserSettings(ctx.from.id);
+        } catch (settingsError) {
+            this.monitoring.logError('Failed to get user settings, using defaults', settingsError, { userId: ctx.from.id });
+            // Create default settings if they don't exist
+            try {
+                await this.database.createUserSettings(ctx.from.id);
+                userSettings = await this.database.getUserSettings(ctx.from.id);
+            } catch (createError) {
+                this.monitoring.logError('Failed to create user settings', createError, { userId: ctx.from.id });
+                userSettings = {}; // Use empty object as fallback
+            }
+        }
+        const turboStatus = (userSettings?.turbo_mode || false) ? '🟢' : '🔴';
             
             const settingsText = `⚙️ **Settings**
 
