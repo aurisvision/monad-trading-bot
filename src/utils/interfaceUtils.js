@@ -25,11 +25,7 @@ _The main area for real nads!_
 
 🟣 *Current MON Price:* $${monPriceUSD.toFixed(2)}
 
-▫️*What you can do:*
-• Buy and sell tokens instantly
-• Track your portfolio with real-time P&L
-• Browse trending token categories
-• Manage your wallet securely
+📖 *Check the Docs button to learn what you can do with this bot.*
 
 💡 Click on the Refresh button to update your current balance.`;
 
