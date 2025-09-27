@@ -74,12 +74,9 @@ class Area51BotModularSimple {
         // Initialize Redis with smart fallback (try without username first, then with username)
         try {
             // First attempt: without username (most common case)
+            const redisUrl = `redis://:${process.env.REDIS_PASSWORD || ''}@${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`;
             this.redis = Redis.createClient({
-                host: process.env.REDIS_HOST || 'localhost',
-                port: parseInt(process.env.REDIS_PORT) || 6379,
-                password: process.env.REDIS_PASSWORD || undefined,
-                retry_unfulfilled_commands: true,
-                retry_delay_on_failover: parseInt(process.env.REDIS_RETRY_DELAY) || 100,
+                url: redisUrl,
                 socket: {
                     connectTimeout: parseInt(process.env.REDIS_CONNECTION_TIMEOUT) || 5000,
                     commandTimeout: parseInt(process.env.REDIS_COMMAND_TIMEOUT) || 5000,
@@ -106,13 +103,9 @@ class Area51BotModularSimple {
                         try { await this.redis.disconnect(); } catch (e) {}
                     }
                     
+                    const redisUrlWithUsername = `redis://${process.env.REDIS_USERNAME}:${process.env.REDIS_PASSWORD || ''}@${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`;
                     this.redis = Redis.createClient({
-                        host: process.env.REDIS_HOST || 'localhost',
-                        port: parseInt(process.env.REDIS_PORT) || 6379,
-                        username: process.env.REDIS_USERNAME,
-                        password: process.env.REDIS_PASSWORD || undefined,
-                        retry_unfulfilled_commands: true,
-                        retry_delay_on_failover: parseInt(process.env.REDIS_RETRY_DELAY) || 100,
+                        url: redisUrlWithUsername,
                         socket: {
                             connectTimeout: parseInt(process.env.REDIS_CONNECTION_TIMEOUT) || 5000,
                             commandTimeout: parseInt(process.env.REDIS_COMMAND_TIMEOUT) || 5000,
