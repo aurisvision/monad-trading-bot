@@ -82,25 +82,39 @@ class TradingInterface {
             if (!tokenInfo || !tokenInfo.success) {
                 return ctx.reply('❌ Token not found. Please try again.');
             }
+            
+            // Get user's custom buy amounts
+            const userSettings = await this.database.getUserSettings(ctx.from.id);
+            let customAmounts = userSettings?.custom_buy_amounts || '0.1,0.5,1,5';
+            // Handle case where custom_buy_amounts might be null or not a string
+            if (!customAmounts || typeof customAmounts !== 'string') {
+                customAmounts = '0.1,0.5,1,5';
+            }
+            const amountsArray = customAmounts.split(',');
+            
             // Set user state with token selection
             await this.database.setUserState(ctx.from.id, 'token_selected', {
                 tokenAddress: tokenAddress,
                 tokenInfo: tokenInfo.token
             });
-            const buyText = `💰 *Buy ${tokenInfo.token.symbol}*
-📋 *Token Details:*
+            const buyText = `💎 *Buy ${tokenInfo.token.symbol}*
+
+📊 *Token Information:*
 • *Name:* ${tokenInfo.token.name}
 • *Symbol:* ${tokenInfo.token.symbol}
-• *Address:* \`${tokenAddress}\`
-💰 *Choose amount to buy:*`;
+• *Contract:* \`${tokenAddress}\`
+
+_💡 Select your investment amount:_`;
+            
+            // Use custom buy amounts from user settings
             const keyboard = Markup.inlineKeyboard([
                 [
-                    Markup.button.callback('0.01 MON', `buy_amount_0.01`),
-                    Markup.button.callback('0.1 MON', `buy_amount_0.1`)
+                    Markup.button.callback(`${amountsArray[0]?.trim() || '0.1'} MON`, `buy_amount_${amountsArray[0]?.trim() || '0.1'}`), 
+                    Markup.button.callback(`${amountsArray[1]?.trim() || '0.5'} MON`, `buy_amount_${amountsArray[1]?.trim() || '0.5'}`)
                 ],
                 [
-                    Markup.button.callback('0.5 MON', `buy_amount_0.5`),
-                    Markup.button.callback('1 MON', `buy_amount_1`)
+                    Markup.button.callback(`${amountsArray[2]?.trim() || '1'} MON`, `buy_amount_${amountsArray[2]?.trim() || '1'}`), 
+                    Markup.button.callback(`${amountsArray[3]?.trim() || '5'} MON`, `buy_amount_${amountsArray[3]?.trim() || '5'}`)
                 ],
                 [Markup.button.callback('📝 Custom Amount', 'buy_amount_custom')],
                 [Markup.button.callback('🔙 Back', 'token_categories')]
@@ -127,6 +141,16 @@ class TradingInterface {
                 await ctx.reply('❌ Please start the bot first with /start');
                 return;
             }
+            
+            // Get user's custom sell percentages
+            const userSettings = await this.database.getUserSettings(userId);
+            let customPercentages = userSettings?.custom_sell_percentages || '25,50,75,100';
+            // Handle case where custom_sell_percentages might be null or not a string
+            if (!customPercentages || typeof customPercentages !== 'string') {
+                customPercentages = '25,50,75,100';
+            }
+            const percentagesArray = customPercentages.split(',');
+            
             // Get token info from portfolio
             const walletBalance = await this.engine.monorailAPI.getWalletBalance(user.wallet_address);
             const token = walletBalance.find(t => t.symbol === tokenSymbol);
@@ -141,19 +165,23 @@ class TradingInterface {
                 balance: token.balance,
                 tokenInfo: token
             });
-            const sellText = `💸 *Sell ${tokenSymbol}*
-📋 *Token Details:*
-• *Symbol:* ${tokenSymbol}
+            const sellText = `📈 *Sell ${tokenSymbol}*
+
+💼 *Your Holdings:*
+• *Token:* ${tokenSymbol}
 • *Balance:* ${parseFloat(token.balance).toFixed(6)}
-📊 *Choose percentage to sell:*`;
+
+_🎯 Select percentage to sell:_`;
+            
+            // Use custom sell percentages from user settings
             const keyboard = Markup.inlineKeyboard([
                 [
-                    Markup.button.callback('25%', `sell_percentage_${tokenSymbol}_25`),
-                    Markup.button.callback('50%', `sell_percentage_${tokenSymbol}_50`)
+                    Markup.button.callback(`${percentagesArray[0]?.trim() || '25'}%`, `sell_percentage_${tokenSymbol}_${percentagesArray[0]?.trim() || '25'}`),
+                    Markup.button.callback(`${percentagesArray[1]?.trim() || '50'}%`, `sell_percentage_${tokenSymbol}_${percentagesArray[1]?.trim() || '50'}`)
                 ],
                 [
-                    Markup.button.callback('75%', `sell_percentage_${tokenSymbol}_75`),
-                    Markup.button.callback('100%', `sell_percentage_${tokenSymbol}_100`)
+                    Markup.button.callback(`${percentagesArray[2]?.trim() || '75'}%`, `sell_percentage_${tokenSymbol}_${percentagesArray[2]?.trim() || '75'}`),
+                    Markup.button.callback(`${percentagesArray[3]?.trim() || '100'}%`, `sell_percentage_${tokenSymbol}_${percentagesArray[3]?.trim() || '100'}`)
                 ],
                 [Markup.button.callback('🔙 Back to Portfolio', 'portfolio')]
             ]);
@@ -268,21 +296,32 @@ Please try again.`, {
             let balanceText = '_Loading..._';
             if (user?.wallet_address) {
                 try {
-                    const balance = await this.engine.dataManager.getCachedBalance(user.wallet_address);
-                    if (balance !== null) {
-                        balanceText = `**${parseFloat(balance).toFixed(4)} MON**`;
+                    // Use monorailAPI to get fresh balance
+                    const balanceData = await this.engine.monorailAPI.getMONBalance(user.wallet_address, false);
+                    if (balanceData && balanceData.balance !== undefined) {
+                        const balance = parseFloat(balanceData.balance);
+                        if (!isNaN(balance)) {
+                            balanceText = `**${balance.toFixed(4)} MON**`;
+                        } else {
+                            balanceText = '_Not available_';
+                        }
+                    } else {
+                        balanceText = '_Not available_';
                     }
                 } catch (error) {
                     this.monitoring?.logError('Failed to get balance for buy confirmation', error);
                     balanceText = '_Not available_';
                 }
             }
-            const confirmText = `🛒 ***Purchase Confirmation***
-📋 ***Token Details:***
-• ***Name:*** _${tokenInfo.token.name}_
-• ***Symbol:*** **${tokenInfo.token.symbol}**
-• ***Amount:*** **${amount} MON**
-💼 ***Your Balance:*** ${balanceText}
+            const confirmText = `💳 *Purchase Confirmation*
+
+📊 *Token Details:*
+• *Name:* ${tokenInfo.token.name}
+• *Symbol:* ${tokenInfo.token.symbol}
+• *Amount:* ${amount} MON
+
+💼 *Your Balance:* ${balanceText}
+
 _Proceed with the purchase?_`;
             const keyboard = Markup.inlineKeyboard([
                 [Markup.button.callback('✅ Confirm', `confirm_buy_${tokenAddress}_${amount}`)],

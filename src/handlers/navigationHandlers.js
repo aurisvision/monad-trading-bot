@@ -45,10 +45,7 @@ class NavigationHandlers {
         this.bot.action('refresh', async (ctx) => {
             await this.handleManualRefresh(ctx);
         });
-        // Help handler
-        this.bot.action('help', async (ctx) => {
-            await this.showHelp(ctx);
-        });
+        // Docs handler removed - now uses direct URL button
         // Transfer handler
         this.bot.action('transfer', async (ctx) => {
             await this.handleTransfer(ctx);
@@ -442,7 +439,9 @@ Explore and trade tokens in the Monad ecosystem:`;
             const currentBalanceData = await this.monorailAPI.getMONBalance(user.wallet_address);
             const currentBalance = parseFloat(currentBalanceData.balance || '0');
             const transferText = `📤 *Transfer MON*
-💰 **Your Balance:** *${currentBalance.toFixed(4)} MON*
+
+💼 **Your Balance:** *${currentBalance.toFixed(4)} MON*
+
 Please enter the recipient address:
 **Example:** \`0x1234567890123456789012345678901234567890\``;
             const transferOptions = {
@@ -472,37 +471,7 @@ Please enter the recipient address:
             await ctx.reply('❌ Error starting transfer. Please try again.');
         }
     }
-    async showHelp(ctx) {
-        try {
-            if (ctx.callbackQuery) {
-                await ctx.answerCbQuery();
-            }
-            const helpText = `🤖 *Area51 Trading Bot Help*
-*Available Commands:*
-/buy - Open trading interface
-/wallet - View wallet details
-/portfolio - Check your portfolio
-/categories - Browse token categories
-/settings - Bot configuration
-/transfer - Send tokens
-/refresh - Update data
-/help - Show this help message
-*How to Use:*
-• Click buttons in the main menu
-• Or type commands directly (e.g., /buy)
-• Send token addresses for quick trading
-*Features:*
-• Real-time token tracking
-• Automated trading options
-• Portfolio management
-• Secure wallet integration
-*Support:* Contact admin for help`;
-            await ctx.reply(helpText);
-        } catch (error) {
-            this.monitoring.logError('Help failed', error, { userId: ctx.from.id });
-            await ctx.reply('❌ Error loading help.');
-        }
-    }
+    // showDocs function removed - now using direct URL button
     async handleTextMessage(ctx) {
         const userId = ctx.from.id;
         const userState = await this.database.getUserState(userId);
@@ -589,8 +558,10 @@ Please enter the recipient address:
             const currentBalance = parseFloat(balance);
             // Ask for amount
             const amountText = `✅ **Address Confirmed**
+
 📤 **To:** \`${cleanAddress}\`
-💰 **Your Balance:** *${currentBalance.toFixed(4)} MON*
+💼 **Your Balance:** *${currentBalance.toFixed(4)} MON*
+
 Enter the amount you want to transfer:
 **Example:** \`1.5\``;
             await ctx.reply(amountText, {
@@ -647,27 +618,29 @@ Enter the amount you want to transfer:
             // Clear user state after transfer attempt (success or failure)
             await this.database.clearUserState(userId);
             if (result.success) {
-                // Clear cache after successful transfer using CacheService
+                // Clear cache after successful transfer
                 if (this.cacheService) {
                     try {
-                        await this.cacheService.invalidateAfterTransfer(userId, null, user.wallet_address, recipientAddress);
+                        // Use unified cache clearing for transfer
+                        await Promise.all([
+                            this.cacheService.delete('wallet_balance', user.wallet_address),
+                            this.cacheService.delete('mon_balance', user.wallet_address),
+                            this.cacheService.delete('portfolio', userId),
+                            this.cacheService.delete('main_menu', userId)
+                        ]);
+                        this.monitoring.logInfo('Cache cleared after successful transfer', { userId, walletAddress: user.wallet_address });
                     } catch (cacheError) {
                         this.monitoring.logError('Cache clear failed after transfer', cacheError, { userId });
                     }
-                } else if (this.cacheService) {
-                    // Use unified cache clearing
-                    await Promise.all([
-                        this.cacheService.del('wallet_balance', user.wallet_address),
-                        this.cacheService.del('user', userId),
-                        this.cacheService.del('main_menu', userId)
-                    ]);
                 }
                 const explorerUrl = `https://testnet.monadexplorer.com/tx/${result.transactionHash}`;
                 await ctx.reply(`✅ *Transfer Successful!*
+
 📤 **Sent:** ${amount} MON
 📍 **To:** \`${recipientAddress}\`
-🔗 **Transaction Hash:** \`${result.transactionHash}\`
+
 [View on Explorer](${explorerUrl})
+
 Your MON has been sent successfully!`, {
                     parse_mode: 'Markdown'
                 });
@@ -1170,9 +1143,9 @@ Proceed with this purchase?`, {
                 // Use unified cache clearing
                 try {
                     await Promise.all([
-                        this.cacheService.del('portfolio', userId),
-                        this.cacheService.del('wallet_balance', user.wallet_address),
-                        this.cacheService.del('main_menu', userId)
+                        this.cacheService.delete('portfolio', userId),
+                        this.cacheService.delete('wallet_balance', user.wallet_address),
+                        this.cacheService.delete('main_menu', userId)
                     ]);
                     this.monitoring.logInfo('Manual refresh cache cleared (legacy)', { userId, walletAddress: user.wallet_address });
                 } catch (redisError) {

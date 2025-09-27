@@ -2,47 +2,48 @@
 
 ## Getting Started
 
-* [🛸 Introduction](README.md)
-* [🚀 Quick Start Guide](quick-start.md)
+* [Introduction](README.md)
+* [Quick Start Guide](quick-start.md)
 
-## Core Services
+## User Guide
 
-* [💼 Wallet Services](wallet-services.md)
-* [🛒 Trading Services](trading-services.md)
-* [📊 Portfolio Management](portfolio-management.md)
+* [Wallet Management](wallet-services.md)
+* [Trading Guide](trading-services.md)
+* [Portfolio Tracking](portfolio-management.md)
 
-## Security & Support
+## Security & Help
 
-* [🛡️ Security Features](security-features.md)
-* [❓ FAQ](faq.md)
+* [Security Features](security-features.md)
+* [Frequently Asked Questions](faq.md)
 
-## Advanced
+## Monad Network
 
-* [🔌 API Reference](api-reference.md)
+* [About Monad](monad-network.md)
+* [Getting MON Tokens](getting-mon-tokens.md)
+* [Network Information](network-info.md)
 
 ## Resources
 
-* [🌐 Official Links](#official-links)
-* [📱 Community](#community)
-* [🆘 Support](#support)
+* [Official Links](#official-links)
+* [Community](#community)
+* [Support](#support)
 
 ---
 
 ## Official Links
 
-* **Bot**: [@Area51Bot](https://t.me/Area51Bot)
-* **Website**: [area51bot.com](https://area51bot.com)
-* **GitHub**: [Area51 Bot Repository](https://github.com/devYahia/area51-bot)
+* **Area51 Bot**: [@Area51Bot](https://t.me/Area51Bot)
+* **Developer**: [@yahia_crypto](https://t.me/yahia_crypto)
+* **Monad Network**: [monad.xyz](https://monad.xyz)
 
 ## Community
 
-* **Telegram Channel**: [@Area51Updates](https://t.me/Area51Updates)
+* **Updates Channel**: [@Area51Updates](https://t.me/Area51Updates)
 * **Community Group**: [@Area51Community](https://t.me/Area51Community)
-* **Developer Group**: [@Area51Developers](https://t.me/Area51Developers)
+* **Monad Community**: [Monad Discord](https://discord.gg/monad)
 
 ## Support
 
-* **Documentation**: This GitBook
-* **Bug Reports**: [GitHub Issues](https://github.com/devYahia/area51-bot/issues)
-* **Feature Requests**: [GitHub Discussions](https://github.com/devYahia/area51-bot/discussions)
-* **Security Issues**: security@area51bot.com
+* **Documentation**: This guide
+* **Direct Support**: Contact [@yahia_crypto](https://t.me/yahia_crypto)
+* **Community Help**: [@Area51Community](https://t.me/Area51Community)

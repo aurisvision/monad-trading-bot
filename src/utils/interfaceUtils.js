@@ -38,7 +38,7 @@ _The main area for real nads!_
             [Markup.button.callback('👛 Wallet', 'wallet'), Markup.button.callback('📊 Portfolio', 'portfolio')],
             [Markup.button.callback('📈 Categories', 'token_categories'), Markup.button.callback('⚙️ Settings', 'settings')],
             [Markup.button.callback('📤 Transfer', 'transfer'), Markup.button.callback('🔄 Refresh', 'refresh')],
-            [Markup.button.callback('❓ Help', 'help')]
+            [Markup.button.url('📚 Docs', 'https://area51-1.gitbook.io/area51/')]
         ]);
 
         return { text: welcomeText, keyboard };

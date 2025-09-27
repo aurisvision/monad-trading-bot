@@ -1,32 +1,33 @@
-# 🛸 Area51 Bot - Complete Documentation
+# Area51 Bot - Your Gateway to Monad Trading
 
-Welcome to **Area51 Bot**, the most advanced Telegram trading bot for the Monad blockchain ecosystem. Built with enterprise-grade architecture to support thousands of concurrent users while maintaining the highest security standards.
+Welcome to **Area51 Bot**, the premier Telegram trading bot designed specifically for the Monad blockchain. Trade tokens, manage your portfolio, and explore DeFi opportunities directly from your Telegram chat.
 
-## 🌟 What is Area51 Bot?
+## What is Area51 Bot?
 
-Area51 Bot is a comprehensive DeFi trading solution that brings the power of decentralized finance directly to your Telegram chat. Whether you're a seasoned trader or just starting your DeFi journey, Area51 Bot provides all the tools you need to trade, manage, and monitor your crypto portfolio on the Monad network.
+Area51 Bot is your personal trading assistant on the Monad network. Whether you're new to crypto or an experienced trader, our bot makes it simple to buy, sell, and manage tokens without leaving Telegram.
 
-### 🎯 Key Features
+### Key Features
 
-- **🔐 Secure Wallet Management** - Generate, import, and manage wallets with military-grade encryption
-- **⚡ Lightning-Fast Trading** - Execute trades in seconds with optimized gas settings
-- **📊 Real-Time Portfolio Tracking** - Monitor your investments with live P&L calculations
-- **🛡️ Advanced Security** - Multi-layer security with rate limiting and fraud protection
-- **🎛️ Customizable Settings** - Fine-tune gas prices, slippage, and trading preferences
-- **📱 User-Friendly Interface** - Intuitive Telegram interface designed for all skill levels
+- **Secure Wallet Management** - Create and import wallets with bank-level security
+- **Instant Trading** - Buy and sell tokens in seconds with smart gas optimization
+- **Portfolio Tracking** - Monitor your investments with real-time profit/loss updates
+- **Advanced Security** - Your funds and data are protected with multiple security layers
+- **Custom Settings** - Adjust trading preferences to match your style
+- **Simple Interface** - Easy-to-use buttons and commands for all experience levels
 
-## 🚀 Why Choose Area51 Bot?
+## Why Choose Area51 Bot?
 
-### **Enterprise-Grade Performance**
-- Supports **100+ concurrent users** with optimized database architecture
-- **Sub-second response times** with advanced caching systems
-- **99.9% uptime** with comprehensive monitoring and failover systems
+### **Built for Monad**
+- Native integration with Monad blockchain
+- Optimized for Monad's fast transaction speeds
+- Access to the latest Monad tokens and projects
+- Real-time Monad network data and analytics
 
-### **Uncompromising Security**
-- **AES-256-GCM encryption** for all sensitive data
-- **Rate limiting** to prevent abuse and protect your assets
-- **Secure logging** that never exposes private keys or sensitive information
-- **Multi-layer validation** for all transactions
+### **Professional Grade Security**
+- Military-grade encryption for all sensitive data
+- Advanced fraud protection and monitoring
+- Secure key management - your private keys never leave your device
+- Rate limiting to protect against automated attacks
 
 ### **Monad Network Optimized**
 - Native integration with **Monad testnet**

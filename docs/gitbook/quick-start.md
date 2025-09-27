@@ -1,23 +1,20 @@
-# 🚀 Quick Start Guide
+# Quick Start Guide
 
-Get started with Area51 Bot in just 5 minutes! This guide will walk you through everything you need to know to start trading on the Monad network.
+Get started with Area51 Bot in just 3 simple steps. This guide will have you trading on Monad in under 5 minutes.
 
-## 📋 Prerequisites
+## What You Need
 
-Before you begin, make sure you have:
+Before you begin:
 - A Telegram account
-- Basic understanding of cryptocurrency trading
-- Some MON tokens for trading (testnet tokens for testing)
+- Some MON tokens for trading (get testnet MON from faucets)
 
-## 🎯 Step 1: Start the Bot
+## Step 1: Start the Bot
 
-1. Open Telegram and search for **@Area51Bot** (replace with your actual bot username)
-2. Click **Start** or send `/start` command
-3. You'll see the welcome message with the main menu
+1. Open Telegram and search for **@Area51Bot**
+2. Click **Start** or send `/start`
+3. You'll see the main trading interface
 
-*[Image placeholder: Bot start screen with welcome message]*
-
-## 🔐 Step 2: Set Up Your Wallet
+## Step 2: Set Up Your Wallet
 
 ### Option A: Generate New Wallet
 

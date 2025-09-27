@@ -730,15 +730,7 @@ class Area51BotModularSimple {
             }
         });
 
-        this.bot.command('help', async (ctx) => {
-            try {
-                this.monitoring?.logInfo('Help command received', { userId: ctx.from.id });
-                await this.navigationHandlers.showHelp(ctx);
-            } catch (error) {
-                this.monitoring?.logError('Help command failed', error, { userId: ctx.from.id });
-                await ctx.reply('Error accessing help. Please try again.');
-            }
-        });
+        // Docs command removed - now using direct URL button
 
         // Start command handler
         this.bot.start(async (ctx) => {

@@ -1,23 +1,23 @@
-# 🛒 Trading Services
+# Trading Guide
 
-Area51 Bot provides comprehensive trading services on the Monad network with advanced features for both beginners and professional traders. Execute trades with lightning speed, optimal pricing, and maximum security.
+Learn how to buy, sell, and trade tokens using Area51 Bot on the Monad network. This guide covers everything from basic trades to advanced strategies.
 
-## 🚀 Trading Overview
+## How Trading Works
 
 ### Powered by Monorail DEX
-- **DEX Aggregation**: Access to multiple liquidity pools
-- **Best Price Execution**: Automatically finds optimal trading routes
-- **MEV Protection**: Advanced protection against front-running
-- **Real-time Pricing**: Live price feeds and market data
+Area51 Bot connects to Monorail, the premier DEX aggregator on Monad, which means:
+- **Best prices** - Automatically finds the cheapest rates across all exchanges
+- **Fast execution** - Trades complete in seconds
+- **Deep liquidity** - Access to all available trading pairs
+- **MEV protection** - Advanced protection against front-running bots
 
-### Key Trading Features
-- **⚡ Instant Execution**: Trades execute in seconds
-- **🎯 Smart Routing**: Optimal path finding for best prices
-- **🛡️ Slippage Protection**: Configurable slippage tolerance
-- **⛽ Gas Optimization**: Intelligent gas price management
-- **📊 Real-time Data**: Live market information and analytics
+### What You Can Trade
+- **MON tokens** - The native Monad currency
+- **Stablecoins** - USDC, USDT, and other stable tokens
+- **Popular tokens** - Major cryptocurrencies bridged to Monad
+- **New projects** - Latest tokens launching on Monad
 
-## 🛒 Buying Tokens
+## Buying Tokens
 
 ### Quick Buy Process
 
