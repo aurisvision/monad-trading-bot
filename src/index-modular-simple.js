@@ -71,8 +71,9 @@ class Area51BotModularSimple {
         this.database = new Database();
         await this.database.initialize();
         
-        // Initialize Redis with fallback
+        // Initialize Redis with smart fallback (try without username first, then with username)
         try {
+            // First attempt: without username (most common case)
             this.redis = Redis.createClient({
                 host: process.env.REDIS_HOST || 'localhost',
                 port: parseInt(process.env.REDIS_PORT) || 6379,
@@ -88,15 +89,53 @@ class Area51BotModularSimple {
 
             const connectPromise = this.redis.connect();
             const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Redis connection timeout')), 10000)
+                setTimeout(() => reject(new Error('Redis connection timeout')), 8000)
             );
 
             await Promise.race([connectPromise, timeoutPromise]);
-            this.monitoring?.logInfo('Redis connected successfully');
+            this.monitoring?.logInfo('Redis connected successfully (without username)');
             
         } catch (error) {
-            this.monitoring?.logWarning('Redis connection failed, running without cache', { error: error.message });
-            this.redis = null;
+            this.monitoring?.logWarning('Redis connection without username failed, trying with username', { error: error.message });
+            
+            // Second attempt: with username if provided
+            if (process.env.REDIS_USERNAME) {
+                try {
+                    // Close the previous connection attempt
+                    if (this.redis) {
+                        try { await this.redis.disconnect(); } catch (e) {}
+                    }
+                    
+                    this.redis = Redis.createClient({
+                        host: process.env.REDIS_HOST || 'localhost',
+                        port: parseInt(process.env.REDIS_PORT) || 6379,
+                        username: process.env.REDIS_USERNAME,
+                        password: process.env.REDIS_PASSWORD || undefined,
+                        retry_unfulfilled_commands: true,
+                        retry_delay_on_failover: parseInt(process.env.REDIS_RETRY_DELAY) || 100,
+                        socket: {
+                            connectTimeout: parseInt(process.env.REDIS_CONNECTION_TIMEOUT) || 5000,
+                            commandTimeout: parseInt(process.env.REDIS_COMMAND_TIMEOUT) || 5000,
+                            reconnectStrategy: (retries) => Math.min(retries * 50, 500)
+                        }
+                    });
+
+                    const connectPromise2 = this.redis.connect();
+                    const timeoutPromise2 = new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('Redis connection timeout')), 8000)
+                    );
+
+                    await Promise.race([connectPromise2, timeoutPromise2]);
+                    this.monitoring?.logInfo('Redis connected successfully (with username)');
+                    
+                } catch (usernameError) {
+                    this.monitoring?.logWarning('Redis connection with username also failed, running without cache', { error: usernameError.message });
+                    this.redis = null;
+                }
+            } else {
+                this.monitoring?.logWarning('Redis connection failed, running without cache', { error: error.message });
+                this.redis = null;
+            }
         }
 
         // Initialize unified monitoring system
