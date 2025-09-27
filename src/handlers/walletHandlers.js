@@ -230,13 +230,16 @@ Send your private key or mnemonic phrase to import your wallet.
                 [Markup.button.callback('🔓 Reveal Full Key', `reveal_key_${userId}`)],
                 [Markup.button.callback('🔙 Back to Wallet', 'wallet')]
             ]);
-            await ctx.editMessageText(`🔑 *Private Key Export*
-*Masked Key:* [PRIVATE_KEY_AVAILABLE]
-⚠️ *SECURITY WARNING*
-• Never share your private key
-• Anyone with this key can access your funds
-• Store it securely offline
-Click below to reveal the full key:`, {
+            await ctx.editMessageText(`🔑 **Private Key Export**
+
+**Masked Key:** *[PRIVATE_KEY_AVAILABLE]*
+
+**Security Notice:**
+• *Never share your private key*
+• *Full wallet access with this key*
+• *Store securely offline*
+
+*Click below to reveal the full key:*`, {
                 parse_mode: 'Markdown',
                 reply_markup: keyboard.reply_markup
             });
@@ -319,18 +322,19 @@ Click below to reveal the full key:`, {
             const adjustedLimit = this.security.getAdjustedLimit(baseLimit, trustLevel);
             // Show private key with strong security warnings
             const message = await ctx.editMessageText(`🔑 **PRIVATE KEY REVEALED**
-${this.getTrustLevelEmoji(trustLevel)} **${trustLevel.toUpperCase()} USER ACCESS**
-🔐 **Your Private Key:**
+
+**Your Private Key:**
 \`${decryptedPrivateKey}\`
-🚨 **SECURITY REMINDERS:**
-• **NEVER share this key with anyone**
-• **This key gives FULL access to your wallet**
-• **Store it securely offline**
-• **Screenshot responsibly**
-📊 **Your Remaining Access:**
-• ${adjustedLimit - 1} reveals left this hour
-• Trust Level: ${this.getTrustLevelEmoji(trustLevel)} ${trustLevel.toUpperCase()}
-_This message will be deleted in 15 seconds for your security._`, {
+
+**Security Notice:**
+• *Never share this key with anyone*
+• *This key provides full wallet access*
+• *Store securely offline*
+
+**Access Status:** ${adjustedLimit - 1} reveals remaining
+**Trust Level:** *${trustLevel.toUpperCase()}*
+
+_This message will be deleted in 15 seconds for security._`, {
                 parse_mode: 'Markdown'
             });
             // Securely wipe the private key from memory

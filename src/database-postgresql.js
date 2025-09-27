@@ -17,7 +17,7 @@ class DatabasePostgreSQL {
         this.pool = new Pool({
             user: process.env.POSTGRES_USER || 'area51_user',
             host: process.env.POSTGRES_HOST || 'localhost',
-            database: process.env.POSTGRES_DB_NAME || 'area51_bot',
+            database: process.env.POSTGRES_DB || process.env.POSTGRES_DB_NAME || 'postgres',
             password: String(process.env.POSTGRES_PASSWORD || ''),
             port: parseInt(process.env.POSTGRES_PORT) || 5432,
             max: 25, // Increased from 20 to support 100 concurrent users
@@ -982,7 +982,7 @@ class DatabasePostgreSQL {
                 this.pool = new Pool({
                     user: process.env.POSTGRES_USER || 'area51_user',
                     host: process.env.POSTGRES_HOST || 'localhost',
-                    database: process.env.POSTGRES_DB_NAME || 'area51_bot',
+                    database: process.env.POSTGRES_DB || process.env.POSTGRES_DB_NAME || 'postgres',
                     password: String(process.env.POSTGRES_PASSWORD || ''),
                     port: parseInt(process.env.POSTGRES_PORT) || 5432,
                     max: 20,
