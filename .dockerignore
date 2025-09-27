@@ -156,9 +156,6 @@ dev/
 scripts/development/
 scripts/test/
 
-# Keep essential scripts
-!scripts/stop_all_bots.js
-
 # Large files that aren't needed
 *.zip
 *.tar.gz
