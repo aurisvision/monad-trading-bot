@@ -72,10 +72,11 @@ class TradingDataManager {
             tradeData.effectiveSlippage = this.config.getSlippageValue(tradeType, settings);
             tradeData.effectiveGas = this.config.getGasValue(tradeType, settings);
             // تسجيل الإعدادات المطبقة للتأكد
-            } Gwei`,
-                effectiveSlippage: `${tradeData.effectiveSlippage}%`,
-                userGasSetting: settings?.gas_price ? `${Math.round(settings.gas_price / 1000000000)} Gwei` : 'default',
-                userSlippageSetting: settings?.slippage_tolerance ? `${settings.slippage_tolerance}%` : 'default',
+            console.log('⚙️ Trade Settings Applied:', {
+                effectiveGas: Math.round(tradeData.effectiveGas / 1000000000) + ' Gwei',
+                effectiveSlippage: tradeData.effectiveSlippage + '%',
+                userGasSetting: settings?.gas_price ? Math.round(settings.gas_price / 1000000000) + ' Gwei' : 'default',
+                userSlippageSetting: settings?.slippage_tolerance ? settings.slippage_tolerance + '%' : 'default',
                 turboMode: settings?.turbo_mode || false
             });
             const responseTime = Date.now() - startTime;
@@ -190,7 +191,7 @@ class TradingDataManager {
      */
     async logSuccessfulTrade(userId, result) {
         try {
-            );
+            console.log('📝 Logging successful trade for user:', userId);
             // Get the correct amount based on action type
             let amount = result.amount || result.monAmount || result.tokenAmount;
             // Ensure amount is not null

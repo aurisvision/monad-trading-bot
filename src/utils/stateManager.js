@@ -16,7 +16,7 @@ class StateManager {
         this.cleanupInterval = setInterval(async () => {
             await this.cleanupExpiredStates();
         }, intervalMinutes * 60 * 1000);
-        `);
+        console.log('🔄 StateManager auto-cleanup started, interval:', intervalMinutes, 'minutes');
     }
     /**
      * Stop automatic cleanup
@@ -74,7 +74,7 @@ class StateManager {
             if (this.cacheService) {
                 await this.cacheService.delete('user_state', userId);
             }
-            `);
+            console.log('✅ User state set:', userId, state);
         } catch (error) {
             throw error;
         }
@@ -120,7 +120,7 @@ class StateManager {
     async clearAllStates() {
         try {
             const result = await this.database.query('DELETE FROM user_states');
-            `);
+            console.log('🗑️ All user states cleared, count:', result.rowCount);
             // Clear cache
             if (this.cacheService && typeof this.cacheService.clearPattern === 'function') {
                 await this.cacheService.clearPattern('user_state:*');

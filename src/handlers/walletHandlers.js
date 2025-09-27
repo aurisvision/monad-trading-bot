@@ -93,7 +93,7 @@ Manage your wallet securely:`;
                         await this.cacheService.delete('portfolio', userId);
                     }
                 } catch (cacheError) {
-                    :', cacheError.message);
+                    console.log('⚠️ Cache cleanup error:', cacheError.message);
                 }
             }
             // Ensure user exists in database before wallet generation
@@ -108,7 +108,7 @@ Manage your wallet securely:`;
                     await this.cacheService.delete('user', userId);
                     await this.cacheService.delete('main_menu', userId);
                 } catch (cacheError) {
-                    :', cacheError.message);
+                    console.log('⚠️ Post-wallet cache cleanup error:', cacheError.message);
                 }
             }
             // Use wallet success interface with Start Trading button
@@ -151,7 +151,7 @@ Manage your wallet securely:`;
                         await this.cacheService.delete('portfolio', userId);
                     }
                 } catch (cacheError) {
-                    :', cacheError.message);
+                    console.log('⚠️ Import wallet cache cleanup error:', cacheError.message);
                 }
             }
             // Ensure user exists in database before setting state

@@ -87,7 +87,7 @@ class CacheConfig {
                 },
                 mon_price_usd: { 
                     prefix: 'area51:mon_price:', 
-                    ttl: 300,  // 5 minutes
+                    ttl: 3600,  // 1 hour (unified with background refresh)
                     description: 'MON token price in USD'
                 }
             }

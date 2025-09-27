@@ -2,7 +2,7 @@
 const { Markup } = require('telegraf');
 const InterfaceUtils = require('../utils/interfaceUtils');
 class NavigationHandlers {
-    constructor(bot, database, monorailAPI, monitoring, redis = null, walletManager = null, mainBot = null, cacheService = null) {
+    constructor(bot, database, monorailAPI, monitoring, redis = null, walletManager = null, mainBot = null, cacheService = null, accessCodeSystem = null, welcomeHandler = null) {
         this.bot = bot;
         this.database = database;
         this.monorailAPI = monorailAPI;
@@ -11,6 +11,8 @@ class NavigationHandlers {
         this.walletManager = walletManager;
         this.mainBot = mainBot; // Reference to main bot instance
         this.cacheService = cacheService;
+        this.accessCodeSystem = accessCodeSystem;
+        this.welcomeHandler = welcomeHandler;
     }
     setupHandlers() {
         // Start command
@@ -18,6 +20,10 @@ class NavigationHandlers {
             await this.handleStart(ctx);
         });
         // Main navigation handlers
+        this.bot.action('start', async (ctx) => {
+            await ctx.answerCbQuery();
+            await this.handleStart(ctx);
+        });
         this.bot.action('back_to_main', async (ctx) => {
             await ctx.answerCbQuery();
             await this.handleBackToMainWithDebug(ctx);
@@ -55,6 +61,16 @@ class NavigationHandlers {
     async handleStart(ctx) {
         const userId = ctx.from.id;
         try {
+            // Check if user needs access code
+            if (ctx.needsAccessCode) {
+                // Show access prompt from the access handler
+                if (this.mainBot && this.mainBot.accessHandler) {
+                    await this.mainBot.accessHandler.showAccessPrompt(ctx);
+                    return;
+                }
+            }
+            
+            // User has access - proceed with normal flow
             // Check cache first for existing user using unified cache system
             let user = null;
             let fromCache = false;
@@ -232,7 +248,7 @@ class NavigationHandlers {
             const [apiBalance, apiPortfolio, apiPrice] = await Promise.all([
                 needsBalance ? this.monorailAPI.getMONBalance(user.wallet_address, true) : Promise.resolve(monBalanceData),
                 needsPortfolio ? this.monorailAPI.getPortfolioValue(user.wallet_address, true) : Promise.resolve(portfolioValueData),
-                needsPrice ? this.monorailAPI.getMONPriceUSD(true) : Promise.resolve(monPriceData)
+                needsPrice ? this.monorailAPI.getMONPriceUSD(false) : Promise.resolve(monPriceData) // Use cache (price updates hourly)
             ]);
             if (needsBalance) monBalanceData = apiBalance;
             if (needsPortfolio) portfolioValueData = apiPortfolio;
@@ -245,7 +261,7 @@ class NavigationHandlers {
         const portfolioValueUSD = parseFloat(portfolioValueData.value || '0');
         const portfolioValueMON = monPriceUSD > 0 ? portfolioValueUSD / monPriceUSD : 0;
         const monValueUSD = monBalance * monPriceUSD;
-        // Cache the data for 5 minutes for faster access (same as underlying data)
+        // Cache the data for 5 minutes for faster access (shorter than price data for balance updates)
         if (this.cacheService && !forceRefresh) {
             try {
                 const dataToCache = { monBalance, monPriceUSD, portfolioValueUSD, portfolioValueMON, monValueUSD, user };
@@ -814,9 +830,10 @@ Please try again or check your wallet balance.`);
     }
     async executeInstantAutoBuy(ctx, tokenAddress, user, userSettings) {
         const userId = ctx.from.id;
+        let processingMessage = null;
         try {
-            // Send immediate feedback to user
-            await ctx.reply(`🚀 *Auto Buy Activated*
+            // Send immediate feedback to user and store message for later update
+            processingMessage = await ctx.reply(`🚀 *Auto Buy Activated*
 ⏳ *Processing transaction...*`, { parse_mode: 'Markdown' });
             // Use NEW UNIFIED TRADING SYSTEM for Auto Buy with preloaded data
             const TradingInterface = require('../trading/TradingInterface');
@@ -843,26 +860,58 @@ Please try again or check your wallet balance.`);
             // Auto buy already executed above, just handle the result
             const tradeResult = result;
             if (tradeResult.success) {
-                // Send simple success message immediately (cache is handled by UnifiedTradingEngine)
+                // Update the processing message with success
                 const explorerUrl = `https://testnet.monadexplorer.com/tx/${tradeResult.txHash}`;
-                await ctx.reply(`*✅ Auto Buy Successful!*
-[View on Explorer](${explorerUrl})`, 
+                await ctx.telegram.editMessageText(
+                    ctx.chat.id,
+                    processingMessage.message_id,
+                    undefined,
+                    `✅ *Auto Buy Successful!*
+[View on Explorer](${explorerUrl})`,
                     { parse_mode: 'Markdown' }
                 );
                 // Auto buy completed successfully - no need for additional refresh
                 // The cache invalidation above will ensure fresh data on next menu access
             } else {
-                // Send failure message
-                await ctx.reply(`❌ *Auto Buy Failed*
-Error: ${tradeResult.error}`, { parse_mode: 'Markdown' });
+                // Update the processing message with failure
+                await ctx.telegram.editMessageText(
+                    ctx.chat.id,
+                    processingMessage.message_id,
+                    undefined,
+                    `❌ *Auto Buy Failed*
+Error: ${tradeResult.error}`,
+                    { parse_mode: 'Markdown' }
+                );
                 // Log failed auto buy
             }
         } catch (error) {
             this.monitoring.logError('Instant auto buy failed', error, { userId, tokenAddress });
-            await ctx.reply(`❌ *Auto Buy System Error*
+            // Try to update the processing message if it exists, otherwise send new message
+            try {
+                if (processingMessage) {
+                    await ctx.telegram.editMessageText(
+                        ctx.chat.id,
+                        processingMessage.message_id,
+                        undefined,
+                        `❌ *Auto Buy System Error*
+An unexpected error occurred during auto buy execution.
+Please try again or contact support if the issue persists.
+📍 Token: \`${tokenAddress}\``,
+                        { parse_mode: 'Markdown' }
+                    );
+                } else {
+                    await ctx.reply(`❌ *Auto Buy System Error*
 An unexpected error occurred during auto buy execution.
 Please try again or contact support if the issue persists.
 📍 Token: \`${tokenAddress}\``);
+                }
+            } catch (editError) {
+                // If edit fails, send new message
+                await ctx.reply(`❌ *Auto Buy System Error*
+An unexpected error occurred during auto buy execution.
+Please try again or contact support if the issue persists.
+📍 Token: \`${tokenAddress}\``);
+            }
         }
     }
     async processTokenAddress(ctx, tokenAddress) {
@@ -1134,7 +1183,7 @@ Proceed with this purchase?`, {
             const [monBalanceData, portfolioValueData, monPriceData] = await Promise.all([
                 this.monorailAPI.getMONBalance(user.wallet_address, true),
                 this.monorailAPI.getPortfolioValue(user.wallet_address, true),
-                this.monorailAPI.getMONPriceUSD(true)
+                this.monorailAPI.getMONPriceUSD(false) // Use cache (price updates hourly)
             ]);
             const monBalance = parseFloat(monBalanceData.balance || '0');
             const monPriceUSD = parseFloat(monPriceData.price || '0');

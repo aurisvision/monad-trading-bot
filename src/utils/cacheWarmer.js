@@ -115,7 +115,7 @@ class CacheWarmer {
      * جدولة تسخين الكاش كل ساعة
      */
     startScheduledWarming() {
-        ...');
+        console.log('🔥 Starting scheduled cache warming...');
 
         // تسخين فوري
         this.warmActiveUsersCache();

@@ -16,7 +16,7 @@ class BackgroundRefreshService {
         // Refresh intervals
         this.intervals = {
             activeUserRefresh: 5 * 60 * 1000,    // 5 minutes
-            globalPriceRefresh: 2 * 60 * 1000,   // 2 minutes
+            globalPriceRefresh: 60 * 60 * 1000,  // 1 hour (unified with cache TTL)
             inactiveUserCleanup: 15 * 60 * 1000, // 15 minutes
             portfolioRefresh: 10 * 60 * 1000     // 10 minutes
         };

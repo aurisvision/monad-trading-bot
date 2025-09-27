@@ -179,7 +179,7 @@ class UnifiedTradingEngine {
             const numAmount = parseFloat(tokenAmount);
             if (numAmount > 0) {
                 adjustedAmount = (numAmount * 0.995).toString(); // بيع 99.5%
-                `);
+                console.log('📉 Adjusted sell amount to 99.5% to avoid precision issues');
             }
             // تنفيذ البيع مع معالجة أفضل للأخطاء
             const swapResult = await this.monorailAPI.sellTokenOptimized(
@@ -195,7 +195,7 @@ class UnifiedTradingEngine {
                 if (errorMessage.includes('transaction execution reverted')) {
                     errorMessage = 'Transaction reverted - possible reasons:\n1. Insufficient token balance\n2. Token not approved for spending\n3. Slippage too low\n4. Liquidity issues\n5. Invalid token pair';
                 }
-                throw new Error(`Sell execution failed: ${errorMessage}`);
+                throw new Error('Sell execution failed: ' + errorMessage);
             }
             return {
                 success: true,
@@ -225,7 +225,7 @@ class UnifiedTradingEngine {
                 { gasPrice: 100000000000 } // 100 Gwei ثابت
             );
             if (!swapResult.success) {
-                throw new Error(`Turbo sell failed: ${swapResult.error}`);
+                throw new Error('Turbo sell failed: ' + swapResult.error);
             }
             return {
                 success: true,
@@ -257,21 +257,21 @@ class UnifiedTradingEngine {
         }
         // فحص الحد الأقصى للمعاملة
         if (numAmount > security.maxTransactionAmount) {
-            throw new Error(`Amount exceeds maximum limit: ${security.maxTransactionAmount} MON`);
+            throw new Error('Amount exceeds maximum limit: ' + security.maxTransactionAmount + ' MON');
         }
         // فحص الرصيد
         const requiredAmount = numAmount + security.gasBuffer;
         const availableBalance = parseFloat(tradeData.balance);
         if (availableBalance < requiredAmount) {
             throw new Error(
-                `${this.config.getErrorMessage('INSUFFICIENT_BALANCE')}\n` +
-                `Required: ${requiredAmount.toFixed(4)} MON\n` +
-                `Available: ${availableBalance.toFixed(4)} MON`
+                this.config.getErrorMessage('INSUFFICIENT_BALANCE') + '\n' +
+                'Required: ' + requiredAmount.toFixed(4) + ' MON\n' +
+                'Available: ' + availableBalance.toFixed(4) + ' MON'
             );
         }
         // فحص الحد الأدنى للرصيد
         if (availableBalance < security.minBalance) {
-            throw new Error(`Balance below minimum required: ${security.minBalance} MON`);
+            throw new Error('Balance below minimum required: ' + security.minBalance + ' MON');
         }
     }
     /**
@@ -291,7 +291,7 @@ class UnifiedTradingEngine {
         const security = this.config.getSecurityConfig();
         const monBalance = parseFloat(tradeData.balance);
         if (monBalance < security.gasBuffer) {
-            throw new Error(`Insufficient MON balance for network fees. Required: ${security.gasBuffer} MON`);
+            throw new Error('Insufficient MON balance for network fees. Required: ' + security.gasBuffer + ' MON');
         }
     }
     /**

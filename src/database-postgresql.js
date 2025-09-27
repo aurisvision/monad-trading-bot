@@ -1175,6 +1175,159 @@ class DatabasePostgreSQL {
         }
     }
 
+    // ===== ACCESS CODE SYSTEM METHODS =====
+    
+    /**
+     * Get access code data
+     */
+    async getAccessCode(code) {
+        const query = `
+            SELECT * FROM access_codes 
+            WHERE code = $1`;
+        
+        try {
+            return await this.getOne(query, [code]);
+        } catch (error) {
+            console.error('Error getting access code:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Create new access code
+     */
+    async createAccessCode(code, codeType, maxUses = null, expiresAt = null, createdBy = null) {
+        const query = `
+            INSERT INTO access_codes (code, code_type, max_uses, expires_at, created_by, is_active)
+            VALUES ($1, $2, $3, $4, $5, true)
+            RETURNING *`;
+        
+        try {
+            // Convert createdBy to number if it's a string number, otherwise keep as null
+            const createdByValue = createdBy && !isNaN(createdBy) ? parseInt(createdBy) : null;
+            return await this.getOne(query, [code, codeType, maxUses, expiresAt, createdByValue]);
+        } catch (error) {
+            console.error('Error creating access code:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Check if user has access
+     */
+    async getUserAccess(telegramId) {
+        const query = `
+            SELECT * FROM user_access 
+            WHERE telegram_id = $1 AND is_active = true`;
+        
+        try {
+            return await this.getOne(query, [telegramId]);
+        } catch (error) {
+            console.error('Error getting user access:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Grant access to user
+     */
+    async grantUserAccess(telegramId, code, userInfo = {}) {
+        const query = `
+            INSERT INTO user_access (telegram_id, used_code, access_granted_at, user_info, is_active)
+            VALUES ($1, $2, CURRENT_TIMESTAMP, $3, true)
+            ON CONFLICT (telegram_id) 
+            DO UPDATE SET 
+                used_code = EXCLUDED.used_code,
+                access_granted_at = EXCLUDED.access_granted_at,
+                user_info = EXCLUDED.user_info,
+                is_active = EXCLUDED.is_active
+            RETURNING *`;
+        
+        try {
+            return await this.getOne(query, [telegramId, code, JSON.stringify(userInfo)]);
+        } catch (error) {
+            console.error('Error granting user access:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Increment code usage count
+     */
+    async incrementCodeUsage(code) {
+        const query = `
+            UPDATE access_codes 
+            SET used_count = used_count + 1
+            WHERE code = $1 
+            AND (max_uses IS NULL OR used_count < max_uses)
+            AND is_active = true
+            RETURNING *`;
+        
+        try {
+            const result = await this.getOne(query, [code]);
+            
+            if (!result) {
+                // Check why the update failed
+                const codeCheck = await this.getOne(
+                    'SELECT * FROM access_codes WHERE code = $1', 
+                    [code]
+                );
+                
+                if (!codeCheck) {
+                    throw new Error('Code does not exist');
+                } else if (!codeCheck.is_active) {
+                    throw new Error('Code is inactive');
+                } else if (codeCheck.max_uses && codeCheck.used_count >= codeCheck.max_uses) {
+                    throw new Error('Code usage limit exceeded');
+                }
+            }
+            
+            return result;
+        } catch (error) {
+            console.error('Error incrementing code usage:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get all access codes (for admin)
+     */
+    async getAllAccessCodes() {
+        const query = `
+            SELECT ac.*, 
+                   COUNT(ua.telegram_id) as users_count
+            FROM access_codes ac
+            LEFT JOIN user_access ua ON ac.code = ua.used_code
+            GROUP BY ac.id, ac.code, ac.code_type, ac.max_uses, ac.used_count, 
+                     ac.expires_at, ac.created_at, ac.created_by, ac.is_active
+            ORDER BY ac.created_at DESC`;
+        
+        try {
+            return await this.getAll(query);
+        } catch (error) {
+            console.error('Error getting all access codes:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Deactivate access code
+     */
+    async deactivateAccessCode(code) {
+        const query = `
+            UPDATE access_codes 
+            SET is_active = false 
+            WHERE code = $1
+            RETURNING *`;
+        
+        try {
+            return await this.getOne(query, [code]);
+        } catch (error) {
+            console.error('Error deactivating access code:', error);
+            throw error;
+        }
+    }
+
     // Graceful shutdown
     async close() {
         try {

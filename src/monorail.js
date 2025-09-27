@@ -101,7 +101,6 @@ class MonorailAPI {
                     }
                     // Additional validation for transaction data completeness
                     if (response.data.transaction && (!response.data.transaction.data || response.data.transaction.data === '0x' || response.data.transaction.data === '')) {
-                        );
                         // Try to use transaction with minimal data if 'to' address exists
                         if (!response.data.transaction.to) {
                             return {
@@ -210,7 +209,7 @@ class MonorailAPI {
             // API response received
             // Handle string response (MON balance only)
             if (typeof response.data === 'string') {
-                , no tokens found');
+                console.log('🔍 String response received, no tokens found');
                 return [];
             }
             if (response.data && Array.isArray(response.data)) {
@@ -358,9 +357,9 @@ class MonorailAPI {
                     price: response.data.price,
                     timestamp: Date.now()
                 };
-                // Cache for 5 minutes using unified cache
+                // Cache for 1 hour using unified cache (unified with background refresh)
                 if (this.cacheService) {
-                    await this.cacheService.set('mon_price_usd', 'global', result, 300);
+                    await this.cacheService.set('mon_price_usd', 'global', result, 3600);
                 }
                 return result;
             }
@@ -689,7 +688,7 @@ class MonorailAPI {
                 throw new Error(`Missing transaction 'to' field`);
             }
             if (!transaction.data || transaction.data === '0x' || transaction.data === '') {
-                );
+                console.log('❌ Invalid transaction data received from Monorail API');
                 throw new Error(`Invalid transaction data: ${transaction.data}. This indicates the Monorail API did not return proper swap instructions.`);
             }
             // Ensure value is properly formatted

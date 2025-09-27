@@ -186,7 +186,7 @@ class PortfolioHandlers {
             const [monBalanceData, portfolioValueData, monPriceData] = await Promise.all([
                 this.monorailAPI.getMONBalance(user.wallet_address, true), // Force refresh
                 this.monorailAPI.getPortfolioValue(user.wallet_address, true), // Force refresh
-                this.monorailAPI.getMONPriceUSD(true) // Force refresh
+                this.monorailAPI.getMONPriceUSD(false) // Use cache (price updates hourly)
             ]);
 
             // Process API responses
@@ -235,7 +235,7 @@ class PortfolioHandlers {
             const [monBalanceData, portfolioValueData, monPriceData] = await Promise.all([
                 this.monorailAPI.getMONBalance(user.wallet_address, true), // Use cached data
                 this.monorailAPI.getPortfolioValue(user.wallet_address, true), // Use cached data
-                this.monorailAPI.getMONPriceUSD(true) // Use cached data
+                this.monorailAPI.getMONPriceUSD(false) // Use cache (price updates hourly)
             ]);
 
             // Process the data

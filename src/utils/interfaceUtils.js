@@ -20,10 +20,10 @@ _The main area for real nads!_
 \`${user.wallet_address}\`
 
 💼 *Balance:*
-• MON: ${monBalance.toFixed(6)} ~$${monValueUSD.toFixed(2)}
-• Portfolio Value: ${portfolioValueMON.toFixed(6)} MON ~$${portfolioValueUSD.toFixed(2)}
+• MON: ${monBalance.toFixed(2)} ~$${monValueUSD.toFixed(2)}
+• Portfolio Value: ${portfolioValueMON.toFixed(2)} MON ~$${portfolioValueUSD.toFixed(2)}
 
-🟣 *Current MON Price:* $${monPriceUSD.toFixed(4)}
+🟣 *Current MON Price:* $${monPriceUSD.toFixed(2)}
 
 ▫️*What you can do:*
 • Buy and sell tokens instantly

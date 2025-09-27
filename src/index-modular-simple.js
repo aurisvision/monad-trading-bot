@@ -28,13 +28,18 @@ const Redis = require('redis');
 const RedisMetrics = require('./services/RedisMetrics');
 const RedisFallbackManager = require('./services/RedisFallbackManager');
 const BackgroundRefreshService = require('./services/BackgroundRefreshService');
-
 // Import handler modules
 const WalletHandlers = require('./handlers/walletHandlers');
 // Legacy trading handlers - REPLACED by unified system
 // const TradingHandlers = require('./handlers/tradingHandlers');
 const PortfolioHandlers = require('./handlers/portfolioHandlers');
 const NavigationHandlers = require('./handlers/navigationHandlers');
+
+// Simple Access Code System
+const SimpleAccessCode = require('./services/SimpleAccessCode');
+const AccessMiddleware = require('./middleware/accessMiddleware');
+const SimpleAccessHandler = require('./handlers/simpleAccessHandler');
+
 // Legacy trading optimizers - REPLACED by unified system
 // const TradingCacheOptimizer = require('./utils/tradingCacheOptimizer');
 const StateManager = require('./utils/stateManager');
@@ -261,24 +266,20 @@ class Area51BotModularSimple {
         // Legacy trading cache optimizer - REPLACED by unified system
         // this.tradingCacheOptimizer = new TradingCacheOptimizer(
         //     this.database,
-        //     this.cacheService,
-        //     this.monitoring
-        // );
+        // Initialize Simple Access Code System
+        this.accessSystem = new SimpleAccessCode(this.database, this.cacheService);
+        this.accessMiddleware = new AccessMiddleware(this.accessSystem);
+        this.accessHandler = new SimpleAccessHandler(this.bot, this.database, this.accessSystem);
         
-        // Initialize Access Code System
-        const AccessCodeIntegration = require('./AccessCodeIntegration');
-        this.accessCodeIntegration = new AccessCodeIntegration(
-            this.bot,
-            this.database,
-            this.monitoring
-        );
-        await this.accessCodeIntegration.initialize();
-        this.monitoring?.logInfo('Access Code System initialized successfully');
-        
-        this.monitoring.logInfo('All components initialized successfully');
+        console.log('[Main] Simple Access Code System initialized');
     }
 
     async setupMiddleware() {
+        // Access control middleware (must be first)
+        this.bot.use(async (ctx, next) => {
+            await this.accessMiddleware.checkAccess(ctx, next);
+        });
+        
         // Global error handling
         this.bot.catch((err, ctx) => {
             this.monitoring.logError('Bot error occurred', err, {
@@ -393,6 +394,12 @@ class Area51BotModularSimple {
     }
 
     setupAdditionalHandlers() {
+        // Start Trading handler (for access code success)
+        this.bot.action('start_trading', async (ctx) => {
+            await ctx.answerCbQuery();
+            await this.handleStart(ctx);
+        });
+
         // Settings handlers
         this.bot.action('settings', async (ctx) => {
             await this.showSettings(ctx);
