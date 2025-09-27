@@ -147,7 +147,13 @@ class PortfolioHandlers {
                 true // force refresh
             );
 
-            await ctx.editMessageText(portfolioDisplay.text, {
+            // Add timestamp to force message update even for empty portfolios
+            const refreshedText = portfolioDisplay.text.replace(
+                /(_🕒 Last updated: )([^_]+)(_)/,
+                `$1${new Date().toLocaleTimeString('en-US', { hour12: true, hour: 'numeric', minute: '2-digit', second: '2-digit' })}$3`
+            );
+            
+            await ctx.editMessageText(refreshedText, {
                 parse_mode: 'Markdown',
                 reply_markup: portfolioDisplay.keyboard
             });
