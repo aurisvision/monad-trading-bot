@@ -156,21 +156,29 @@ Manage your wallet securely:`;
             }
             // Ensure user exists in database before setting state
             await this.database.createUser(ctx.from.id, ctx.from.username || 'Unknown');
-            const importText = `🔑 *Import Existing Wallet*
-Send your private key or mnemonic phrase to import your wallet.
-⚠️ *Security Notice:*
-• Your message will be automatically deleted
-• We encrypt and store your key securely
-• Never share this information with others
-📝 Send your private key or mnemonic phrase now:`;
+            const importText = `🔑 **Import Existing Wallet**
+
+📤 **How to Import:**
+Send your private key or mnemonic phrase to import your existing wallet.
+
+🔒 **Security Guarantee:**
+• Your message will be automatically deleted after processing
+• We encrypt and store your key using military-grade security
+• Your private information never leaves our secure system
+• Never share this information with anyone else
+
+📝 **Ready to Import?**
+Send your private key (0x123...) or mnemonic phrase (12-24 words) now:`;
+            
             await ctx.editMessageText(importText, {
                 parse_mode: 'Markdown'
             });
-            // Send force reply as separate message
-            await ctx.reply('📝 Send your private key or mnemonic phrase:', {
+            
+            // Send force reply as separate message with better placeholder
+            await ctx.reply('🔐 Paste your private key or mnemonic phrase here:', {
                 reply_markup: {
                     force_reply: true,
-                    input_field_placeholder: "0x123... or 12-word phrase"
+                    input_field_placeholder: "0x1234abcd... or word1 word2 word3..."
                 }
             });
             // Set user state for import and store message ID for later deletion
