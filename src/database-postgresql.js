@@ -59,45 +59,6 @@ class DatabasePostgreSQL {
             return false;
         }
         
-        // Production mode - enforce SSL (only if SSL is explicitly required)
-        if (process.env.NODE_ENV === 'production' && sslMode === 'require') {
-            const fs = require('fs');
-            
-            try {
-                const sslConfig = {
-                    rejectUnauthorized: process.env.POSTGRES_SSL_REJECT_UNAUTHORIZED !== 'false',
-                    sslmode: 'require'
-                };
-                
-                // Add CA certificate if provided
-                if (process.env.POSTGRES_SSL_CA_CERT_PATH) {
-                    if (fs.existsSync(process.env.POSTGRES_SSL_CA_CERT_PATH)) {
-                        sslConfig.ca = fs.readFileSync(process.env.POSTGRES_SSL_CA_CERT_PATH).toString();
-                    } else {
-                        console.warn('⚠️  SSL CA certificate file not found:', process.env.POSTGRES_SSL_CA_CERT_PATH);
-                    }
-                }
-                
-                // Add client certificate if provided
-                if (process.env.POSTGRES_SSL_CERT_PATH && process.env.POSTGRES_SSL_KEY_PATH) {
-                    if (fs.existsSync(process.env.POSTGRES_SSL_CERT_PATH) && 
-                        fs.existsSync(process.env.POSTGRES_SSL_KEY_PATH)) {
-                        sslConfig.cert = fs.readFileSync(process.env.POSTGRES_SSL_CERT_PATH).toString();
-                        sslConfig.key = fs.readFileSync(process.env.POSTGRES_SSL_KEY_PATH).toString();
-                    } else {
-                        console.warn('⚠️  SSL client certificate files not found');
-                    }
-                }
-                
-                console.log('✅ SSL enabled for database connection');
-                return sslConfig;
-                
-            } catch (error) {
-                console.error('❌ Error configuring SSL for database:', error.message);
-                // Fallback to basic SSL in production
-                return { rejectUnauthorized: false, sslmode: 'require' };
-            }
-        }
         
         // Handle different SSL modes
         switch (sslMode) {
