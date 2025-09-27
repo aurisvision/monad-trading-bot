@@ -66,5 +66,5 @@ USER area51bot
 # Use tini for proper signal handling
 ENTRYPOINT ["/sbin/tini", "--"]
 
-# Start the application
-CMD ["node", "src/index-modular-simple.js"]
+# Start the application with database fix and bot cleanup
+CMD ["node", "start.js"]
