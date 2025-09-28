@@ -819,9 +819,16 @@ Please try again or check your wallet balance.`);
             };
             const tradingInterface = new TradingInterface(null, tradingDependencies);
             // Execute auto buy with maximum speed bypass for turbo mode
+            console.log('🚀 AUTO-BUY TURBO CHECK:', {
+                turbo_mode: userSettings.turbo_mode,
+                user_id: userId,
+                will_use_turbo: !!userSettings.turbo_mode
+            });
+            
             let result;
-            if (userSettings.turbo_mode_enabled) {
+            if (userSettings.turbo_mode) {
                 // TURBO AUTO-BUY: Direct execution bypass for maximum speed
+                console.log('⚡ USING TURBO AUTO-BUY BYPASS - Direct executeSwapTurbo()');
                 const wallet = await this.walletManager.getWallet(userId);
                 result = await this.monorailAPI.executeSwapTurbo(
                     wallet,
@@ -853,6 +860,7 @@ Please try again or check your wallet balance.`);
                 }
             } else {
                 // NORMAL AUTO-BUY: Use full validation system
+                console.log('🔒 USING NORMAL AUTO-BUY - Full UnifiedTradingEngine validation');
                 result = await tradingInterface.engine.executeTrade({
                     type: 'normal',
                     action: 'buy',
