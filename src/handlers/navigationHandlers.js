@@ -618,21 +618,23 @@ Enter the amount you want to transfer:
             // Clear user state after transfer attempt (success or failure)
             await this.database.clearUserState(userId);
             if (result.success) {
-                // Clear cache after successful transfer
-                if (this.cacheService) {
-                    try {
-                        // Use unified cache clearing for transfer
-                        await Promise.all([
-                            this.cacheService.delete('wallet_balance', user.wallet_address),
-                            this.cacheService.delete('mon_balance', user.wallet_address),
-                            this.cacheService.delete('portfolio', userId),
-                            this.cacheService.delete('main_menu', userId)
-                        ]);
-                        this.monitoring.logInfo('Cache cleared after successful transfer', { userId, walletAddress: user.wallet_address });
-                    } catch (cacheError) {
-                        this.monitoring.logError('Cache clear failed after transfer', cacheError, { userId });
+                // Wait for blockchain confirmation before clearing cache
+                setTimeout(async () => {
+                    if (this.cacheService) {
+                        try {
+                            // Clear cache after blockchain confirmation delay
+                            await Promise.all([
+                                this.cacheService.delete('wallet_balance', user.wallet_address),
+                                this.cacheService.delete('mon_balance', user.wallet_address),
+                                this.cacheService.delete('portfolio', userId),
+                                this.cacheService.delete('main_menu', userId)
+                            ]);
+                            this.monitoring.logInfo('Cache cleared after transfer confirmation delay', { userId, walletAddress: user.wallet_address });
+                        } catch (cacheError) {
+                            this.monitoring.logError('Cache clear failed after transfer', cacheError, { userId });
+                        }
                     }
-                }
+                }, 3000); // 3 second delay for blockchain confirmation
                 const explorerUrl = `https://testnet.monadexplorer.com/tx/${result.transactionHash}`;
                 await ctx.reply(`✅ *Transfer Successful!*
 

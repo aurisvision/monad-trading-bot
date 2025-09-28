@@ -159,24 +159,55 @@ class UnifiedCacheManager {
             if (typesToInvalidate.length === 0) {
                 return true;
             }
-            const deletePromises = typesToInvalidate.map(type => {
-                // Determine identifier based on cache type
-                let identifier;
-                if (type.includes('balance') || type.includes('portfolio_value')) {
-                    identifier = walletAddress;
-                } else {
-                    identifier = userId;
-                }
-                return this.delete(type, identifier);
-            });
-            const results = await Promise.all(deletePromises);
-            const successCount = results.filter(r => r).length;
+            
+            // Immediate invalidation for UI elements
+            const immediateTypes = ['main_menu'];
+            const delayedTypes = typesToInvalidate.filter(type => !immediateTypes.includes(type));
+            
+            // Clear UI cache immediately
+            const immediatePromises = immediateTypes
+                .filter(type => typesToInvalidate.includes(type))
+                .map(type => this.delete(type, userId));
+            
+            if (immediatePromises.length > 0) {
+                await Promise.all(immediatePromises);
+            }
+            
+            // Clear balance-related cache after blockchain confirmation delay
+            if (delayedTypes.length > 0) {
+                setTimeout(async () => {
+                    try {
+                        const deletePromises = delayedTypes.map(type => {
+                            // Determine identifier based on cache type
+                            let identifier;
+                            if (type.includes('balance') || type.includes('portfolio_value')) {
+                                identifier = walletAddress;
+                            } else {
+                                identifier = userId;
+                            }
+                            return this.delete(type, identifier);
+                        });
+                        await Promise.all(deletePromises);
+                        this.monitoring?.logInfo('Delayed cache invalidated', { 
+                            operation, 
+                            userId, 
+                            walletAddress, 
+                            typesInvalidated: delayedTypes,
+                            delay: '2000ms'
+                        });
+                    } catch (error) {
+                        this.monitoring?.logError('Delayed cache invalidation failed', error, { operation, userId });
+                    }
+                }, 2000); // 2 second delay for blockchain confirmation
+            }
+            
+            const successCount = immediateTypes.length;
             this.recordMetrics('invalidate', startTime, true);
             this.monitoring?.logInfo('Cache invalidated', { 
                 operation, 
                 userId, 
                 walletAddress, 
-                typesInvalidated: typesToInvalidate,
+                typesInvalidated: immediateTypes,
                 successCount 
             });
             return successCount > 0;
