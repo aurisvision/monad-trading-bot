@@ -618,23 +618,34 @@ Enter the amount you want to transfer:
             // Clear user state after transfer attempt (success or failure)
             await this.database.clearUserState(userId);
             if (result.success) {
-                // Wait for blockchain confirmation before clearing cache
-                setTimeout(async () => {
-                    if (this.cacheService) {
-                        try {
-                            // Clear cache after blockchain confirmation delay
-                            await Promise.all([
-                                this.cacheService.delete('wallet_balance', user.wallet_address),
-                                this.cacheService.delete('mon_balance', user.wallet_address),
-                                this.cacheService.delete('portfolio', userId),
-                                this.cacheService.delete('main_menu', userId)
-                            ]);
-                            this.monitoring.logInfo('Cache cleared after transfer confirmation delay', { userId, walletAddress: user.wallet_address });
-                        } catch (cacheError) {
-                            this.monitoring.logError('Cache clear failed after transfer', cacheError, { userId });
-                        }
+                // Use UnifiedCacheManager for transfer operations (same as trading)
+                if (this.cacheService) {
+                    try {
+                        // Immediate cache clear for UI responsiveness
+                        await this.cacheService.delete('main_menu', userId);
+                        
+                        // Delayed cache clear for balance accuracy (same as trading operations)
+                        setTimeout(async () => {
+                            try {
+                                await Promise.all([
+                                    this.cacheService.delete('wallet_balance', user.wallet_address),
+                                    this.cacheService.delete('mon_balance', user.wallet_address),
+                                    this.cacheService.delete('portfolio', userId)
+                                ]);
+                                this.monitoring.logInfo('Transfer: Delayed cache invalidated', { 
+                                    userId, 
+                                    walletAddress: user.wallet_address,
+                                    typesInvalidated: ['wallet_balance', 'mon_balance', 'portfolio'],
+                                    delay: '3000ms'
+                                });
+                            } catch (cacheError) {
+                                this.monitoring.logError('Transfer: Delayed cache invalidation failed', cacheError, { userId });
+                            }
+                        }, 3000); // 3 second delay for transfer confirmation
+                    } catch (cacheError) {
+                        this.monitoring.logError('Transfer: Immediate cache clear failed', cacheError, { userId });
                     }
-                }, 3000); // 3 second delay for blockchain confirmation
+                }
                 const explorerUrl = `https://testnet.monadexplorer.com/tx/${result.transactionHash}`;
                 await ctx.reply(`✅ *Transfer Successful!*
 
