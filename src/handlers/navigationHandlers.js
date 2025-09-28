@@ -821,50 +821,16 @@ Please try again or check your wallet balance.`);
             // Execute auto buy with turbo mode bypass if enabled
             let result;
             if (userSettings.turbo_mode) {
-                // TURBO AUTO-BUY: Direct execution bypass for maximum speed
-                try {
-                    const wallet = await this.walletManager.getWallet(userId);
-                    result = await this.monorailAPI.executeSwapTurbo(
-                        wallet,
-                        tokenAddress,
-                        userSettings.auto_buy_amount,
-                        20, // Fixed 20% slippage for turbo
-                        user.wallet_address
-                    );
-                    
-                    // Add required fields for compatibility
-                    if (result.success) {
-                        result.action = 'buy';
-                        result.tokenAddress = tokenAddress;
-                        result.monAmount = userSettings.auto_buy_amount;
-                        result.mode = 'turbo';
-                        
-                        // Quick cache invalidation for turbo mode
-                        if (this.cacheService) {
-                            try {
-                                await Promise.all([
-                                    this.cacheService.delete('mon_balance', user.wallet_address),
-                                    this.cacheService.delete('wallet_balance', user.wallet_address),
-                                    this.cacheService.delete('portfolio', userId),
-                                    this.cacheService.delete('main_menu', userId)
-                                ]);
-                            } catch (error) {
-                                // Ignore cache errors in turbo mode for speed
-                            }
-                        }
-                    }
-                } catch (turboError) {
-                    // Fallback to normal mode if turbo fails
-                    result = await tradingInterface.engine.executeTrade({
-                        type: 'normal',
-                        action: 'buy',
-                        userId: userId,
-                        tokenAddress: tokenAddress,
-                        amount: userSettings.auto_buy_amount,
-                        preloadedUser: user,
-                        preloadedSettings: userSettings
-                    });
-                }
+                // TURBO AUTO-BUY: Use UnifiedTradingEngine turbo mode (same as manual)
+                result = await tradingInterface.engine.executeTrade({
+                    type: 'turbo',
+                    action: 'buy',
+                    userId: userId,
+                    tokenAddress: tokenAddress,
+                    amount: userSettings.auto_buy_amount,
+                    preloadedUser: user,
+                    preloadedSettings: userSettings
+                });
             } else {
                 // NORMAL AUTO-BUY: Use full validation system
                 result = await tradingInterface.engine.executeTrade({
