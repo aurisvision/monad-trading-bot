@@ -573,10 +573,18 @@ class MonorailAPI {
             // Get current gas price from blockchain
             const currentGasPrice = await this.getCurrentGasPrice();
             // Execute with optimized gas settings using real blockchain gas price
+            let finalGasLimit = gasLimit || 350000;
+            
+            // Use quote gas estimate with buffer if available
+            if (!gasLimit && quote.gasEstimate) {
+                const baseGasEstimate = parseInt(quote.gasEstimate);
+                finalGasLimit = Math.max(baseGasEstimate * 1.2, 300000);
+            }
+            
             const swapTx = {
                 ...quote.transaction,
                 gasPrice: gasPrice || currentGasPrice,
-                gasLimit: gasLimit || 250000,
+                gasLimit: finalGasLimit,
                 nonce: nonce
             };
             const txResponse = await wallet.sendTransaction(swapTx);
@@ -647,13 +655,14 @@ class MonorailAPI {
                 transaction.gasLimit = options.gasLimit;
                 // Using custom gas limit
             } else if (quote.gasEstimate) {
-                // Use API's exact gas estimate
-                transaction.gasLimit = parseInt(quote.gasEstimate);
-                // Using Monorail gas estimate
+                // Use API's gas estimate with 20% buffer for safety
+                const baseGasEstimate = parseInt(quote.gasEstimate);
+                transaction.gasLimit = Math.max(baseGasEstimate * 1.2, 300000);
+                // Using Monorail gas estimate with buffer
             } else {
-                // Fallback to reasonable default
-                transaction.gasLimit = 300000;
-                // Using fallback gas limit
+                // Fallback with higher limit for complex operations
+                transaction.gasLimit = 400000;
+                // Using fallback gas limit with buffer
             }
             // Apply gas pricing with custom support
             if (options.gasPrice) {
