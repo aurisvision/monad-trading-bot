@@ -818,21 +818,12 @@ Please try again or check your wallet balance.`);
                 monitoring: this.monitoring
             };
             const tradingInterface = new TradingInterface(null, tradingDependencies);
-            // Execute auto buy with maximum speed bypass for turbo mode
-            console.log('🚀 AUTO-BUY TURBO CHECK:', {
-                turbo_mode: userSettings.turbo_mode,
-                user_id: userId,
-                will_use_turbo: !!userSettings.turbo_mode
-            });
-            
+            // Execute auto buy with turbo mode bypass if enabled
             let result;
             if (userSettings.turbo_mode) {
                 // TURBO AUTO-BUY: Direct execution bypass for maximum speed
-                console.log('⚡ USING TURBO AUTO-BUY BYPASS - Direct executeSwapTurbo()');
-                
                 try {
-                    // Use TradingInterface to get wallet properly (same as normal path)
-                    const wallet = await tradingInterface.walletManager.getWallet(userId);
+                    const wallet = await this.walletManager.getWallet(userId);
                     result = await this.monorailAPI.executeSwapTurbo(
                         wallet,
                         tokenAddress,
@@ -840,8 +831,29 @@ Please try again or check your wallet balance.`);
                         20, // Fixed 20% slippage for turbo
                         user.wallet_address
                     );
+                    
+                    // Add required fields for compatibility
+                    if (result.success) {
+                        result.action = 'buy';
+                        result.tokenAddress = tokenAddress;
+                        result.monAmount = userSettings.auto_buy_amount;
+                        result.mode = 'turbo';
+                        
+                        // Quick cache invalidation for turbo mode
+                        if (this.cacheService) {
+                            try {
+                                await Promise.all([
+                                    this.cacheService.delete('mon_balance', user.wallet_address),
+                                    this.cacheService.delete('wallet_balance', user.wallet_address),
+                                    this.cacheService.delete('portfolio', userId),
+                                    this.cacheService.delete('main_menu', userId)
+                                ]);
+                            } catch (error) {
+                                // Ignore cache errors in turbo mode for speed
+                            }
+                        }
+                    }
                 } catch (turboError) {
-                    console.log('❌ TURBO AUTO-BUY FAILED, falling back to normal mode:', turboError.message);
                     // Fallback to normal mode if turbo fails
                     result = await tradingInterface.engine.executeTrade({
                         type: 'normal',
@@ -853,30 +865,8 @@ Please try again or check your wallet balance.`);
                         preloadedSettings: userSettings
                     });
                 }
-                // Add required fields for compatibility
-                if (result.success) {
-                    result.action = 'buy';
-                    result.tokenAddress = tokenAddress;
-                    result.monAmount = userSettings.auto_buy_amount;
-                    result.mode = 'turbo';
-                    
-                    // Quick cache invalidation for turbo mode
-                    if (this.cacheService) {
-                        try {
-                            await Promise.all([
-                                this.cacheService.delete('mon_balance', user.wallet_address),
-                                this.cacheService.delete('wallet_balance', user.wallet_address),
-                                this.cacheService.delete('portfolio', userId),
-                                this.cacheService.delete('main_menu', userId)
-                            ]);
-                        } catch (error) {
-                            // Ignore cache errors in turbo mode for speed
-                        }
-                    }
-                }
             } else {
                 // NORMAL AUTO-BUY: Use full validation system
-                console.log('🔒 USING NORMAL AUTO-BUY - Full UnifiedTradingEngine validation');
                 result = await tradingInterface.engine.executeTrade({
                     type: 'normal',
                     action: 'buy',
