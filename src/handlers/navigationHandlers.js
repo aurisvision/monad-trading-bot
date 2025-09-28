@@ -818,17 +818,51 @@ Please try again or check your wallet balance.`);
                 monitoring: this.monitoring
             };
             const tradingInterface = new TradingInterface(null, tradingDependencies);
-            // Execute auto buy with turbo mode if enabled for maximum speed
-            const tradeType = userSettings.turbo_mode_enabled ? 'turbo' : 'normal';
-            const result = await tradingInterface.engine.executeTrade({
-                type: tradeType,
-                action: 'buy',
-                userId: userId,
-                tokenAddress: tokenAddress,
-                amount: userSettings.auto_buy_amount,
-                preloadedUser: user,
-                preloadedSettings: userSettings
-            });
+            // Execute auto buy with maximum speed bypass for turbo mode
+            let result;
+            if (userSettings.turbo_mode_enabled) {
+                // TURBO AUTO-BUY: Direct execution bypass for maximum speed
+                const wallet = await this.walletManager.getWallet(userId);
+                result = await this.monorailAPI.executeSwapTurbo(
+                    wallet,
+                    tokenAddress,
+                    userSettings.auto_buy_amount,
+                    20, // Fixed 20% slippage for turbo
+                    user.wallet_address
+                );
+                // Add required fields for compatibility
+                if (result.success) {
+                    result.action = 'buy';
+                    result.tokenAddress = tokenAddress;
+                    result.monAmount = userSettings.auto_buy_amount;
+                    result.mode = 'turbo';
+                    
+                    // Quick cache invalidation for turbo mode
+                    if (this.cacheService) {
+                        try {
+                            await Promise.all([
+                                this.cacheService.delete('mon_balance', user.wallet_address),
+                                this.cacheService.delete('wallet_balance', user.wallet_address),
+                                this.cacheService.delete('portfolio', userId),
+                                this.cacheService.delete('main_menu', userId)
+                            ]);
+                        } catch (error) {
+                            // Ignore cache errors in turbo mode for speed
+                        }
+                    }
+                }
+            } else {
+                // NORMAL AUTO-BUY: Use full validation system
+                result = await tradingInterface.engine.executeTrade({
+                    type: 'normal',
+                    action: 'buy',
+                    userId: userId,
+                    tokenAddress: tokenAddress,
+                    amount: userSettings.auto_buy_amount,
+                    preloadedUser: user,
+                    preloadedSettings: userSettings
+                });
+            }
             // Get auto buy amount from settings for display purposes
             const buyAmount = parseFloat(userSettings.auto_buy_amount) || 0.1; // Default 0.1 MON
             // Auto buy already executed above, just handle the result
