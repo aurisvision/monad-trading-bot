@@ -819,8 +819,15 @@ Please try again or check your wallet balance.`);
             };
             const tradingInterface = new TradingInterface(null, tradingDependencies);
             // Execute auto buy with turbo mode bypass if enabled
+            console.log('🔍 AUTO-BUY TURBO DEBUG:', {
+                turbo_mode: userSettings.turbo_mode,
+                user_id: userId,
+                will_use_turbo: !!userSettings.turbo_mode
+            });
+            
             let result;
             if (userSettings.turbo_mode) {
+                console.log('⚡ AUTO-BUY: Using TURBO mode');
                 // TURBO AUTO-BUY: Use UnifiedTradingEngine turbo mode (same as manual)
                 result = await tradingInterface.engine.executeTrade({
                     type: 'turbo',
@@ -832,6 +839,7 @@ Please try again or check your wallet balance.`);
                     preloadedSettings: userSettings
                 });
             } else {
+                console.log('🔒 AUTO-BUY: Using NORMAL mode');
                 // NORMAL AUTO-BUY: Use full validation system
                 result = await tradingInterface.engine.executeTrade({
                     type: 'normal',
