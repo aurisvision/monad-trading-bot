@@ -190,9 +190,9 @@ class DirectTokenFetcher {
 **Contract:** \`${tokenAddress}\`
 
 **Your Holdings:**
-**Balance:** ${balance.toFixed(6)} ${symbol}
-**Value (USD):** $${valueUSD.toFixed(4)}
-**Value (MON):** ${valueMON.toFixed(4)} MON
+**Balance:** ${balance.toFixed(2)} ${symbol}
+**Value (USD):** $${valueUSD.toFixed(2)}
+**Value (MON):** ${valueMON.toFixed(2)} MON
 
 **Transaction:**
 **Hash:** \`${tradeResult.txHash}\`
