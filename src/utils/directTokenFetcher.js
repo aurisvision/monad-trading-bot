@@ -147,23 +147,22 @@ class DirectTokenFetcher {
                 this.monitoring?.logInfo('✅ Token balance found successfully', {
                     attempt,
                     balance: result.balance,
-                    valueUSD: result.valueUSD
                 });
                 return result;
             }
 
             if (attempt < maxRetries) {
-                // Wait before retry (increasing delay)
-                const delay = attempt * 2000; // 2s, 4s, 6s
-                this.monitoring?.logInfo(`⏳ Waiting ${delay}ms before retry...`);
-                await new Promise(resolve => setTimeout(resolve, delay));
+                // Optimized wait times: 1s, 2s for faster response
+                const waitTime = attempt * 1000; // 1s, 2s
+                this.monitoring?.logInfo(`⏳ Waiting ${waitTime}ms before retry...`, {});
+                await new Promise(resolve => setTimeout(resolve, waitTime));
             }
         }
 
-        this.monitoring?.logInfo('❌ All retry attempts failed', {
+        // If all retries failed, return zero balance
+        this.monitoring?.logInfo('❌ All retry attempts failed, returning zero balance', {
             walletAddress,
-            tokenSymbol,
-            maxRetries
+            tokenSymbol
         });
 
         return {
@@ -171,13 +170,14 @@ class DirectTokenFetcher {
             balance: 0,
             valueUSD: 0,
             valueMON: 0,
-            error: `Failed after ${maxRetries} attempts`
+            symbol: tokenSymbol,
+            name: 'Unknown Token',
+            address: tokenAddress
         };
     }
 
     /**
      * Generate sell message with direct API data
-     */
     generateSellMessage(tokenData, tokenAddress, tradeResult) {
         const { balance, valueUSD, valueMON, symbol, name } = tokenData;
 
