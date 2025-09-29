@@ -6,6 +6,7 @@
 const { Markup } = require('telegraf');
 const UnifiedTradingEngine = require('./UnifiedTradingEngine');
 const FreshDataFetcher = require("../utils/freshDataFetcher");
+const DirectTokenFetcher = require("../utils/directTokenFetcher");
 const TradingConfig = require('./TradingConfig');
 class TradingInterface {
     constructor(bot, dependencies) {
@@ -552,17 +553,42 @@ Select percentage to sell:`;
             // Send the comprehensive sell interface
             setTimeout(async () => {
                 try {
-                    await ctx.reply(sellMessage, {
-                        parse_mode: 'Markdown',
+                    // Use direct API for accurate balance
+                    const directFetcher = new DirectTokenFetcher(this.monitoring);
+                    const directTokenData = await directFetcher.getTokenBalanceWithRetry(
+                        user.wallet_address,
+                        tokenAddress,
+                        tokenSymbol,
+                        3
+                    );
+                    
+                    // Generate message with direct API data
+                    const directSellMessage = directFetcher.generateSellMessage(
+                        directTokenData,
+                        tokenAddress,
+                        tradeResult
+                    );
+                    
+                    // Update user state with direct data
+                    await this.database.setUserState(userId, "selling_token", {
+                        tokenAddress,
+                        tokenSymbol,
+                        tokenBalance: directTokenData.balance,
+                        tokenValueUSD: directTokenData.valueUSD,
+                        tokenValueMON: directTokenData.valueMON
+                    });
+
+                    await ctx.reply(directSellMessage, {
+                        parse_mode: "Markdown",
                         reply_markup: keyboard.reply_markup
                     });
                 } catch (error) {
-                    this.monitoring?.logError('Failed to send sell interface after buy', error, { 
-                        userId, 
-                        tokenAddress 
+                    this.monitoring?.logError("Failed to send sell interface after buy", error, {
+                        userId,
+                        tokenAddress
                     });
                 }
-            }, 8000); // 8 second delay for blockchain confirmation
+            }, 8000);
             
         } catch (error) {
             this.monitoring?.logError('Sell interface after buy failed', error, { 
