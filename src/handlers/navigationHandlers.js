@@ -871,6 +871,10 @@ Please try again or check your wallet balance.`);
 [View on Explorer](${explorerUrl})`,
                     { parse_mode: 'Markdown' }
                 );
+                
+                // Show professional sell prompt after successful auto-buy
+                await this.showProfessionalSellPrompt(ctx, tokenAddress, userSettings.auto_buy_amount, tradeResult);
+                
                 // Auto buy completed successfully - no need for additional refresh
                 // The cache invalidation above will ensure fresh data on next menu access
             } else {
@@ -1092,6 +1096,70 @@ ${tokenAddress}
             await ctx.reply('❌ Error importing wallet. Please try again.');
         }
     }
+
+    /**
+     * Show professional sell prompt after successful auto-buy
+     */
+    async showProfessionalSellPrompt(ctx, tokenAddress, purchaseAmount, tradeResult) {
+        try {
+            // Get token info for display
+            const tokenInfo = await this.monorailAPI.getTokenInfo(tokenAddress);
+            const tokenSymbol = tokenInfo?.token?.symbol || 'Token';
+            const tokenName = tokenInfo?.token?.name || 'Unknown Token';
+            
+            // Calculate estimated value (if available)
+            const tokenPriceUSD = parseFloat(tokenInfo?.token?.usd_per_token || 0);
+            const estimatedValue = tokenPriceUSD > 0 ? (purchaseAmount * tokenPriceUSD).toFixed(2) : 'N/A';
+            
+            // Professional sell message without emojis
+            const sellMessage = `**Purchase Complete**
+
+*Token Details:*
+**Symbol:** ${tokenSymbol}
+**Name:** ${tokenName}
+**Amount Purchased:** ${purchaseAmount} MON
+**Estimated Value:** $${estimatedValue}
+
+*Transaction:*
+**Hash:** \`${tradeResult.txHash}\`
+**Status:** Confirmed
+
+Would you like to set up a sell order for this token?`;
+
+            const keyboard = Markup.inlineKeyboard([
+                [
+                    Markup.button.callback('Set Sell Order', `sell_${tokenAddress}`),
+                    Markup.button.callback('View Portfolio', 'portfolio')
+                ],
+                [
+                    Markup.button.callback('Back to Main', 'back_to_main')
+                ]
+            ]);
+
+            // Send the professional sell prompt
+            setTimeout(async () => {
+                try {
+                    await ctx.reply(sellMessage, {
+                        parse_mode: 'Markdown',
+                        reply_markup: keyboard.reply_markup
+                    });
+                } catch (error) {
+                    this.monitoring.logError('Failed to send sell prompt', error, { 
+                        userId: ctx.from.id, 
+                        tokenAddress 
+                    });
+                }
+            }, 2000); // 2 second delay after auto-buy success
+            
+        } catch (error) {
+            this.monitoring.logError('Professional sell prompt failed', error, { 
+                userId: ctx.from.id, 
+                tokenAddress 
+            });
+            // Don't throw - this is not critical
+        }
+    }
+
     async processCustomBuyAmount(ctx, amountText) {
         const userId = ctx.from.id;
         try {

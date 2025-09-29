@@ -808,6 +808,20 @@ class DatabasePostgreSQL {
         return await this.query(query, [telegramId]);
     }
 
+    /**
+     * Clear all user states (for bot restart cleanup)
+     */
+    async clearAllUserStates() {
+        const query = `DELETE FROM user_states WHERE expires_at < CURRENT_TIMESTAMP + INTERVAL '1 hour'`;
+        try {
+            const result = await this.query(query);
+            return result.rowCount || 0;
+        } catch (error) {
+            console.error('Error clearing all user states:', error);
+            return 0;
+        }
+    }
+
     // Temporary sell data with automatic cleanup
     async storeTempSellData(id, telegramId, tokenAddress, tokenSymbol, amount, quoteData) {
         const query = `

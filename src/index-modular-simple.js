@@ -56,6 +56,7 @@ class Area51BotModularSimple {
         
         try {
             await this.initializeComponents();
+            await this.cleanupPendingOperations();
             await this.setupMiddleware();
             this.setupHandlers();
             this.initialized = true;
@@ -63,6 +64,33 @@ class Area51BotModularSimple {
         } catch (error) {
             console.error('❌ Modular bot initialization failed:', error.message);
             throw error;
+        }
+    }
+
+    /**
+     * Clean up pending operations on bot restart to prevent old replies
+     */
+    async cleanupPendingOperations() {
+        try {
+            // Clear all pending timeouts and operations from previous sessions
+            if (this.redis) {
+                const pendingKeys = await this.redis.keys('area51:pending:*');
+                if (pendingKeys.length > 0) {
+                    await this.redis.del(...pendingKeys);
+                    console.log(`🧹 Cleaned ${pendingKeys.length} pending operations`);
+                }
+            }
+            
+            // Clear any user states that might trigger old operations
+            if (this.database) {
+                await this.database.clearAllUserStates();
+                console.log('🧹 Cleared all user states from previous session');
+            }
+            
+            this.monitoring?.logInfo('Pending operations cleanup completed');
+        } catch (error) {
+            console.error('⚠️ Error during cleanup:', error.message);
+            // Don't throw - this is not critical for bot startup
         }
     }
 
