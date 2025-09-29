@@ -1167,7 +1167,7 @@ ${tokenAddress}
 **✅ Transaction Confirmed**
 • **Hash:** \`${tradeResult.txHash}\`
 
-**💸 Select percentage to sell:**`;
+**Select percentage to sell:**`;
 
             // Build sell percentage buttons using user's custom settings
             const buttons = [];
@@ -1275,7 +1275,7 @@ ${tokenAddress}
             const percentagesArray = customPercentages.split(',').map(p => parseInt(p.trim()));
 
             // Updated sell interface message
-            const sellMessage = `💸 **Token Sell Interface**
+            const sellMessage = `**Token Sell Interface**
 
 **📊 Token Information**
 • **Name:** ${tokenName}
@@ -1289,7 +1289,7 @@ ${tokenAddress}
 
 🔄 *Last Updated: ${new Date().toLocaleTimeString()}*
 
-**💸 Select percentage to sell:**`;
+**Select percentage to sell:**`;
 
             // Build sell percentage buttons using user's custom settings
             const buttons = [];
