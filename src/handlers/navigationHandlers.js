@@ -1,6 +1,7 @@
 // Navigation and UI Handlers
 const { Markup } = require('telegraf');
 const InterfaceUtils = require('../utils/interfaceUtils');
+const FreshDataFetcher = require("../utils/freshDataFetcher");
 class NavigationHandlers {
     constructor(bot, database, monorailAPI, monitoring, redis = null, walletManager = null, mainBot = null, cacheService = null, accessCodeSystem = null, welcomeHandler = null) {
         this.bot = bot;
@@ -1200,7 +1201,33 @@ Select percentage to sell:`;
             // Send the comprehensive sell interface
             setTimeout(async () => {
                 try {
-                    await ctx.reply(sellMessage, {
+                    // Use fresh data fetcher for accurate balance
+                    const FreshDataFetcher = require("../utils/freshDataFetcher");
+                    const freshDataFetcher = new FreshDataFetcher(this.monorailAPI, this.cacheService, this.monitoring);
+                    const freshTokenData = await freshDataFetcher.getFreshTokenData(
+                        user.wallet_address, 
+                        tokenAddress, 
+                        tokenSymbol, 
+                        tokenName
+                    );
+                    
+                    // Generate updated message with fresh data
+                    const updatedSellMessage = freshDataFetcher.generateUpdatedSellMessage(
+                        freshTokenData, 
+                        tokenAddress, 
+                        tradeResult
+                    );
+                    
+                    // Update user state with fresh data
+                    await this.database.setUserState(userId, "selling_token", {
+                        tokenAddress,
+                        tokenSymbol,
+                        tokenBalance: freshTokenData.tokenBalance,
+                        tokenValueUSD: freshTokenData.tokenValueUSD,
+                        tokenValueMON: freshTokenData.tokenValueMON
+                    });
+
+                    await ctx.reply(updatedSellMessage, {
                         parse_mode: 'Markdown',
                         reply_markup: keyboard.reply_markup
                     });
@@ -1210,7 +1237,7 @@ Select percentage to sell:`;
                         tokenAddress 
                     });
                 }
-            }, 2000); // 2 second delay after purchase success
+            }, 8000); // 8 second delay for blockchain confirmation
             
         } catch (error) {
             this.monitoring.logError('Comprehensive sell interface failed', error, { 

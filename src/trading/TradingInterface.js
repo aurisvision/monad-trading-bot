@@ -5,6 +5,7 @@
  */
 const { Markup } = require('telegraf');
 const UnifiedTradingEngine = require('./UnifiedTradingEngine');
+const FreshDataFetcher = require("../utils/freshDataFetcher");
 const TradingConfig = require('./TradingConfig');
 class TradingInterface {
     constructor(bot, dependencies) {
@@ -561,7 +562,7 @@ Select percentage to sell:`;
                         tokenAddress 
                     });
                 }
-            }, 2000); // 2 second delay after purchase success
+            }, 8000); // 8 second delay for blockchain confirmation
             
         } catch (error) {
             this.monitoring?.logError('Sell interface after buy failed', error, { 
