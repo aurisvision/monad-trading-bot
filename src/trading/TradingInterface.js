@@ -6,7 +6,7 @@
 const { Markup } = require('telegraf');
 const UnifiedTradingEngine = require('./UnifiedTradingEngine');
 const FreshDataFetcher = require("../utils/freshDataFetcher");
-const DirectTokenFetcher = require("../utils/directTokenFetcher");
+const DirectTokenFetcher = require('../utils/directTokenFetcher');
 const TradingConfig = require('./TradingConfig');
 class TradingInterface {
     constructor(bot, dependencies) {
@@ -475,26 +475,18 @@ Please enter the token contract address you want to buy:`;
             const tokenSymbol = tokenInfo?.token?.symbol || 'Token';
             const tokenName = tokenInfo?.token?.name || 'Unknown Token';
             
-            // Get user's FULL balance of this token (not just purchased amount)
-            let tokenBalance = 0;
-            let tokenValueUSD = 0;
-            let tokenValueMON = 0;
+            // Use direct API for accurate balance
+            const directFetcher = new DirectTokenFetcher(this.monitoring);
+            const directTokenData = await directFetcher.getTokenBalanceWithRetry(
+                user.wallet_address,
+                tokenAddress,
+                tokenSymbol,
+                3
+            );
             
-            try {
-                const portfolioData = await this.engine.monorailAPI.getPortfolioValue(user.wallet_address);
-                if (portfolioData.success && portfolioData.tokens) {
-                    const tokenEntry = portfolioData.tokens.find(t => 
-                        t.address?.toLowerCase() === tokenAddress.toLowerCase()
-                    );
-                    if (tokenEntry) {
-                        tokenBalance = parseFloat(tokenEntry.balance || 0);
-                        tokenValueUSD = parseFloat(tokenEntry.value_usd || 0);
-                        tokenValueMON = parseFloat(tokenEntry.value_mon || 0);
-                    }
-                }
-            } catch (error) {
-                this.monitoring?.logError('Failed to get token balance after buy', error, { userId, tokenAddress });
-            }
+            const tokenBalance = directTokenData.balance;
+            const tokenValueUSD = directTokenData.valueUSD;
+            const tokenValueMON = directTokenData.valueMON;
 
             // Get user's custom sell percentages
             const customPercentages = userSettings?.custom_sell_percentages || '25,50,75,100';
@@ -553,42 +545,17 @@ Select percentage to sell:`;
             // Send the comprehensive sell interface
             setTimeout(async () => {
                 try {
-                    // Use direct API for accurate balance
-                    const directFetcher = new DirectTokenFetcher(this.monitoring);
-                    const directTokenData = await directFetcher.getTokenBalanceWithRetry(
-                        user.wallet_address,
-                        tokenAddress,
-                        tokenSymbol,
-                        3
-                    );
-                    
-                    // Generate message with direct API data
-                    const directSellMessage = directFetcher.generateSellMessage(
-                        directTokenData,
-                        tokenAddress,
-                        tradeResult
-                    );
-                    
-                    // Update user state with direct data
-                    await this.database.setUserState(userId, "selling_token", {
-                        tokenAddress,
-                        tokenSymbol,
-                        tokenBalance: directTokenData.balance,
-                        tokenValueUSD: directTokenData.valueUSD,
-                        tokenValueMON: directTokenData.valueMON
-                    });
-
-                    await ctx.reply(directSellMessage, {
-                        parse_mode: "Markdown",
+                    await ctx.reply(sellMessage, {
+                        parse_mode: 'Markdown',
                         reply_markup: keyboard.reply_markup
                     });
                 } catch (error) {
-                    this.monitoring?.logError("Failed to send sell interface after buy", error, {
-                        userId,
-                        tokenAddress
+                    this.monitoring?.logError('Failed to send sell interface after buy', error, { 
+                        userId, 
+                        tokenAddress 
                     });
                 }
-            }, 8000);
+            }, 8000); // 8 second delay for blockchain confirmation
             
         } catch (error) {
             this.monitoring?.logError('Sell interface after buy failed', error, { 
