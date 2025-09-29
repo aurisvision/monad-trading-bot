@@ -1150,7 +1150,6 @@ ${tokenAddress}
             // Get user's custom sell percentages
             const customPercentages = userSettings?.custom_sell_percentages || '25,50,75,100';
             const percentagesArray = customPercentages.split(',').map(p => parseInt(p.trim()));
-{{ ... }}
 
             // Professional sell interface message
             const sellMessage = `**Purchase Successful**
