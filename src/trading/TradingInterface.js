@@ -212,7 +212,9 @@ _🎯 Select percentage to sell:_`;
                 return ctx.reply('❌ Token selection expired. Please select a token again.');
             }
             const balance = parseFloat(userState.data.tokenBalance || userState.data.balance || 0);
-            const sellAmount = (balance * percentage / 100).toFixed(6);
+            // Use 99.99% for 100% to avoid precision issues with fees
+            const effectivePercentage = percentage === 100 ? 99.99 : percentage;
+            const sellAmount = (balance * effectivePercentage / 100).toFixed(6);
             
             const confirmText = `💸 **Confirm Sale**
 
@@ -251,7 +253,9 @@ Proceed with the sale?`;
                 return ctx.editMessageText('❌ Token selection expired. Please try again.');
             }
             const balance = parseFloat(userState.data.tokenBalance || userState.data.balance || 0);
-            const tokenAmount = (balance * percentage / 100).toString();
+            // Use 99.99% for 100% to avoid precision issues with fees
+            const effectivePercentage = percentage === 100 ? 99.99 : percentage;
+            const tokenAmount = (balance * effectivePercentage / 100).toString();
             // Get user settings to determine trade type
             const userSettings = await this.database.getUserSettings(userId);
             const tradeType = userSettings?.turbo_mode ? 'turbo' : 'normal';
