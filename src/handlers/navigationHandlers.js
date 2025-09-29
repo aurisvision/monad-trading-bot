@@ -1308,6 +1308,18 @@ ${tokenAddress}
             buttons.push([
                 Markup.button.callback('🔄 Refresh', `refresh_sell_${tokenAddress}`),
                 Markup.button.callback('📊 Portfolio', 'portfolio')
+            ]);
+            buttons.push([Markup.button.callback('🏠 Main Menu', 'back_to_main')]);
+
+            const keyboard = Markup.inlineKeyboard(buttons);
+
+            // Send the updated sell interface
+            await ctx.editMessageText(sellMessage, {
+                parse_mode: 'Markdown',
+                reply_markup: keyboard.reply_markup
+            });
+
+        } catch (error) {
             this.monitoring.logError('Refresh sell interface failed', error, { 
                 userId: ctx.from.id, 
                 tokenAddress 
