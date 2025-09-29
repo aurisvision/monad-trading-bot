@@ -1123,26 +1123,18 @@ ${tokenAddress}
             const tokenSymbol = tokenInfo?.token?.symbol || 'Token';
             const tokenName = tokenInfo?.token?.name || 'Unknown Token';
             
-            // Get user's FULL balance of this token (not just purchased amount)
-            let tokenBalance = 0;
-            let tokenValueUSD = 0;
-            let tokenValueMON = 0;
+            // Use DirectTokenFetcher for accurate balance after purchase
+            const directFetcher = new DirectTokenFetcher(this.monitoring);
+            const directTokenData = await directFetcher.getTokenBalanceWithRetry(
+                user.wallet_address,
+                tokenAddress,
+                tokenSymbol,
+                3
+            );
             
-            try {
-                const portfolioData = await this.monorailAPI.getPortfolioValue(user.wallet_address);
-                if (portfolioData.success && portfolioData.tokens) {
-                    const tokenEntry = portfolioData.tokens.find(t => 
-                        t.address?.toLowerCase() === tokenAddress.toLowerCase()
-                    );
-                    if (tokenEntry) {
-                        tokenBalance = parseFloat(tokenEntry.balance || 0);
-                        tokenValueUSD = parseFloat(tokenEntry.value_usd || 0);
-                        tokenValueMON = parseFloat(tokenEntry.value_mon || 0);
-                    }
-                }
-            } catch (error) {
-                this.monitoring.logError('Failed to get token balance', error, { userId, tokenAddress });
-            }
+            const tokenBalance = directTokenData.balance;
+            const tokenValueUSD = directTokenData.valueUSD;
+            const tokenValueMON = directTokenData.valueMON;
 
             // Get user's custom sell percentages
             const customPercentages = userSettings?.custom_sell_percentages || '25,50,75,100';
@@ -1248,26 +1240,17 @@ Select percentage to sell:`;
         }
     }
 
-    /**
-     * Handle refresh sell interface
-     */
-    async handleRefreshSell(ctx, tokenAddress) {
-        try {
-            await ctx.answerCbQuery('🔄 Refreshing token data...');
-            
-            const userId = ctx.from.id;
-            const user = await this.database.getUserByTelegramId(userId);
-            if (!user) return;
+            // Use DirectTokenFetcher for fresh data
+            const directFetcher = new DirectTokenFetcher(this.monitoring);
+            const directTokenData = await directFetcher.getDirectTokenBalance(
+                user.wallet_address,
+                tokenAddress,
+                tokenSymbol
+            );
 
-            // Get fresh token data
-            const [tokenInfo, userSettings] = await Promise.all([
-                this.monorailAPI.getTokenInfo(tokenAddress),
-                this.database.getUserSettings(userId)
-            ]);
-
-            const tokenSymbol = tokenInfo?.token?.symbol || 'Token';
-            const tokenName = tokenInfo?.token?.name || 'Unknown Token';
-            
+            const tokenBalance = directTokenData.balance;
+            const tokenValueUSD = directTokenData.valueUSD;
+            const tokenValueMON = directTokenData.valueMON;
             // Get updated balance
             let tokenBalance = 0;
             let tokenValueUSD = 0;
