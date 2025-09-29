@@ -1154,23 +1154,20 @@ ${tokenAddress}
             // Professional sell interface message
             const sellMessage = `🎉 **Purchase Successful!**
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 **Token Information**
-**Name:** ${tokenName}
-**Symbol:** ${tokenSymbol}
-**Contract:** \`${tokenAddress}\`
+**📊 Token Information**
+• **Name:** ${tokenName}
+• **Symbol:** ${tokenSymbol}
+• **Contract:** \`${tokenAddress}\`
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-💼 **Your Holdings**
-**Balance:** ${tokenBalance.toFixed(2)} ${tokenSymbol}
-**Value (USD):** $${tokenValueUSD.toFixed(2)}
-**Value (MON):** ${tokenValueMON.toFixed(2)} MON
+**💼 Your Holdings**
+• **Balance:** ${tokenBalance.toFixed(2)} ${tokenSymbol}
+• **Value (USD):** $${tokenValueUSD.toFixed(2)}
+• **Value (MON):** ${tokenValueMON.toFixed(2)} MON
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ **Transaction Confirmed**
-**Hash:** \`${tradeResult.txHash}\`
+**✅ Transaction Confirmed**
+• **Hash:** \`${tradeResult.txHash}\`
 
-💸 **Select percentage to sell:**`;
+**💸 Select percentage to sell:**`;
 
             // Build sell percentage buttons using user's custom settings
             const buttons = [];
@@ -1202,6 +1199,9 @@ ${tokenAddress}
                 tokenValueUSD,
                 tokenValueMON
             });
+
+            // Add 500ms delay to allow blockchain data to update
+            await new Promise(resolve => setTimeout(resolve, 500));
 
             // Send the comprehensive sell interface immediately
             try {
@@ -1277,21 +1277,19 @@ ${tokenAddress}
             // Updated sell interface message
             const sellMessage = `💸 **Token Sell Interface**
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 **Token Information**
-**Name:** ${tokenName}
-**Symbol:** ${tokenSymbol}
-**Contract:** \`${tokenAddress}\`
+**📊 Token Information**
+• **Name:** ${tokenName}
+• **Symbol:** ${tokenSymbol}
+• **Contract:** \`${tokenAddress}\`
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-💼 **Your Holdings**
-**Balance:** ${tokenBalance.toFixed(2)} ${tokenSymbol}
-**Value (USD):** $${tokenValueUSD.toFixed(2)}
-**Value (MON):** ${tokenValueMON.toFixed(2)} MON
+**💼 Your Holdings**
+• **Balance:** ${tokenBalance.toFixed(2)} ${tokenSymbol}
+• **Value (USD):** $${tokenValueUSD.toFixed(2)}
+• **Value (MON):** ${tokenValueMON.toFixed(2)} MON
 
 🔄 *Last Updated: ${new Date().toLocaleTimeString()}*
 
-💸 **Select percentage to sell:**`;
+**💸 Select percentage to sell:**`;
 
             // Build sell percentage buttons using user's custom settings
             const buttons = [];
@@ -1310,27 +1308,6 @@ ${tokenAddress}
             buttons.push([
                 Markup.button.callback('🔄 Refresh', `refresh_sell_${tokenAddress}`),
                 Markup.button.callback('📊 Portfolio', 'portfolio')
-            ]);
-            buttons.push([Markup.button.callback('🏠 Main Menu', 'back_to_main')]);
-
-            const keyboard = Markup.inlineKeyboard(buttons);
-
-            // Update user state with fresh data
-            await this.database.setUserState(userId, 'selling_token', {
-                tokenAddress,
-                tokenSymbol,
-                tokenBalance,
-                tokenValueUSD,
-                tokenValueMON
-            });
-
-            // Update the message
-            await ctx.editMessageText(sellMessage, {
-                parse_mode: 'Markdown',
-                reply_markup: keyboard.reply_markup
-            });
-            
-        } catch (error) {
             this.monitoring.logError('Refresh sell interface failed', error, { 
                 userId: ctx.from.id, 
                 tokenAddress 
@@ -1462,4 +1439,4 @@ Proceed with this purchase?`, {
     }
     // handleToggleTurboMode and handleConfirmTurboEnable removed - using updated versions from index-modular-simple.js
 }
-module.exports = NavigationHandlers;
+module.exports = NavigationHandlers;

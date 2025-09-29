@@ -250,7 +250,8 @@ Proceed with the sale?`;
                 await this.database.clearUserState(userId);
                 return ctx.editMessageText('❌ Token selection expired. Please try again.');
             }
-            const tokenAmount = (parseFloat(userState.data.balance) * percentage / 100).toString();
+            const balance = parseFloat(userState.data.tokenBalance || userState.data.balance || 0);
+            const tokenAmount = (balance * percentage / 100).toString();
             // Get user settings to determine trade type
             const userSettings = await this.database.getUserSettings(userId);
             const tradeType = userSettings?.turbo_mode ? 'turbo' : 'normal';
