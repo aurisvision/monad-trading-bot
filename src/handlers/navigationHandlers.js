@@ -45,7 +45,6 @@ class NavigationHandlers {
         this.bot.action('refresh', async (ctx) => {
             await this.handleManualRefresh(ctx);
         });
-        // Docs handler removed - now uses direct URL button
         // Transfer handler
         this.bot.action('transfer', async (ctx) => {
             await this.handleTransfer(ctx);
@@ -53,6 +52,12 @@ class NavigationHandlers {
         // Text message handler
         this.bot.on('text', async (ctx) => {
             await this.handleTextMessage(ctx);
+        });
+
+        // Refresh sell interface handler
+        this.bot.action(/^refresh_sell_(.+)$/, async (ctx) => {
+            const tokenAddress = ctx.match[1];
+            await this.handleRefreshSell(ctx, tokenAddress);
         });
     }
     async handleStart(ctx) {
@@ -872,8 +877,8 @@ Please try again or check your wallet balance.`);
                     { parse_mode: 'Markdown' }
                 );
                 
-                // Show professional sell prompt after successful auto-buy
-                await this.showProfessionalSellPrompt(ctx, tokenAddress, userSettings.auto_buy_amount, tradeResult);
+                // Show comprehensive sell interface after successful auto-buy
+                await this.showComprehensiveSellInterface(ctx, tokenAddress, tradeResult);
                 
                 // Auto buy completed successfully - no need for additional refresh
                 // The cache invalidation above will ensure fresh data on next menu access
@@ -1098,45 +1103,101 @@ ${tokenAddress}
     }
 
     /**
-     * Show professional sell prompt after successful auto-buy
+     * Show comprehensive sell interface after successful purchase (Auto-buy + Manual)
      */
-    async showProfessionalSellPrompt(ctx, tokenAddress, purchaseAmount, tradeResult) {
+    async showComprehensiveSellInterface(ctx, tokenAddress, tradeResult) {
         try {
-            // Get token info for display
-            const tokenInfo = await this.monorailAPI.getTokenInfo(tokenAddress);
+            const userId = ctx.from.id;
+            
+            // Get user for wallet address
+            const user = await this.database.getUserByTelegramId(userId);
+            if (!user) return;
+
+            // Get comprehensive token info and user balance
+            const [tokenInfo, userSettings] = await Promise.all([
+                this.monorailAPI.getTokenInfo(tokenAddress),
+                this.database.getUserSettings(userId)
+            ]);
+
             const tokenSymbol = tokenInfo?.token?.symbol || 'Token';
             const tokenName = tokenInfo?.token?.name || 'Unknown Token';
             
-            // Calculate estimated value (if available)
-            const tokenPriceUSD = parseFloat(tokenInfo?.token?.usd_per_token || 0);
-            const estimatedValue = tokenPriceUSD > 0 ? (purchaseAmount * tokenPriceUSD).toFixed(2) : 'N/A';
+            // Get user's FULL balance of this token (not just purchased amount)
+            let tokenBalance = 0;
+            let tokenValueUSD = 0;
+            let tokenValueMON = 0;
             
-            // Professional sell message without emojis
-            const sellMessage = `**Purchase Complete**
+            try {
+                const portfolioData = await this.monorailAPI.getPortfolioValue(user.wallet_address);
+                if (portfolioData.success && portfolioData.tokens) {
+                    const tokenEntry = portfolioData.tokens.find(t => 
+                        t.address?.toLowerCase() === tokenAddress.toLowerCase()
+                    );
+                    if (tokenEntry) {
+                        tokenBalance = parseFloat(tokenEntry.balance || 0);
+                        tokenValueUSD = parseFloat(tokenEntry.value_usd || 0);
+                        tokenValueMON = parseFloat(tokenEntry.value_mon || 0);
+                    }
+                }
+            } catch (error) {
+                this.monitoring.logError('Failed to get token balance', error, { userId, tokenAddress });
+            }
 
-*Token Details:*
-**Symbol:** ${tokenSymbol}
+            // Get user's custom sell percentages
+            const customPercentages = userSettings?.custom_sell_percentages || '25,50,75,100';
+            const percentagesArray = customPercentages.split(',').map(p => parseInt(p.trim()));
+
+            // Professional sell interface message
+            const sellMessage = `**Purchase Successful**
+
+**Token Information:**
 **Name:** ${tokenName}
-**Amount Purchased:** ${purchaseAmount} MON
-**Estimated Value:** $${estimatedValue}
+**Symbol:** ${tokenSymbol}
+**Contract:** \`${tokenAddress}\`
 
-*Transaction:*
+**Your Holdings:**
+**Balance:** ${tokenBalance.toFixed(6)} ${tokenSymbol}
+**Value (USD):** $${tokenValueUSD.toFixed(4)}
+**Value (MON):** ${tokenValueMON.toFixed(4)} MON
+
+**Transaction:**
 **Hash:** \`${tradeResult.txHash}\`
 **Status:** Confirmed
 
-Would you like to set up a sell order for this token?`;
+Select percentage to sell:`;
 
-            const keyboard = Markup.inlineKeyboard([
-                [
-                    Markup.button.callback('Set Sell Order', `sell_${tokenAddress}`),
-                    Markup.button.callback('View Portfolio', 'portfolio')
-                ],
-                [
-                    Markup.button.callback('Back to Main', 'back_to_main')
-                ]
+            // Build sell percentage buttons using user's custom settings
+            const buttons = [];
+            for (let i = 0; i < percentagesArray.length; i += 2) {
+                const row = [];
+                if (percentagesArray[i]) {
+                    row.push(Markup.button.callback(`${percentagesArray[i]}%`, `sell_percentage_${tokenSymbol}_${percentagesArray[i]}`));
+                }
+                if (percentagesArray[i + 1]) {
+                    row.push(Markup.button.callback(`${percentagesArray[i + 1]}%`, `sell_percentage_${tokenSymbol}_${percentagesArray[i + 1]}`));
+                }
+                if (row.length > 0) buttons.push(row);
+            }
+
+            // Add refresh and navigation buttons
+            buttons.push([
+                Markup.button.callback('🔄 Refresh', `refresh_sell_${tokenAddress}`),
+                Markup.button.callback('📊 Portfolio', 'portfolio')
             ]);
+            buttons.push([Markup.button.callback('🏠 Main Menu', 'back_to_main')]);
 
-            // Send the professional sell prompt
+            const keyboard = Markup.inlineKeyboard(buttons);
+
+            // Set user state for selling this token
+            await this.database.setUserState(userId, 'selling_token', {
+                tokenAddress,
+                tokenSymbol,
+                tokenBalance,
+                tokenValueUSD,
+                tokenValueMON
+            });
+
+            // Send the comprehensive sell interface
             setTimeout(async () => {
                 try {
                     await ctx.reply(sellMessage, {
@@ -1144,19 +1205,127 @@ Would you like to set up a sell order for this token?`;
                         reply_markup: keyboard.reply_markup
                     });
                 } catch (error) {
-                    this.monitoring.logError('Failed to send sell prompt', error, { 
-                        userId: ctx.from.id, 
+                    this.monitoring.logError('Failed to send sell interface', error, { 
+                        userId, 
                         tokenAddress 
                     });
                 }
-            }, 2000); // 2 second delay after auto-buy success
+            }, 2000); // 2 second delay after purchase success
             
         } catch (error) {
-            this.monitoring.logError('Professional sell prompt failed', error, { 
+            this.monitoring.logError('Comprehensive sell interface failed', error, { 
                 userId: ctx.from.id, 
                 tokenAddress 
             });
             // Don't throw - this is not critical
+        }
+    }
+
+    /**
+     * Handle refresh sell interface
+     */
+    async handleRefreshSell(ctx, tokenAddress) {
+        try {
+            await ctx.answerCbQuery('🔄 Refreshing token data...');
+            
+            const userId = ctx.from.id;
+            const user = await this.database.getUserByTelegramId(userId);
+            if (!user) return;
+
+            // Get fresh token data
+            const [tokenInfo, userSettings] = await Promise.all([
+                this.monorailAPI.getTokenInfo(tokenAddress),
+                this.database.getUserSettings(userId)
+            ]);
+
+            const tokenSymbol = tokenInfo?.token?.symbol || 'Token';
+            const tokenName = tokenInfo?.token?.name || 'Unknown Token';
+            
+            // Get updated balance
+            let tokenBalance = 0;
+            let tokenValueUSD = 0;
+            let tokenValueMON = 0;
+            
+            try {
+                const portfolioData = await this.monorailAPI.getPortfolioValue(user.wallet_address);
+                if (portfolioData.success && portfolioData.tokens) {
+                    const tokenEntry = portfolioData.tokens.find(t => 
+                        t.address?.toLowerCase() === tokenAddress.toLowerCase()
+                    );
+                    if (tokenEntry) {
+                        tokenBalance = parseFloat(tokenEntry.balance || 0);
+                        tokenValueUSD = parseFloat(tokenEntry.value_usd || 0);
+                        tokenValueMON = parseFloat(tokenEntry.value_mon || 0);
+                    }
+                }
+            } catch (error) {
+                this.monitoring.logError('Failed to refresh token balance', error, { userId, tokenAddress });
+            }
+
+            // Get user's custom sell percentages
+            const customPercentages = userSettings?.custom_sell_percentages || '25,50,75,100';
+            const percentagesArray = customPercentages.split(',').map(p => parseInt(p.trim()));
+
+            // Updated sell interface message
+            const sellMessage = `**Token Sell Interface**
+
+**Token Information:**
+**Name:** ${tokenName}
+**Symbol:** ${tokenSymbol}
+**Contract:** \`${tokenAddress}\`
+
+**Your Holdings:**
+**Balance:** ${tokenBalance.toFixed(6)} ${tokenSymbol}
+**Value (USD):** $${tokenValueUSD.toFixed(4)}
+**Value (MON):** ${tokenValueMON.toFixed(4)} MON
+
+*Last Updated: ${new Date().toLocaleTimeString()}*
+
+Select percentage to sell:`;
+
+            // Build sell percentage buttons using user's custom settings
+            const buttons = [];
+            for (let i = 0; i < percentagesArray.length; i += 2) {
+                const row = [];
+                if (percentagesArray[i]) {
+                    row.push(Markup.button.callback(`${percentagesArray[i]}%`, `sell_percentage_${tokenSymbol}_${percentagesArray[i]}`));
+                }
+                if (percentagesArray[i + 1]) {
+                    row.push(Markup.button.callback(`${percentagesArray[i + 1]}%`, `sell_percentage_${tokenSymbol}_${percentagesArray[i + 1]}`));
+                }
+                if (row.length > 0) buttons.push(row);
+            }
+
+            // Add refresh and navigation buttons
+            buttons.push([
+                Markup.button.callback('🔄 Refresh', `refresh_sell_${tokenAddress}`),
+                Markup.button.callback('📊 Portfolio', 'portfolio')
+            ]);
+            buttons.push([Markup.button.callback('🏠 Main Menu', 'back_to_main')]);
+
+            const keyboard = Markup.inlineKeyboard(buttons);
+
+            // Update user state with fresh data
+            await this.database.setUserState(userId, 'selling_token', {
+                tokenAddress,
+                tokenSymbol,
+                tokenBalance,
+                tokenValueUSD,
+                tokenValueMON
+            });
+
+            // Update the message
+            await ctx.editMessageText(sellMessage, {
+                parse_mode: 'Markdown',
+                reply_markup: keyboard.reply_markup
+            });
+            
+        } catch (error) {
+            this.monitoring.logError('Refresh sell interface failed', error, { 
+                userId: ctx.from.id, 
+                tokenAddress 
+            });
+            await ctx.answerCbQuery('❌ Failed to refresh data');
         }
     }
 

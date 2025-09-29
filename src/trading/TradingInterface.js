@@ -364,6 +364,8 @@ _Proceed with the purchase?_`;
             });
             if (result.success) {
                 await this.sendSuccessMessage(ctx, result, 'buy');
+                // Show comprehensive sell interface after successful manual buy
+                await this.showSellInterfaceAfterBuy(ctx, tokenAddress, result);
             } else {
                 await this.sendErrorMessage(ctx, result.error);
             }
@@ -372,7 +374,7 @@ _Proceed with the purchase?_`;
         }
     }
     /**
-     * Handle buy interface - EXACT COPY from old system
+{{ ... }}
      */
     async handleBuyInterface(ctx) {
         if (ctx.callbackQuery) {
@@ -452,6 +454,125 @@ Please enter the token contract address you want to buy:`;
         await ctx.editMessageText(errorMessage, { parse_mode: 'Markdown' });
     }
     /**
+     * Show sell interface after successful buy (Manual + Turbo)
+     */
+    async showSellInterfaceAfterBuy(ctx, tokenAddress, tradeResult) {
+        try {
+            const userId = ctx.from.id;
+            
+            // Get user for wallet address
+            const user = await this.database.getUserByTelegramId(userId);
+            if (!user) return;
+
+            // Get comprehensive token info and user balance
+            const [tokenInfo, userSettings] = await Promise.all([
+                this.engine.monorailAPI.getTokenInfo(tokenAddress),
+                this.database.getUserSettings(userId)
+            ]);
+
+            const tokenSymbol = tokenInfo?.token?.symbol || 'Token';
+            const tokenName = tokenInfo?.token?.name || 'Unknown Token';
+            
+            // Get user's FULL balance of this token (not just purchased amount)
+            let tokenBalance = 0;
+            let tokenValueUSD = 0;
+            let tokenValueMON = 0;
+            
+            try {
+                const portfolioData = await this.engine.monorailAPI.getPortfolioValue(user.wallet_address);
+                if (portfolioData.success && portfolioData.tokens) {
+                    const tokenEntry = portfolioData.tokens.find(t => 
+                        t.address?.toLowerCase() === tokenAddress.toLowerCase()
+                    );
+                    if (tokenEntry) {
+                        tokenBalance = parseFloat(tokenEntry.balance || 0);
+                        tokenValueUSD = parseFloat(tokenEntry.value_usd || 0);
+                        tokenValueMON = parseFloat(tokenEntry.value_mon || 0);
+                    }
+                }
+            } catch (error) {
+                this.monitoring?.logError('Failed to get token balance after buy', error, { userId, tokenAddress });
+            }
+
+            // Get user's custom sell percentages
+            const customPercentages = userSettings?.custom_sell_percentages || '25,50,75,100';
+            const percentagesArray = customPercentages.split(',').map(p => parseInt(p.trim()));
+
+            // Professional sell interface message
+            const sellMessage = `**Purchase Successful**
+
+**Token Information:**
+**Name:** ${tokenName}
+**Symbol:** ${tokenSymbol}
+**Contract:** \`${tokenAddress}\`
+
+**Your Holdings:**
+**Balance:** ${tokenBalance.toFixed(6)} ${tokenSymbol}
+**Value (USD):** $${tokenValueUSD.toFixed(4)}
+**Value (MON):** ${tokenValueMON.toFixed(4)} MON
+
+**Transaction:**
+**Hash:** \`${tradeResult.txHash}\`
+**Status:** Confirmed
+
+Select percentage to sell:`;
+
+            // Build sell percentage buttons using user's custom settings
+            const buttons = [];
+            for (let i = 0; i < percentagesArray.length; i += 2) {
+                const row = [];
+                if (percentagesArray[i]) {
+                    row.push(Markup.button.callback(`${percentagesArray[i]}%`, `sell_percentage_${tokenSymbol}_${percentagesArray[i]}`));
+                }
+                if (percentagesArray[i + 1]) {
+                    row.push(Markup.button.callback(`${percentagesArray[i + 1]}%`, `sell_percentage_${tokenSymbol}_${percentagesArray[i + 1]}`));
+                }
+                if (row.length > 0) buttons.push(row);
+            }
+
+            // Add refresh and navigation buttons
+            buttons.push([
+                Markup.button.callback('🔄 Refresh', `refresh_sell_${tokenAddress}`),
+                Markup.button.callback('📊 Portfolio', 'portfolio')
+            ]);
+            buttons.push([Markup.button.callback('🏠 Main Menu', 'back_to_main')]);
+
+            const keyboard = Markup.inlineKeyboard(buttons);
+
+            // Set user state for selling this token
+            await this.database.setUserState(userId, 'selling_token', {
+                tokenAddress,
+                tokenSymbol,
+                tokenBalance,
+                tokenValueUSD,
+                tokenValueMON
+            });
+
+            // Send the comprehensive sell interface
+            setTimeout(async () => {
+                try {
+                    await ctx.reply(sellMessage, {
+                        parse_mode: 'Markdown',
+                        reply_markup: keyboard.reply_markup
+                    });
+                } catch (error) {
+                    this.monitoring?.logError('Failed to send sell interface after buy', error, { 
+                        userId, 
+                        tokenAddress 
+                    });
+                }
+            }, 2000); // 2 second delay after purchase success
+            
+        } catch (error) {
+            this.monitoring?.logError('Sell interface after buy failed', error, { 
+                userId: ctx.from.id, 
+                tokenAddress 
+            });
+            // Don't throw - this is not critical
+        }
+    }
+
+    /**
      * Get interface statistics
      */
     getInterfaceStats() {
@@ -464,4 +585,4 @@ Please enter the token contract address you want to buy:`;
         return await this.engine.healthCheck();
     }
 }
-module.exports = TradingInterface;
+module.exports = TradingInterface;
