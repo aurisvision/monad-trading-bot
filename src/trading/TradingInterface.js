@@ -261,9 +261,9 @@ _Proceed with the sale?_`;
             if (result.success) {
                 await this.sendSuccessMessage(ctx, result, 'sell');
             } else {
-                await ctx.editMessageText(`❌ *Sale Failed*
-${result.error}
-Please try again.`, {
+                // Escape special characters to prevent Telegram parsing errors
+                const safeError = (result.error || 'Unknown error').replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&');
+                await ctx.editMessageText(`❌ *Sale Failed*\n${safeError}\nPlease try again.`, {
                     parse_mode: 'Markdown'
                 });
             }

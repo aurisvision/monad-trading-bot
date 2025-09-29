@@ -147,25 +147,28 @@ class DirectTokenFetcher {
                 this.monitoring?.logInfo('✅ Token balance found successfully', {
                     attempt,
                     balance: result.balance,
+                    valueUSD: result.valueUSD
                 });
                 return result;
             }
 
             if (attempt < maxRetries) {
-                // Optimized wait times: 1s, 2s for faster response
-                const waitTime = attempt * 1000; // 1s, 2s
+                // Faster retry: 800ms, 1.2s for better UX
+                const waitTime = attempt * 800; // 800ms, 1600ms
                 this.monitoring?.logInfo(`⏳ Waiting ${waitTime}ms before retry...`, {});
                 await new Promise(resolve => setTimeout(resolve, waitTime));
             }
         }
 
-        // If all retries failed, return zero balance
-        this.monitoring?.logInfo('❌ All retry attempts failed, returning zero balance', {
+        // If all retries failed, return the last result (may have balance but not success flag)
+        this.monitoring?.logInfo('⚠️ Using last available result', {
             walletAddress,
-            tokenSymbol
+            tokenSymbol,
+            lastBalance: result?.balance || 0
         });
 
-        return {
+        // Return last result or fallback
+        return result || {
             success: false,
             balance: 0,
             valueUSD: 0,
@@ -198,7 +201,7 @@ class DirectTokenFetcher {
 **Hash:** \`${tradeResult.txHash}\`
 **Status:** Confirmed
 
-${balance > 0 ? 'Select percentage to sell:' : '*Balance updating... Please use refresh button.*'}`;
+Select percentage to sell:`;
     }
 }
 
