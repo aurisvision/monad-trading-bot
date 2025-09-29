@@ -211,11 +211,16 @@ _🎯 Select percentage to sell:_`;
                 await this.database.clearUserState(userId);
                 return ctx.reply('❌ Token selection expired. Please select a token again.');
             }
-            const confirmText = `💸 *Confirm Sale*
-📋 *Token:* ${tokenSymbol}
-📊 *Percentage:* ${percentage}%
-💰 *Amount:* ${(parseFloat(userState.data.balance) * percentage / 100).toFixed(6)}
-_Proceed with the sale?_`;
+            const balance = parseFloat(userState.data.tokenBalance || userState.data.balance || 0);
+            const sellAmount = (balance * percentage / 100).toFixed(6);
+            
+            const confirmText = `💸 **Confirm Sale**
+
+📋 **Token:** ${tokenSymbol}
+📊 **Percentage:** ${percentage}%
+💰 **Amount:** ${sellAmount} ${tokenSymbol}
+
+Proceed with the sale?`;
             const keyboard = Markup.inlineKeyboard([
                 [Markup.button.callback('✅ Confirm Sale', `confirm_portfolio_sell_${tokenSymbol}_${percentage}`)],
                 [Markup.button.callback('🔙 Back', `sell:${tokenSymbol}`)]
@@ -368,7 +373,7 @@ _Proceed with the purchase?_`;
                 await this.sendSuccessMessage(ctx, result, 'buy');
                 // Use unified sell interface (same as auto-buy)
                 const NavigationHandlers = require('../handlers/navigationHandlers');
-                const navHandlers = new NavigationHandlers(this.bot, this.database, this.monorailAPI, this.cacheService, this.monitoring);
+                const navHandlers = new NavigationHandlers(this.bot, this.database, this.engine.monorailAPI, this.engine.cacheService, this.monitoring);
                 await navHandlers.showComprehensiveSellInterface(ctx, tokenAddress, result);
             } else {
                 await this.sendErrorMessage(ctx, result.error);
