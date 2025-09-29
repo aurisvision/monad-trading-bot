@@ -366,8 +366,10 @@ _Proceed with the purchase?_`;
             });
             if (result.success) {
                 await this.sendSuccessMessage(ctx, result, 'buy');
-                // Show comprehensive sell interface after successful manual buy
-                await this.showSellInterfaceAfterBuy(ctx, tokenAddress, result);
+                // Use unified sell interface (same as auto-buy)
+                const NavigationHandlers = require('../handlers/navigationHandlers');
+                const navHandlers = new NavigationHandlers(this.bot, this.database, this.monorailAPI, this.cacheService, this.monitoring);
+                await navHandlers.showComprehensiveSellInterface(ctx, tokenAddress, result);
             } else {
                 await this.sendErrorMessage(ctx, result.error);
             }
@@ -456,7 +458,8 @@ Please enter the token contract address you want to buy:`;
         await ctx.editMessageText(errorMessage, { parse_mode: 'Markdown' });
     }
     /**
-     * Show sell interface after successful buy (Manual + Turbo)
+     * DEPRECATED: Show sell interface after successful buy (Manual + Turbo)
+     * Now using unified showComprehensiveSellInterface from NavigationHandlers
      */
     async showSellInterfaceAfterBuy(ctx, tokenAddress, tradeResult) {
         try {

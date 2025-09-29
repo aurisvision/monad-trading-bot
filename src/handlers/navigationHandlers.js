@@ -1129,16 +1129,19 @@ ${tokenAddress}
             let tokenValueMON = 0;
             
             try {
-                const portfolioData = await this.monorailAPI.getPortfolioValue(user.wallet_address);
-                if (portfolioData.success && portfolioData.tokens) {
-                    const tokenEntry = portfolioData.tokens.find(t => 
-                        t.address?.toLowerCase() === tokenAddress.toLowerCase()
-                    );
-                    if (tokenEntry) {
-                        tokenBalance = parseFloat(tokenEntry.balance || 0);
-                        tokenValueUSD = parseFloat(tokenEntry.value_usd || 0);
-                        tokenValueMON = parseFloat(tokenEntry.value_mon || 0);
-                    }
+                const DirectTokenFetcher = require('../utils/directTokenFetcher');
+                const directFetcher = new DirectTokenFetcher(this.monitoring);
+                const directTokenData = await directFetcher.getTokenBalanceWithRetry(
+                    user.wallet_address,
+                    tokenAddress,
+                    tokenSymbol,
+                    2
+                );
+                
+                if (directTokenData.success || directTokenData.balance > 0) {
+                    tokenBalance = directTokenData.balance;
+                    tokenValueUSD = directTokenData.valueUSD;
+                    tokenValueMON = directTokenData.valueMON;
                 }
             } catch (error) {
                 this.monitoring.logError('Failed to get token balance', error, { userId, tokenAddress });
@@ -1147,6 +1150,7 @@ ${tokenAddress}
             // Get user's custom sell percentages
             const customPercentages = userSettings?.custom_sell_percentages || '25,50,75,100';
             const percentagesArray = customPercentages.split(',').map(p => parseInt(p.trim()));
+{{ ... }}
 
             // Professional sell interface message
             const sellMessage = `**Purchase Successful**
@@ -1157,9 +1161,9 @@ ${tokenAddress}
 **Contract:** \`${tokenAddress}\`
 
 **Your Holdings:**
-**Balance:** ${tokenBalance.toFixed(6)} ${tokenSymbol}
-**Value (USD):** $${tokenValueUSD.toFixed(4)}
-**Value (MON):** ${tokenValueMON.toFixed(4)} MON
+**Balance:** ${tokenBalance.toFixed(2)} ${tokenSymbol}
+**Value (USD):** $${tokenValueUSD.toFixed(2)}
+**Value (MON):** ${tokenValueMON.toFixed(2)} MON
 
 **Transaction:**
 **Hash:** \`${tradeResult.txHash}\`
@@ -1198,46 +1202,19 @@ Select percentage to sell:`;
                 tokenValueMON
             });
 
-            // Send the comprehensive sell interface
-            setTimeout(async () => {
-                try {
-                    // Use fresh data fetcher for accurate balance
-                    const FreshDataFetcher = require("../utils/freshDataFetcher");
-                    const freshDataFetcher = new FreshDataFetcher(this.monorailAPI, this.cacheService, this.monitoring);
-                    const freshTokenData = await freshDataFetcher.getFreshTokenData(
-                        user.wallet_address, 
-                        tokenAddress, 
-                        tokenSymbol, 
-                        tokenName
-                    );
-                    
-                    // Generate updated message with fresh data
-                    const updatedSellMessage = freshDataFetcher.generateUpdatedSellMessage(
-                        freshTokenData, 
-                        tokenAddress, 
-                        tradeResult
-                    );
-                    
-                    // Update user state with fresh data
-                    await this.database.setUserState(userId, "selling_token", {
-                        tokenAddress,
-                        tokenSymbol,
-                        tokenBalance: freshTokenData.tokenBalance,
-                        tokenValueUSD: freshTokenData.tokenValueUSD,
-                        tokenValueMON: freshTokenData.tokenValueMON
-                    });
-
-                    await ctx.reply(updatedSellMessage, {
-                        parse_mode: 'Markdown',
-                        reply_markup: keyboard.reply_markup
-                    });
-                } catch (error) {
-                    this.monitoring.logError('Failed to send sell interface', error, { 
-                        userId, 
-                        tokenAddress 
-                    });
-                }
-            }, 8000); // 8 second delay for blockchain confirmation
+            // Send the comprehensive sell interface immediately
+            try {
+                await ctx.reply(sellMessage, {
+                    parse_mode: 'Markdown',
+                    reply_markup: keyboard.reply_markup
+                });
+            } catch (error) {
+                this.monitoring.logError('Failed to send sell interface', error, { 
+                    userId: ctx.from.id, 
+                    tokenAddress 
+                });
+                // Don't throw - this is not critical
+            }
             
         } catch (error) {
             this.monitoring.logError('Comprehensive sell interface failed', error, { 
@@ -1274,16 +1251,19 @@ Select percentage to sell:`;
             let tokenValueMON = 0;
             
             try {
-                const portfolioData = await this.monorailAPI.getPortfolioValue(user.wallet_address);
-                if (portfolioData.success && portfolioData.tokens) {
-                    const tokenEntry = portfolioData.tokens.find(t => 
-                        t.address?.toLowerCase() === tokenAddress.toLowerCase()
-                    );
-                    if (tokenEntry) {
-                        tokenBalance = parseFloat(tokenEntry.balance || 0);
-                        tokenValueUSD = parseFloat(tokenEntry.value_usd || 0);
-                        tokenValueMON = parseFloat(tokenEntry.value_mon || 0);
-                    }
+                const DirectTokenFetcher = require('../utils/directTokenFetcher');
+                const directFetcher = new DirectTokenFetcher(this.monitoring);
+                const directTokenData = await directFetcher.getTokenBalanceWithRetry(
+                    user.wallet_address,
+                    tokenAddress,
+                    tokenSymbol,
+                    2
+                );
+                
+                if (directTokenData.success || directTokenData.balance > 0) {
+                    tokenBalance = directTokenData.balance;
+                    tokenValueUSD = directTokenData.valueUSD;
+                    tokenValueMON = directTokenData.valueMON;
                 }
             } catch (error) {
                 this.monitoring.logError('Failed to refresh token balance', error, { userId, tokenAddress });
@@ -1302,9 +1282,9 @@ Select percentage to sell:`;
 **Contract:** \`${tokenAddress}\`
 
 **Your Holdings:**
-**Balance:** ${tokenBalance.toFixed(6)} ${tokenSymbol}
-**Value (USD):** $${tokenValueUSD.toFixed(4)}
-**Value (MON):** ${tokenValueMON.toFixed(4)} MON
+**Balance:** ${tokenBalance.toFixed(2)} ${tokenSymbol}
+**Value (USD):** $${tokenValueUSD.toFixed(2)}
+**Value (MON):** ${tokenValueMON.toFixed(2)} MON
 
 *Last Updated: ${new Date().toLocaleTimeString()}*
 
