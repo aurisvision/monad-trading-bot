@@ -43,7 +43,13 @@ class DirectTokenFetcher {
             this.monitoring?.logInfo('📡 Direct API response received', { 
                 status: response.status,
                 dataType: typeof response.data,
-                isArray: Array.isArray(response.data)
+                isArray: Array.isArray(response.data),
+                tokenCount: Array.isArray(response.data) ? response.data.length : 0,
+                firstToken: Array.isArray(response.data) && response.data.length > 0 ? {
+                    symbol: response.data[0].symbol,
+                    address: response.data[0].address,
+                    balance: response.data[0].balance
+                } : null
             });
 
             if (response.data && Array.isArray(response.data)) {
@@ -55,9 +61,10 @@ class DirectTokenFetcher {
 
                 if (tokenEntry) {
                     const balance = parseFloat(tokenEntry.balance || 0);
-                    const valueUSD = parseFloat(tokenEntry.value_usd || 0);
                     const monValue = parseFloat(tokenEntry.mon_value || 0);
                     const priceUSD = parseFloat(tokenEntry.usd_per_token || 0);
+                    // Calculate USD value from balance and price
+                    const valueUSD = balance * priceUSD;
 
                     this.monitoring?.logInfo('✅ Token found in direct API', {
                         tokenSymbol,
@@ -73,9 +80,10 @@ class DirectTokenFetcher {
                         valueUSD,
                         valueMON: monValue,
                         priceUSD,
-                        symbol: tokenEntry.symbol,
-                        name: tokenEntry.name,
-                        address: tokenEntry.address
+                        symbol: tokenEntry.symbol || tokenSymbol,
+                        name: tokenEntry.name || 'Unknown Token',
+                        address: tokenEntry.address || tokenAddress,
+                        rawData: tokenEntry // Keep raw data for debugging
                     };
                 } else {
                     this.monitoring?.logInfo('❌ Token not found in wallet', { 
