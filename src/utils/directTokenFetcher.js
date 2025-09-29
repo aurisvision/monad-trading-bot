@@ -178,6 +178,7 @@ class DirectTokenFetcher {
 
     /**
      * Generate sell message with direct API data
+     */
     generateSellMessage(tokenData, tokenAddress, tradeResult) {
         const { balance, valueUSD, valueMON, symbol, name } = tokenData;
 
