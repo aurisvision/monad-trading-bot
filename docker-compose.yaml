@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: area51-bot
+    restart: unless-stopped
+    
+    environment:
+      # Application Configuration
+      NODE_ENV: production
+      TZ: UTC
+      
+      # Database Configuration - Use Coolify environment variables
+      POSTGRES_HOST: ${POSTGRES_HOST:-localhost}
+      POSTGRES_DB: ${POSTGRES_DB:-area51_bot}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_SSL_MODE: ${POSTGRES_SSL_MODE:-disable}
+      POSTGRES_APPLICATION_NAME: ${POSTGRES_APPLICATION_NAME:-area51_bot}
+      
+      # Redis Configuration - Use Coolify environment variables
+      REDIS_HOST: ${REDIS_HOST:-localhost}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_USERNAME: ${REDIS_USERNAME:-redis}
+      REDIS_DB: ${REDIS_DB:-0}
+      REDIS_KEY_PREFIX: ${REDIS_KEY_PREFIX:-area51:}
+      
+      # Bot Configuration - Use Coolify environment variables
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      ADMIN_USER_ID: ${ADMIN_USER_ID}
+      ACCESS_CONTROL_ENABLED: ${ACCESS_CONTROL_ENABLED:-true}
+      
+      # Monad Network Configuration
+      CHAIN_ID: ${CHAIN_ID:-10143}
+      MONAD_RPC_URL: ${MONAD_RPC_URL:-https://testnet-rpc.monad.xyz}
+      
+      # Monorail Configuration
+      MONORAIL_APP_ID: ${MONORAIL_APP_ID}
+      MONORAIL_DATA_URL: ${MONORAIL_DATA_URL:-https://testnet-api.monorail.xyz/v1}
+      MONORAIL_QUOTE_URL: ${MONORAIL_QUOTE_URL:-https://testnet-pathfinder.monorail.xyz/v4}
+      
+      # Security Configuration
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      
+      # Health Check Configuration
+      HEALTH_CHECK_PORT: ${HEALTH_CHECK_PORT:-3001}
+      PORT: ${PORT:-3000}
+      
+      # Performance Configuration
+      DATABASE_POOL_SIZE: ${DATABASE_POOL_SIZE:-10}
+      DATABASE_TIMEOUT: ${DATABASE_TIMEOUT:-30000}
+      
+      # Rate Limiting
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+      RATE_LIMIT_REQUESTS_PER_MINUTE: ${RATE_LIMIT_REQUESTS_PER_MINUTE:-30}
+      
+      # Caching Configuration
+      CACHE_ENABLED: ${CACHE_ENABLED:-true}
+      BACKGROUND_REFRESH_ENABLED: ${BACKGROUND_REFRESH_ENABLED:-true}
+      
+      # Trading Configuration
+      DEFAULT_GAS_LIMIT: ${DEFAULT_GAS_LIMIT:-250000}
+      DEFAULT_GAS_PRICE_GWEI: ${DEFAULT_GAS_PRICE_GWEI:-20}
+      DEFAULT_SLIPPAGE_BPS: ${DEFAULT_SLIPPAGE_BPS:-10}
+      
+      # Monitoring Configuration
+      METRICS_ENABLED: ${METRICS_ENABLED:-true}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    
+    ports:
+      - "${PORT:-3000}:3000"
+      - "${HEALTH_CHECK_PORT:-3001}:3001"
+    
+    # Health check using curl (simpler and more reliable)
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+    
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  default:
+    driver: bridge

@@ -39,8 +39,8 @@ ENV HEALTH_CHECK_PORT=3001
 # Expose ports
 EXPOSE 3000 3001
 
-# Health check - simplified for Coolify
-HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
+# Health check - optimized for Coolify
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=5 \
     CMD curl -f http://localhost:3001/health || exit 1
 
 # Switch to non-root user
