@@ -1,33 +1,13 @@
-# Multi-stage Dockerfile for Area51 Bot Production Deployment
-# Optimized for PostgreSQL 17 and Coolify deployment
+# Optimized Dockerfile for Area51 Bot - Coolify Deployment
+# Single-stage build for faster deployment
 
-# Stage 1: Builder
-FROM node:18-alpine AS builder
+FROM node:18-alpine
 
-# Install build dependencies
+# Install runtime dependencies
 RUN apk add --no-cache \
-    python3 \
-    make \
-    g++ \
-    postgresql17-client \
-    && rm -rf /var/cache/apk/*
-
-# Set working directory
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install dependencies
-RUN npm ci --only=production && npm cache clean --force
-
-# Stage 2: Production
-FROM node:18-alpine AS production
-
-# Install runtime dependencies including PostgreSQL 17 client
-RUN apk add --no-cache \
-    postgresql17-client \
+    postgresql-client \
     tini \
+    curl \
     && rm -rf /var/cache/apk/*
 
 # Create non-root user for security
@@ -37,8 +17,11 @@ RUN addgroup -g 1001 -S nodejs && \
 # Set working directory
 WORKDIR /app
 
-# Copy dependencies from builder stage
-COPY --from=builder --chown=area51bot:nodejs /app/node_modules ./node_modules
+# Copy package files first for better caching
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production && npm cache clean --force
 
 # Copy application code
 COPY --chown=area51bot:nodejs . .
@@ -56,9 +39,9 @@ ENV HEALTH_CHECK_PORT=3001
 # Expose ports
 EXPOSE 3000 3001
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:3001/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"
+# Health check - simplified for Coolify
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
+    CMD curl -f http://localhost:3001/health || exit 1
 
 # Switch to non-root user
 USER area51bot

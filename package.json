@@ -22,7 +22,10 @@
     "bot:stop": "node scripts/stop-all-bots.js",
     "bot:restart": "npm run bot:stop && npm start",
     "bot:clean-start": "npm run bot:stop && redis-cli FLUSHALL && npm start",
-    "performance:test": "node -e \"console.log('🚀 Transaction Accelerator Performance Test'); console.log('✅ All optimizations applied successfully!');\""
+    "performance:test": "node -e \"console.log('🚀 Transaction Accelerator Performance Test'); console.log('✅ All optimizations applied successfully!');\"",
+    "deploy:health": "node -e \"require('http').get('http://localhost:3001/health', (res) => { console.log('Health Status:', res.statusCode); process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', (e) => { console.error('Health check failed:', e.message); process.exit(1) })\"",
+    "deploy:verify": "npm run deploy:health && echo 'Deployment verification successful'",
+    "coolify:start": "node src/index-modular-simple.js"
   },
   "keywords": [
     "telegram",
