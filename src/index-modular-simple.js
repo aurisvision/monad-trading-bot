@@ -42,7 +42,7 @@ const SimpleAccessHandler = require('./handlers/simpleAccessHandler');
 
 // Legacy trading optimizers - REPLACED by unified system
 // const TradingCacheOptimizer = require('./utils/tradingCacheOptimizer');
-const StateManager = require('./utils/stateManager');
+const StateManager = require('./services/StateManager');
 // const TransactionAccelerator = require('./utils/transactionAccelerator');
 
 class Area51BotModularSimple {
@@ -251,7 +251,7 @@ class Area51BotModularSimple {
         console.log('✅ Unified Trading System initialized successfully');
         
         // this.portfolioManager = new PortfolioManager(this.monorailAPI, this.database, this.redis); // Removed - using portfolioService instead
-        this.portfolioService = new (require('./portfolioService'))(this.monorailAPI, this.redis, this.monitoring);
+        this.portfolioService = new (require('./services/PortfolioService'))(this.monorailAPI, this.redis, this.monitoring);
             
         if (this.redis && this.cacheService) {
             // Initialize background refresh service
