@@ -1,25 +1,7 @@
 // Simplified Modular Area51 Bot - Working Version
-// Load environment configuration from .env file (if exists)
-const fs = require('fs');
-const path = require('path');
-
-const envPath = path.join(__dirname, '..', '.env');
-if (fs.existsSync(envPath)) {
-    require('dotenv').config();
-    console.log('🔧 Loaded environment from: .env');
-} else {
-    console.log('🔧 No .env file found, using system environment variables');
-}
-
-// Validate critical environment variables
-const requiredEnvs = ['TELEGRAM_BOT_TOKEN'];
-const missingEnvs = requiredEnvs.filter(env => !process.env[env]);
-
-if (missingEnvs.length > 0) {
-    console.error('❌ Missing required environment variables:', missingEnvs.join(', '));
-    console.error('💡 Make sure these are set in your environment or .env file');
-    process.exit(1);
-}
+// Load environment configuration from .env file
+require('dotenv').config();
+console.log('🔧 Loaded environment from: .env');
 
 const { Telegraf, Markup } = require('telegraf');
 const Database = require('./database-postgresql');
