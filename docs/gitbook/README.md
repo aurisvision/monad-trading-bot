@@ -1,52 +1,50 @@
-# Area51 Bot - Your Gateway to Monad Trading
+# Area51 Bot - Monad Trading Bot
 
-Welcome to **Area51 Bot**, the premier Telegram trading bot designed specifically for the Monad blockchain. Trade tokens, manage your portfolio, and explore DeFi opportunities directly from your Telegram chat.
+Simple Telegram bot for trading tokens on the Monad blockchain testnet.
 
 ## What is Area51 Bot?
 
-Area51 Bot is your personal trading assistant on the Monad network. Whether you're new to crypto or an experienced trader, our bot makes it simple to buy, sell, and manage tokens without leaving Telegram.
+Area51 Bot lets you trade tokens on Monad directly from Telegram. Buy, sell, and manage your portfolio with simple commands.
 
-### Key Features
+### Main Features
 
-- **Secure Wallet Management** - Create and import wallets with bank-level security
-- **Instant Trading** - Buy and sell tokens in seconds with smart gas optimization
-- **Portfolio Tracking** - Monitor your investments with real-time profit/loss updates
-- **Advanced Security** - Your funds and data are protected with multiple security layers
-- **Custom Settings** - Adjust trading preferences to match your style
-- **Simple Interface** - Easy-to-use buttons and commands for all experience levels
+- **Wallet Management** - Create or import wallets securely
+- **Token Trading** - Buy and sell tokens with one click
+- **Portfolio Tracking** - View your holdings and profit/loss
+- **Turbo Mode** - Ultra-fast trading 
+- **Auto-Buy** - Automatically buy tokens just by sending CA
+- **Custom Settings** - Adjust gas, slippage, and amounts
 
-## Why Choose Area51 Bot?
+## Key Trading Features
 
-### **Built for Monad**
-- Native integration with Monad blockchain
-- Optimized for Monad's fast transaction speeds
-- Access to the latest Monad tokens and projects
-- Real-time Monad network data and analytics
+### **Turbo Mode** 🚀
+- Maximum speed trading
+- Fixed 100 Gwei gas price
+- 20% slippage tolerance
+- Instant execution
 
-### **Professional Grade Security**
-- Military-grade encryption for all sensitive data
-- Advanced fraud protection and monitoring
-- Secure key management - your private keys never leave your device
-- Rate limiting to protect against automated attacks
+### **Auto-Buy** 🤖
+- Automatically buy tokens just by sending CA
+- Configurable MON amount
+- Separate gas and slippage settings
+- Can be combined with Turbo Mode
 
-### **Monad Network Optimized**
-- Native integration with **Monad testnet**
-- Optimized for **Monad's high-speed transactions**
-- Direct integration with **Monorail DEX aggregator**
-- Real-time **MON token price tracking**
+### **Smart Trading**
+- Integration with Monorail DEX aggregator
+- Real-time price data
+- Customizable gas and slippage
+- Portfolio profit/loss tracking
 
-## 🎮 Getting Started
+## 🎮 Quick Start
 
-Ready to start trading? Here's how to get started with Area51 Bot:
+1. **Start** - Send `/start` to the bot
+2. **Wallet** - Create or import your wallet
+3. **Fund** - Add MON tokens from testnet faucet
+4. **Trade** - Start buying and selling tokens
 
-1. **Start the Bot** - Send `/start` to [@Area51Bot](https://t.me/Area51Bot)
-2. **Create Your Wallet** - Generate a new wallet or import an existing one
-3. **Fund Your Wallet** - Add MON tokens to start trading
-4. **Start Trading** - Buy and sell tokens with just a few taps
+[**→ Detailed Setup Guide**](quick-start.md)
 
-[**→ Quick Start Guide**](quick-start.md)
-
-## 📚 Documentation Structure
+## 📚 Documentation
 
 This documentation is organized into the following sections:
 

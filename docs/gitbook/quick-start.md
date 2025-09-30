@@ -1,59 +1,44 @@
 # Quick Start Guide
 
-Get started with Area51 Bot in just 3 simple steps. This guide will have you trading on Monad in under 5 minutes.
+Get started with Area51 Bot in 3 simple steps.
 
 ## What You Need
 
-Before you begin:
-- A Telegram account
-- Some MON tokens for trading (get testnet MON from faucets)
+- Telegram account
+- MON tokens from testnet faucet
 
 ## Step 1: Start the Bot
 
-1. Open Telegram and search for **@Area51Bot**
-2. Click **Start** or send `/start`
-3. You'll see the main trading interface
+1. Send `/start` to the bot
+2. You'll see the main menu
 
 ## Step 2: Set Up Your Wallet
 
-### Option A: Generate New Wallet
-
-1. Click **💼 Wallet** from the main menu
+### Create New Wallet
+1. Click **💼 Wallet**
 2. Select **🆕 Generate New Wallet**
-3. **IMPORTANT**: Save your seed phrase securely - write it down offline
-4. Confirm your seed phrase by entering the requested words
-5. Your wallet is now created and ready to use!
+3. **SAVE YOUR SEED PHRASE** - Write it down safely
+4. Confirm the seed phrase
+5. Wallet created!
 
-*[Image placeholder: Wallet generation flow screenshots]*
-
-### Option B: Import Existing Wallet
-
-1. Click **💼 Wallet** from the main menu
+### Import Existing Wallet
+1. Click **💼 Wallet**
 2. Select **📥 Import Wallet**
 3. Enter your 12-word seed phrase
-4. Your existing wallet is now imported and ready!
+4. Wallet imported!
 
-*[Image placeholder: Wallet import flow screenshots]*
+## Step 3: Fund Your Wallet
 
-## 💰 Step 3: Fund Your Wallet
-
-### Get Your Wallet Address
 1. Go to **💼 Wallet** → **📋 Wallet Info**
 2. Copy your wallet address
-3. Send MON tokens to this address
-
-*[Image placeholder: Wallet info screen showing address]*
-
-### For Testnet (Current)
-- Use the [Monad Testnet Faucet](https://faucet.monad.xyz) to get test MON tokens
-- Paste your wallet address and request tokens
-- Tokens should arrive within a few minutes
+3. Get testnet MON from [Monad Faucet](https://faucet.monad.xyz)
+4. Send tokens to your address
 
 ## 🛒 Step 4: Your First Trade
 
 ### Buying Tokens
 
-1. From the main menu, click **🛒 Buy**
+1. From the main menu, click **categories**
 2. Browse token categories or search for a specific token
 3. Select the token you want to buy
 4. Choose your purchase amount:

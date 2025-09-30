@@ -289,23 +289,30 @@ class SecurityTest {
      * Display test results
      */
     displayResults(summary) {
-        );
-        );
-        );
+        console.log('\n🔒 Security Test Results');
+        console.log('========================');
+        console.log(`Overall Status: ${summary.overallStatus}`);
         summary.results.forEach(result => {
             const icon = result.passed ? '✅' : '❌';
             const severity = result.severity === 'CRITICAL' ? '🚨' : 
                            result.severity === 'HIGH' ? '⚠️' : 
                            result.severity === 'SKIP' ? '⏭️' : '✅';
+            console.log(`${icon} ${severity} ${result.name}: ${result.details}`);
         });
-        );
+        
+        console.log(`\nSecurity Score: ${summary.score}/100`);
         if (summary.critical > 0) {
+            console.log('🚨 CRITICAL SECURITY ISSUES FOUND!');
         } else if (summary.high > 0) {
+            console.log('⚠️ High priority security issues detected');
         } else if (summary.score >= 90) {
+            console.log('🚀 Excellent security posture');
         } else if (summary.score >= 80) {
+            console.log('✅ Good security level');
         } else {
+            console.log('🔴 Security improvements needed');
         }
-        + '\n');
+        console.log('========================\n');
     }
 }
-module.exports = SecurityTest;
+module.exports = SecurityTest;

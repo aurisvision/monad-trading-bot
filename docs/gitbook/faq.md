@@ -1,327 +1,461 @@
-# ❓ Frequently Asked Questions
+# Frequently Asked Questions
 
-Find answers to the most common questions about Area51 Bot. If you can't find what you're looking for, join our [community](https://t.me/Area51Community) or [contact support](support.md).
+Common questions and answers about Area51 Bot.
 
-## 🚀 Getting Started
+## Getting Started
 
 ### What is Area51 Bot?
-Area51 Bot is an advanced Telegram trading bot designed specifically for the Monad blockchain network. It provides secure wallet management, lightning-fast trading, and comprehensive portfolio tracking all within Telegram.
 
-### Is Area51 Bot free to use?
-Yes, Area51 Bot is completely free to use. You only pay standard network gas fees for your transactions on the Monad network.
+Area51 Bot is a Telegram trading bot for the Monad blockchain. It lets you:
+- Buy and sell tokens easily
+- Manage your crypto wallet
+- Track your portfolio
+- Trade with advanced features like Turbo Mode,Auto buy.
 
-### What blockchain networks does Area51 Bot support?
-Currently, Area51 Bot operates exclusively on the **Monad Testnet**. We're optimized for Monad's high-speed, low-cost transactions and native MON token.
+### How do I start using the bot?
 
-### How do I start using Area51 Bot?
-1. Search for [@Area51Bot](https://t.me/Area51Bot) on Telegram
-2. Send `/start` to begin
-3. Create or import a wallet
-4. Fund your wallet with MON tokens
-5. Start trading!
+1. **Find the bot** on Telegram
+2. **Send /start** to begin
+3. **Setup your wallet** - create new or import existing
+4. **Fund your wallet** with MON tokens
+5. **Start trading** - buy and sell tokens
 
-*[Image placeholder: Getting started flow]*
+### Is it free to use?
 
-## 💼 Wallet & Security
+Yes, the bot is free to use. You only pay:
+- **Gas fees** for blockchain transactions
+- **Trading fees** (small percentage on trades)
+- **Network fees** for using Monad blockchain
 
-### How secure is my wallet?
-Area51 Bot uses military-grade AES-256-GCM encryption to protect your private keys. We implement a zero-knowledge architecture, meaning we never see your unencrypted private keys or seed phrases.
+### What do I need to get started?
 
-### Can I use my existing wallet?
-Yes! You can import any existing Ethereum-compatible wallet using either:
-- Your 12-word seed phrase
-- Your private key
+**Requirements:**
+- **Telegram account** - to use the bot
+- **MON tokens** - for gas fees and trading
+- **Basic crypto knowledge** - understanding of wallets and trading
 
-### What if I lose access to the bot?
-As long as you have your seed phrase, you can:
-- Re-import your wallet to Area51 Bot
-- Use your seed phrase with any compatible wallet (MetaMask, etc.)
-- Access your funds through other Monad-compatible interfaces
+## Wallet Questions
 
-### How do I backup my wallet?
-**Critical**: Always save your 12-word seed phrase offline when creating a wallet. This is your only way to recover your funds if you lose access to the bot.
+### How do I create a wallet?
 
-### Can Area51 Bot access my funds?
-No. Area51 Bot cannot access your funds without your explicit transaction approval. Your private keys are encrypted and only you can authorize transactions.
+1. **Start the bot** with /start
+2. **Click "Setup Wallet"**
+3. **Choose "Generate New Wallet"**
+4. **Save your seed phrase** - write it down safely!
+5. **Confirm you saved it**
+6. **Wallet is ready**
 
-## 🛒 Trading
+### Can I import my existing wallet?
 
-### What tokens can I trade?
-You can trade any token available on the Monad network through the Monorail DEX aggregator. The bot provides access to:
-- Popular tokens
-- New token launches
-- Custom token addresses
+Yes! You can import using:
+- **Seed phrase** (12 words)
+- **Private key**
 
-### How fast are transactions?
-Transactions typically execute within seconds on the Monad network, depending on:
-- Network congestion
-- Gas price settings
-- Transaction complexity
+Just choose "Import Wallet" when setting up.
 
-### What are gas fees?
-Gas fees are network transaction costs paid to Monad validators. Area51 Bot offers:
-- **Standard (50 Gwei)**: Normal speed, lower cost
-- **Fast (100 Gwei)**: Faster execution, higher cost
-- **Custom**: Set your own gas price
+### What if I lose my seed phrase?
 
-### What is slippage?
-Slippage is the difference between expected and actual trade prices due to market movement. We recommend:
-- **1-3%** for stable, high-liquidity tokens
-- **5-10%** for volatile or low-liquidity tokens
-
-### Why did my transaction fail?
-Common reasons include:
-- **Insufficient gas**: Increase gas price or limit
-- **Slippage exceeded**: Increase slippage tolerance
-- **Network congestion**: Wait and retry
-- **Insufficient balance**: Ensure adequate MON balance
-
-*[Image placeholder: Transaction troubleshooting guide]*
-
-## 📊 Portfolio & Performance
-
-### How is my profit/loss calculated?
-P&L is calculated using your average purchase price compared to current market prices:
-- **Unrealized P&L**: Current profit/loss if sold now
-- **Realized P&L**: Actual profit/loss from completed sales
-
-### Why isn't my balance updating?
-Balances update automatically every 5 minutes. For immediate updates:
-- Click the **🔄 Refresh** button
-- Wait for network synchronization
-- Check transaction status on [Monad Explorer](https://testnet.monadexplorer.com)
-
-### Can I export my trading history?
-Yes, you can export your complete trading history including:
-- All buy/sell transactions
-- Gas fees and costs
-- Profit/loss calculations
-- Tax-ready reports
-
-### How accurate are the price displays?
-Prices are updated in real-time from the Monorail DEX aggregator and cached for optimal performance. Prices may have slight delays during high network activity.
-
-## ⚙️ Settings & Customization
-
-### How do I change my gas settings?
-1. Go to **⚙️ Settings** → **⛽ Gas Settings**
-2. Choose from preset options or set custom values
-3. Configure separate settings for buy and sell operations
-
-### What is Auto-Buy?
-Auto-Buy automatically purchases new tokens based on your criteria:
-- Set MON amount for automatic purchases
-- Configure gas and slippage for auto-buy
-- Enable/disable as needed
-
-### Can I set price alerts?
-Currently, Area51 Bot focuses on active trading. Price alerts and advanced notifications are planned for future updates.
-
-### How do I customize the interface?
-You can customize:
-- Display currency (MON, USD, or both)
-- Sorting preferences
-- Refresh frequency
-- Decimal precision
-
-*[Image placeholder: Settings customization options]*
-
-## 🔧 Technical Issues
-
-### The bot is not responding
-Try these steps:
-1. Check your internet connection
-2. Restart the Telegram app
-3. Send `/start` to refresh the bot
-4. Check [Monad network status](https://testnet-rpc.monad.xyz)
-
-### I'm getting rate limit errors
-Area51 Bot implements rate limiting for security:
-- **30 requests per minute** for normal operations
-- **1,000 requests per hour** maximum
-- Wait a few minutes and try again
-
-### My transaction is stuck
-If your transaction is pending:
-1. Check transaction status on [Monad Explorer](https://testnet.monadexplorer.com)
-2. Wait for network confirmation (usually 1-2 minutes)
-3. Increase gas price for faster processing
-4. Contact support if stuck for over 10 minutes
-
-### Balance shows zero but I have tokens
-This can happen due to:
-- Network synchronization delays
-- Cache refresh needed
-- RPC connection issues
-
-**Solutions**:
-- Click **🔄 Refresh**
-- Wait 5 minutes for auto-update
-- Check wallet address on explorer
-
-## 🌐 Monad Network
-
-### What is Monad?
-Monad is a high-performance, EVM-compatible blockchain designed for the future of DeFi. It offers:
-- **High Speed**: Thousands of transactions per second
-- **Low Costs**: Minimal transaction fees
-- **EVM Compatibility**: Works with Ethereum tools and wallets
-
-### Is this mainnet or testnet?
-Area51 Bot currently operates on **Monad Testnet** for testing and development purposes. Mainnet support will be added when Monad launches.
+**Important:** If you lose your seed phrase, you lose access to your wallet forever. Always:
+- **Write it down** on paper
+- **Store safely** - not on your phone/computer
+- **Make multiple copies** in safe places
+- **Never share** with anyone
 
 ### How do I get MON tokens?
-For testnet:
-- Use the [Monad Testnet Faucet](https://faucet.monad.xyz)
-- Request tokens to your wallet address
-- Tokens arrive within minutes
 
-### What is Monorail DEX?
-Monorail is the primary DEX aggregator for Monad, providing:
-- **Best Prices**: Aggregates liquidity across multiple pools
-- **MEV Protection**: Advanced protection against front-running
-- **Optimal Routing**: Finds the best trading paths
+**Ways to get MON:**
+- **Faucets** - Free testnet MON from faucets
+- **Exchanges** - Buy from crypto exchanges
+- **Friends** - Ask someone to send you some
+- **Airdrops** - Participate in Monad airdrops
 
-*[Image placeholder: Monad ecosystem overview]*
+### Is my wallet secure?
 
-## 💰 Fees & Costs
+Yes, your wallet is protected by:
+- **Encryption** - Your keys are encrypted
+- **No logging** - We don't store your sensitive data
+- **Local processing** - Keys processed securely
+- **Your control** - Only you have your seed phrase
 
-### What fees does Area51 Bot charge?
-Area51 Bot is **completely free**. You only pay:
-- **Gas fees**: Network transaction costs (typically $0.01-0.10)
-- **DEX fees**: Standard trading fees (usually 0.3%)
+## Trading Questions
 
-### Why are gas fees different each time?
-Gas fees vary based on:
-- **Network congestion**: Higher demand = higher fees
-- **Transaction complexity**: More complex operations cost more
-- **Gas price setting**: Your chosen speed setting
-- **Market conditions**: Network activity levels
+### How do I buy tokens?
 
-### Can I reduce trading costs?
-Yes, you can minimize costs by:
-- Using standard gas settings instead of fast
-- Trading during low network activity
-- Batching multiple operations
-- Using higher slippage for better prices
+1. **Go to main menu**
+2. **Click "Buy Token"**
+3. **Enter token address** or choose from list
+4. **Enter amount** to spend
+5. **Review details**
+6. **Confirm purchase**
 
-## 🛡️ Safety & Security
+### How do I sell tokens?
 
-### Is Area51 Bot safe to use?
-Yes, Area51 Bot implements enterprise-grade security:
-- **AES-256-GCM encryption** for all sensitive data
-- **Rate limiting** to prevent abuse
-- **Zero-knowledge architecture** - we never see your keys
-- **Regular security audits** and updates
+1. **Go to "Portfolio"**
+2. **Find token to sell**
+3. **Click "Sell"**
+4. **Choose percentage** (25%, 50%, 75%, 100%)
+5. **Review details**
+6. **Confirm sale**
 
-### How do I protect myself from scams?
-**Always verify**:
-- Only use the official [@Area51Bot](https://t.me/Area51Bot)
-- Never share your seed phrase or private key
-- Verify token contract addresses
-- Be cautious of too-good-to-be-true offers
+### What is Turbo Mode?
 
-### What if I suspect unauthorized access?
-Immediately:
-1. Change your Telegram password
-2. Enable Telegram 2FA
-3. Export your private key and create a new wallet
-4. Contact our security team
+**Turbo Mode** is faster trading with:
+- **Higher gas fees** - for faster confirmation
+- **Priority processing** - your transaction goes first
+- **Quick execution** - trades complete faster
 
-### Are there withdrawal limits?
-No withdrawal limits - you have complete control of your funds. However, we implement rate limiting on sensitive operations for security.
+Use for urgent trades or when network is busy.
 
-*[Image placeholder: Security best practices checklist]*
+### What is Auto-Buy?
 
-## 🔄 Updates & Maintenance
+**Auto-Buy** automatically buys tokens when:
+- **Price drops** to your target
+- **New tokens** are listed
+- **Conditions met** that you set
 
-### How often is Area51 Bot updated?
-We regularly update Area51 Bot with:
-- **Security patches**: Immediate deployment
-- **Feature updates**: Monthly releases
-- **Bug fixes**: Weekly as needed
-- **Performance improvements**: Ongoing optimization
+Set it up in trading settings.
 
-### Will my data be lost during updates?
-No, all your data is safely stored and encrypted. Updates don't affect:
-- Your wallet and private keys
-- Transaction history
-- Settings and preferences
-- Portfolio data
+### What are gas fees?
 
-### How do I know about new features?
-Stay updated through:
-- **Telegram Channel**: [@Area51Updates](https://t.me/Area51Updates)
-- **Community Group**: [@Area51Community](https://t.me/Area51Community)
-- **In-bot notifications**: Automatic update notifications
-- **Documentation**: Regular documentation updates
+**Gas fees** are:
+- **Network fees** - paid to Monad blockchain
+- **Required** for all transactions
+- **Variable** - change based on network activity
+- **Paid in MON** - deducted from your balance
 
-## 🆘 Support & Community
+### Why did my transaction fail?
+
+**Common reasons:**
+- **Low gas fees** - increase gas for next time
+- **Insufficient balance** - not enough MON for gas
+- **Network busy** - try again later
+- **Wrong address** - check token address
+- **Slippage too low** - increase slippage tolerance
+
+### What is slippage?
+
+**Slippage** is price change during your trade:
+- **Normal** - prices change constantly
+- **Higher slippage** - allows more price movement
+- **Lower slippage** - stricter price limits
+- **Recommended** - 1-5% for most trades
+
+## Portfolio Questions
+
+### How do I check my portfolio?
+
+1. **Main menu** → **"Portfolio"**
+2. **See all tokens** you own
+3. **View values** in MON and USD
+4. **Check profit/loss** for each token
+
+### Why don't I see my tokens?
+
+**Possible reasons:**
+- **Transaction not confirmed** - wait a few minutes
+- **Wrong network** - ensure you're on Monad
+- **Very small amount** - might be hidden as "dust"
+- **Need to refresh** - click refresh button
+
+### How is profit/loss calculated?
+
+**P&L calculation:**
+- **Current price** - what token is worth now
+- **Your buy price** - what you paid
+- **Difference** - profit (green) or loss (red)
+- **Percentage** - how much you gained/lost
+
+### Can I export my portfolio?
+
+Yes, you can:
+- **Copy text** - basic portfolio summary
+- **Share data** - send to yourself
+- **View history** - see past transactions
+- **Track performance** - monitor over time
+
+## Technical Questions
+
+### Why is the bot slow?
+
+**Possible causes:**
+- **Network congestion** - Monad network busy
+- **High demand** - many users trading
+- **Internet connection** - check your connection
+- **Bot maintenance** - temporary updates
+
+**Solutions:**
+- **Wait a moment** - try again
+- **Use Turbo Mode** - for faster processing
+- **Check network status** - verify Monad is working
+- **Restart bot** - send /start
+
+### What if I get an error?
+
+**Common errors:**
+
+**"Insufficient balance"**
+- Need more MON for gas fees
+- Check your MON balance
+
+**"Transaction failed"**
+- Increase gas fees
+- Try again with higher slippage
+
+**"Token not found"**
+- Check token address
+- Ensure token exists on Monad
+
+**"Network error"**
+- Check internet connection
+- Wait and try again
+
+### How do I update the bot?
+
+The bot updates automatically. You don't need to do anything.
+
+### Can I use the bot on multiple devices?
+
+Yes, but:
+- **Same wallet** - you'll access the same wallet
+- **Security** - be careful on public devices
+- **Logout** - logout when done on shared devices
+
+## Security Questions
+
+### Is my money safe?
+
+Your funds are protected by:
+- **Blockchain security** - Monad blockchain protection
+- **Wallet encryption** - your keys are encrypted
+- **Your control** - only you have access
+- **No custody** - we don't hold your funds
+
+### What if someone gets my phone?
+
+**Immediate actions:**
+- **Change passwords** - Telegram and device passwords
+- **Move funds** - transfer to new wallet
+- **Revoke access** - logout all Telegram sessions
+- **Create new wallet** - if needed
+
+### How do I report suspicious activity?
+
+**If you notice:**
+- **Unexpected transactions** - you didn't make
+- **Balance changes** - without your action
+- **Access issues** - can't access wallet
+
+**Contact support immediately** and:
+- **Stop trading** - don't make more transactions
+- **Document issues** - take screenshots
+- **Move funds** - to safety if possible
+
+### What should I never share?
+
+**Never share:**
+- **Seed phrase** - your 12-word backup
+- **Private key** - your wallet's private key
+- **Passwords** - any account passwords
+- **Screenshots** - of sensitive information
+
+## Troubleshooting
+
+### Bot not responding?
+
+**Try these steps:**
+1. **Wait a moment** - bot might be busy
+2. **Send /start** - restart the bot
+3. **Check internet** - ensure good connection
+4. **Try again** - in a few minutes
+
+### Can't access wallet?
+
+**Possible solutions:**
+- **Use seed phrase** - import wallet again
+- **Check spelling** - ensure correct seed words
+- **Try private key** - if you have it
+- **Contact support** - for help
+
+### Transactions not showing?
+
+**Check these:**
+- **Wait time** - transactions take time to confirm
+- **Network status** - check if Monad is working
+- **Transaction hash** - verify on blockchain explorer
+- **Refresh** - click refresh in portfolio
+
+### Wrong token balance?
+
+**Troubleshooting:**
+- **Refresh portfolio** - click refresh button
+- **Check transaction** - verify it was successful
+- **Network sync** - wait for network to update
+- **Contact support** - if problem persists
+
+## Support
 
 ### How do I get help?
-Multiple support options:
-- **Community**: [Telegram Community](https://t.me/Area51Community)
-- **Documentation**: This comprehensive guide
-- **Bug Reports**: [GitHub Issues](https://github.com/devYahia/area51-bot/issues)
-- **Direct Support**: Contact through official channels
+
+**Support options:**
+- **Bot commands** - use /help for basic help
+- **Documentation** - read guides and FAQs
+- **Community** - ask other users
+- **Support team** - contact for serious issues
+
+### What information should I provide?
+
+**When contacting support:**
+- **Wallet address** - your public address
+- **Transaction hash** - if about specific transaction
+- **Error messages** - exact text of errors
+- **Steps taken** - what you were trying to do
+- **Screenshots** - if helpful (no sensitive data)
+
+### How long for support response?
+
+**Response times:**
+- **Emergency issues** - Within hours
+- **General questions** - 1-2 days
+- **Technical issues** - 1-3 days
+- **Feature requests** - Varies
 
 ### Is there a community?
-Yes! Join our active community:
-- **[@Area51Community](https://t.me/Area51Community)**: General discussions and support
-- **[@Area51Updates](https://t.me/Area51Updates)**: Official announcements
-- **Trading discussions**: Share strategies and tips
-- **Technical support**: Community-driven help
 
-### How do I report bugs?
-Report bugs through:
-1. **GitHub Issues**: [Create detailed bug reports](https://github.com/devYahia/area51-bot/issues)
-2. **Community Group**: Quick community support
-3. **Direct Message**: Contact bot administrators
-4. **Security Issues**: Use secure channels for security bugs
+Yes! Join our community for:
+- **Trading tips** - learn from other users
+- **Technical help** - community support
+- **Updates** - latest news and features
+- **Discussions** - general crypto talk
 
-### Can I contribute to Area51 Bot?
-We welcome community contributions:
-- **Bug reports**: Help us identify and fix issues
-- **Feature suggestions**: Propose new functionality
-- **Documentation**: Improve guides and tutorials
-- **Testing**: Help test new features
+## Advanced Features
 
-*[Image placeholder: Community contribution guidelines]*
+### What is MEV protection?
 
-## 🔮 Future Plans
+**MEV protection** prevents:
+- **Front-running** - others copying your trades
+- **Sandwich attacks** - manipulating your trade price
+- **Bot interference** - automated trading bots affecting you
 
-### What's coming next?
-Upcoming features include:
-- **Mainnet Support**: Full Monad mainnet integration
-- **Advanced Analytics**: Enhanced portfolio analytics
-- **Price Alerts**: Customizable price notifications
-- **Mobile App**: Dedicated mobile application
-- **Multi-Chain**: Support for additional blockchains
+The bot automatically protects you.
 
-### Will Area51 Bot always be free?
-Yes, our core trading functionality will always remain free. We may introduce premium features in the future, but basic trading will never require payment.
+### Can I set trading limits?
 
-### How can I stay informed about updates?
-- Follow [@Area51Updates](https://t.me/Area51Updates)
-- Join [@Area51Community](https://t.me/Area51Community)
-- Check this documentation regularly
-- Enable in-bot notifications
+Yes, you can set:
+- **Daily limits** - maximum trading per day
+- **Transaction limits** - maximum per trade
+- **Slippage limits** - maximum price change
+- **Gas limits** - maximum gas fees
+
+### What about tax reporting?
+
+**For taxes:**
+- **Track trades** - keep records of all transactions
+- **Export data** - get transaction history
+- **Consult professional** - talk to tax advisor
+- **Local laws** - follow your country's rules
+
+### Can I trade multiple tokens at once?
+
+Currently:
+- **One trade at a time** - for safety and simplicity
+- **Portfolio view** - see all tokens together
+- **Quick switching** - easy to trade different tokens
+- **Future updates** - may add batch trading
+
+## Monad Network
+
+### What is Monad?
+
+**Monad** is:
+- **New blockchain** - fast and efficient
+- **EVM compatible** - works with Ethereum tools
+- **Low fees** - cheaper transactions
+- **High speed** - faster confirmations
+
+### Is this testnet or mainnet?
+
+Currently **testnet only**:
+- **Test environment** - for testing and learning
+- **Free tokens** - get test MON from faucets
+- **No real value** - tokens have no monetary value
+- **Practice trading** - learn without risk
+
+### When is mainnet?
+
+**Mainnet launch:**
+- **Coming soon** - Monad team is working on it
+- **Stay updated** - follow official announcements
+- **Bot ready** - we'll support mainnet when available
+- **Migration** - easy transition from testnet
+
+### How do I get testnet MON?
+
+**Testnet MON sources:**
+- **Faucets** - free testnet tokens
+- **Community** - ask in Monad community
+- **Developers** - sometimes distribute for testing
+- **Bot features** - some bots give test tokens
+
+## Future Updates
+
+### What new features are coming?
+
+**Planned features:**
+- **More tokens** - support for more token types
+- **Advanced charts** - better price visualization
+- **Social features** - share trades and tips
+- **Mobile app** - dedicated mobile application
+
+### How do I suggest features?
+
+**Feature requests:**
+- **Community feedback** - share in community groups
+- **Support contact** - send suggestions to support
+- **User testing** - participate in beta testing
+- **Voting** - vote on proposed features
+
+### Will the bot always be free?
+
+**Current plan:**
+- **Basic features** - always free
+- **Premium features** - may have paid options
+- **No hidden fees** - transparent pricing
+- **User choice** - optional premium features
+
+## Legal and Compliance
+
+### Is this legal?
+
+**Legal status:**
+- **Varies by country** - check local laws
+- **Testnet use** - generally allowed for testing
+- **Educational purpose** - learning about crypto
+- **Your responsibility** - follow local regulations
+
+### What about KYC?
+
+**Know Your Customer:**
+- **Not required** - for testnet use
+- **May change** - for mainnet or regulations
+- **Privacy focused** - minimal data collection
+- **Compliance ready** - prepared for requirements
+
+### Data privacy?
+
+**Your privacy:**
+- **Minimal data** - only necessary information
+- **Encrypted storage** - all data protected
+- **No selling** - we don't sell your data
+- **Your control** - you control your information
 
 ---
 
-## 🤔 Still Have Questions?
+## Still Have Questions?
 
-If you couldn't find the answer you're looking for:
+If you can't find your answer here:
+- **Use /help** in the bot
+- **Check other guides** in documentation
+- **Ask the community** for help
+- **Contact support** for assistance
 
-- **📱 Join our Community**: [Area51 Community](https://t.me/Area51Community)
-- **📧 Contact Support**: [Support Channels](support.md)
-- **🐛 Report Issues**: [GitHub Issues](https://github.com/devYahia/area51-bot/issues)
-- **📚 Read More**: [Complete Documentation](README.md)
-
----
-
-**We're here to help!** 🚀
-
-Our community and support team are always ready to assist you with any questions or issues.
-
-*Last updated: September 2025*
+**Remember:** Never share your seed phrase or private keys with anyone!

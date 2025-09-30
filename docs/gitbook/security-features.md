@@ -1,340 +1,325 @@
-# 🛡️ Security Features
+# Security Features
 
-Area51 Bot implements military-grade security measures to protect your assets and personal information. Our multi-layered security architecture ensures your funds remain safe while providing a seamless trading experience.
+Learn how Area51 Bot keeps your crypto safe and secure.
 
-## 🔐 Security Architecture Overview
+## Security Overview
 
-### Enterprise-Grade Protection
-- **AES-256-GCM Encryption**: Military-grade encryption for all sensitive data
-- **Zero-Knowledge Architecture**: We never see your unencrypted private keys
-- **Multi-Layer Authentication**: Multiple security checkpoints for sensitive operations
-- **Rate Limiting**: Advanced protection against abuse and attacks
-- **Secure Logging**: Prevents exposure of sensitive information in logs
+### How We Protect You
 
-### Security Certifications & Standards
-- **Industry Best Practices**: Following OWASP security guidelines
-- **Encryption Standards**: NIST-approved encryption algorithms
-- **Key Management**: Secure key derivation and storage protocols
-- **Audit Trail**: Comprehensive logging for security monitoring
+**Core Security Features:**
+- **Encrypted storage** - Your private keys are encrypted
+- **No key logging** - We never log your sensitive data
+- **Secure processing** - Keys processed locally and securely
+- **Rate limiting** - Prevents unauthorized access attempts
+- **Session security** - Secure session management
 
-*[Image placeholder: Security architecture diagram]*
+### What We Don't Store
 
-## 🔒 Encryption & Data Protection
+**Your Privacy Matters:**
+- **No seed phrases** - Never stored in plain text
+- **No private keys** - Only encrypted versions stored
+- **No transaction details** - Only necessary data kept
+- **No personal info** - Minimal data collection
 
-### Private Key Security
+## Wallet Security
 
-**Advanced Encryption Implementation**
-- **Algorithm**: AES-256-GCM with authenticated encryption
-- **Key Derivation**: PBKDF2 with 100,000 iterations
-- **User-Specific Salts**: Unique encryption parameters for each user
-- **Integrity Protection**: Authentication tags prevent data tampering
+### Private Key Protection
 
-*[Image placeholder: Encryption process visualization]*
+**How Your Keys Are Protected:**
+- **AES-256 encryption** - Military-grade encryption
+- **Unique salts** - Each user has unique encryption
+- **Secure deletion** - Old data is properly removed
+- **Memory protection** - Keys cleared from memory after use
 
-**Key Storage Security**
-- **Never Stored Plain**: Private keys never stored unencrypted
-- **Memory Protection**: Secure memory handling and cleanup
-- **Database Encryption**: Encrypted storage in PostgreSQL
-- **Backup Encryption**: All backups use additional encryption layers
+### Seed Phrase Security
 
-### Seed Phrase Protection
+**Best Practices for Seed Phrases:**
+- **Write on paper** - Never store digitally
+- **Multiple copies** - Keep backups in safe places
+- **Never share** - Don't tell anyone your seed phrase
+- **Test recovery** - Make sure your backup works
 
-**Generation Security**
-- **Cryptographic Randomness**: Uses secure random number generation
-- **BIP39 Standard**: Industry-standard seed phrase generation
-- **Entropy Validation**: Ensures sufficient randomness for security
-- **Offline Generation**: Generated locally, never transmitted
+### Access Control
 
-**Storage & Handling**
-- **Client-Side Only**: Seed phrases never leave your device unencrypted
-- **Secure Display**: Limited-time display with auto-hide features
-- **No Cloud Storage**: Never stored in cloud or remote servers
-- **User Responsibility**: You maintain complete control of your seed phrase
+**Preventing Unauthorized Access:**
+- **Rate limiting** - Limits on failed attempts
+- **Session timeouts** - Automatic logout after inactivity
+- **Device verification** - Checks for suspicious activity
+- **Audit logging** - Tracks access attempts (without exposing data)
 
-## 🚨 Rate Limiting & Abuse Prevention
+## Transaction Security
 
-### Intelligent Rate Limiting
+### Safe Trading
 
-Based on our analysis, Area51 Bot implements sophisticated rate limiting:
+**Transaction Protection:**
+- **Address verification** - Double-check recipient addresses
+- **Amount confirmation** - Confirm amounts before sending
+- **Gas estimation** - Accurate fee calculations
+- **Transaction preview** - Review before confirming
 
-**General Usage Limits**
-- **30 requests per minute** per user for normal operations
-- **1,000 requests per hour** maximum for any user
-- **Dynamic adjustment** based on network conditions and user behavior
+### Slippage Protection
 
-*[Image placeholder: Rate limiting dashboard]*
+**Protecting Against Price Changes:**
+- **Slippage limits** - Maximum price change allowed
+- **Price impact warnings** - Alerts for large trades
+- **Market monitoring** - Real-time price tracking
+- **Auto-adjustment** - Smart slippage settings
 
-**Sensitive Operations Limits**
-- **Private Key Access**: 10 attempts per hour
-- **Private Key Export**: 5 exports per hour
-- **Wallet Operations**: 5 imports/exports per hour
-- **Large Transactions**: 20 per hour for high-value trades
+### MEV Protection
 
-### Anti-Abuse Measures
+**Front-Running Protection:**
+- **Private mempools** - Transactions sent privately
+- **Gas optimization** - Efficient gas usage
+- **Timing protection** - Strategic transaction timing
+- **Route optimization** - Best execution paths
 
-**Suspicious Activity Detection**
-- **Pattern Recognition**: Identifies unusual usage patterns
-- **Geographic Monitoring**: Detects access from unusual locations
-- **Velocity Checks**: Monitors rapid successive operations
-- **Behavioral Analysis**: Learns normal user behavior patterns
+## Bot Security
 
-**Automated Protection**
-- **Temporary Blocks**: Automatic temporary restrictions for suspicious activity
-- **Progressive Delays**: Increasing delays for repeated failed attempts
-- **Account Monitoring**: Enhanced monitoring for flagged accounts
-- **Manual Review**: Human review for complex security incidents
+### Telegram Security
 
-## 🔍 Access Control & Authentication
+**Platform Security:**
+- **Encrypted messaging** - All messages encrypted
+- **Session management** - Secure bot sessions
+- **Command validation** - All commands verified
+- **Input sanitization** - Prevents malicious input
 
-### Multi-Layer Authentication
+### Data Protection
 
-**Primary Authentication**
-- **Telegram Integration**: Secure Telegram user verification
-- **Session Management**: Secure session handling and timeout
-- **Device Fingerprinting**: Identifies and remembers trusted devices
-- **Two-Factor Ready**: Compatible with Telegram 2FA
+**Your Data Is Safe:**
+- **Minimal collection** - Only necessary data stored
+- **Encrypted storage** - All data encrypted at rest
+- **Secure transmission** - Encrypted data transfer
+- **Regular cleanup** - Old data automatically removed
 
-*[Image placeholder: Authentication flow diagram]*
+### Error Handling
 
-**Secondary Verification**
-- **Operation Confirmation**: Additional confirmation for sensitive operations
-- **Time-Based Restrictions**: Configurable time windows for operations
-- **IP Monitoring**: Tracks and validates access locations
-- **User Verification**: Identity confirmation for high-risk operations
+**Safe Error Management:**
+- **No sensitive data** in error messages
+- **Generic responses** - Don't reveal system details
+- **Secure logging** - Errors logged without exposing keys
+- **Graceful failures** - Safe handling of errors
 
-### Permission System
-
-**Granular Permissions**
-- **Operation-Specific**: Different permissions for different operations
-- **Risk-Based Access**: Higher security for higher-risk operations
-- **Time-Limited Access**: Temporary permissions for specific operations
-- **Audit Trail**: Complete log of all permission grants and uses
+## Network Security
 
-## 🛡️ Transaction Security
+### Monad Network
 
-### Secure Transaction Processing
+**Blockchain Security:**
+- **Network validation** - Verify network connections
+- **RPC security** - Secure blockchain communication
+- **Node reliability** - Multiple backup nodes
+- **Transaction verification** - Confirm all transactions
 
-**Pre-Transaction Validation**
-- **Balance Verification**: Ensures sufficient funds before processing
-- **Address Validation**: Verifies all addresses are valid and safe
-- **Amount Limits**: Enforces reasonable transaction limits
-- **Gas Estimation**: Accurate gas estimation prevents failed transactions
+### API Security
 
-*[Image placeholder: Transaction validation process]*
+**External API Protection:**
+- **Rate limiting** - Prevents API abuse
+- **Authentication** - Secure API access
+- **Data validation** - Verify all external data
+- **Fallback systems** - Backup data sources
 
-**Transaction Monitoring**
-- **Real-Time Monitoring**: Live monitoring of all transactions
-- **Anomaly Detection**: Identifies unusual transaction patterns
-- **Fraud Prevention**: Blocks potentially fraudulent transactions
-- **Recovery Assistance**: Help with failed or stuck transactions
+## User Security Tips
 
-### Smart Contract Security
+### Daily Security
 
-**Contract Interaction Safety**
-- **Verified Contracts**: Only interact with verified smart contracts
-- **Audit Status**: Check audit status of tokens and contracts
-- **Risk Assessment**: Evaluate contract risks before interaction
-- **Blacklist Protection**: Avoid known malicious contracts
-
-**MEV Protection**
-- **Front-Running Protection**: Advanced protection against MEV attacks
-- **Private Mempool**: Option to use private transaction pools
-- **Slippage Protection**: Configurable slippage limits
-- **Sandwich Attack Prevention**: Detection and prevention of sandwich attacks
+**Protect Yourself:**
+- **Strong passwords** - Use secure device passwords
+- **2FA enabled** - Enable two-factor authentication on Telegram
+- **Updated software** - Keep apps and OS updated
+- **Secure networks** - Avoid public WiFi for trading
 
-## 📊 Security Monitoring & Alerts
+### Trading Security
 
-### Real-Time Security Monitoring
+**Safe Trading Practices:**
+- **Start small** - Begin with small amounts
+- **Double-check** - Verify all transaction details
+- **Monitor activity** - Check your transactions regularly
+- **Set limits** - Don't risk more than you can afford
 
-**System Monitoring**
-- **24/7 Monitoring**: Continuous security monitoring
-- **Threat Detection**: Real-time threat identification
-- **Incident Response**: Automated response to security incidents
-- **Performance Monitoring**: Security impact on system performance
+### Wallet Security
 
-*[Image placeholder: Security monitoring dashboard]*
+**Protect Your Wallet:**
+- **Backup safely** - Store seed phrase securely
+- **Never share** - Don't share keys or seed phrases
+- **Test recovery** - Ensure backups work
+- **Multiple backups** - Store in different safe places
 
-**User Activity Monitoring**
-- **Login Tracking**: Monitor all login attempts and sessions
-- **Operation Logging**: Log all user operations for security review
-- **Anomaly Alerts**: Immediate alerts for unusual activity
-- **Geographic Tracking**: Monitor access from different locations
+## Security Alerts
 
-### Security Alerts & Notifications
+### Warning Signs
 
-**Automated Alerts**
-- **Suspicious Activity**: Immediate alerts for unusual behavior
-- **Failed Attempts**: Notifications for failed login or operation attempts
-- **New Device Access**: Alerts when accessing from new devices
-- **Large Transactions**: Notifications for significant transactions
-
-**User Notifications**
-- **Security Updates**: Important security announcements
-- **Policy Changes**: Notifications of security policy updates
-- **Incident Reports**: Transparent reporting of any security incidents
-- **Best Practice Tips**: Regular security education and tips
+**Red Flags to Watch For:**
+- **Unexpected transactions** - You didn't authorize
+- **Balance changes** - Without your action
+- **Access issues** - Can't access your wallet
+- **Suspicious messages** - Asking for sensitive info
 
-## 🔧 Security Settings & Configuration
+### What to Do
 
-### User Security Controls
+**If You Suspect Issues:**
+1. **Stop trading** immediately
+2. **Check transactions** for unauthorized activity
+3. **Move funds** to a new wallet if needed
+4. **Contact support** for help
+5. **Report issues** to the team
 
-**Privacy Settings**
-- **Data Visibility**: Control what information is visible
-- **Activity Logging**: Configure activity logging preferences
-- **Notification Settings**: Customize security alert preferences
-- **Session Management**: Control active sessions and timeouts
-
-*[Image placeholder: Security settings interface]*
-
-**Advanced Security Options**
-- **Enhanced Verification**: Enable additional security checks
-- **Restricted Mode**: Limit operations to essential functions only
-- **Time-Based Access**: Set specific hours for account access
-- **Geographic Restrictions**: Limit access to specific regions
-
-### Security Audit Features
-
-**Personal Security Audit**
-- **Security Score**: Overall security rating for your account
-- **Vulnerability Assessment**: Identify potential security weaknesses
-- **Recommendation Engine**: Personalized security improvement suggestions
-- **Compliance Check**: Verify adherence to security best practices
+### Emergency Response
 
-**Activity Review**
-- **Login History**: Complete history of account access
-- **Operation History**: Detailed log of all operations performed
-- **Security Events**: Timeline of security-related events
-- **Risk Assessment**: Ongoing risk evaluation and scoring
+**Immediate Actions:**
+- **Secure your accounts** - Change passwords
+- **Move funds** to safety
+- **Document issues** - Take screenshots
+- **Get help** - Contact support immediately
 
-## 🚨 Incident Response & Recovery
+## Security Settings
 
-### Security Incident Handling
+### Bot Settings
 
-**Immediate Response**
-- **Automatic Lockdown**: Immediate account protection for detected threats
-- **Incident Isolation**: Isolate affected accounts to prevent spread
-- **Forensic Analysis**: Detailed analysis of security incidents
-- **Recovery Planning**: Structured approach to account recovery
+**Configure Security:**
+- **Session timeouts** - How long before auto-logout
+- **Confirmation requirements** - Extra confirmations for large trades
+- **Alert preferences** - What notifications you want
+- **Privacy settings** - Control data sharing
 
-*[Image placeholder: Incident response workflow]*
+### Trading Limits
 
-**User Support**
-- **24/7 Security Support**: Round-the-clock security assistance
-- **Incident Reporting**: Easy reporting of security concerns
-- **Recovery Assistance**: Help with account recovery and security restoration
-- **Communication**: Clear communication during security incidents
+**Set Safe Limits:**
+- **Daily limits** - Maximum trading per day
+- **Transaction limits** - Maximum per transaction
+- **Slippage limits** - Maximum price change allowed
+- **Gas limits** - Maximum gas fees
 
-### Account Recovery
+### Notification Settings
 
-**Secure Recovery Process**
-- **Identity Verification**: Multi-step identity verification for recovery
-- **Backup Validation**: Verification of backup seed phrases or keys
-- **Security Assessment**: Comprehensive security review before restoration
-- **Enhanced Monitoring**: Increased monitoring after recovery
+**Stay Informed:**
+- **Transaction alerts** - Notifications for all trades
+- **Security alerts** - Warnings for suspicious activity
+- **Balance alerts** - Notifications for balance changes
+- **System alerts** - Important system updates
 
-**Recovery Options**
-- **Seed Phrase Recovery**: Standard recovery using seed phrase
-- **Partial Recovery**: Recovery of specific account elements
-- **Emergency Recovery**: Expedited recovery for urgent situations
-- **Assisted Recovery**: Human-assisted recovery for complex cases
+## Advanced Security
 
-## 📚 Security Best Practices
+### Multi-Layer Protection
 
-### User Security Guidelines
+**Defense in Depth:**
+- **Encryption layers** - Multiple levels of encryption
+- **Access controls** - Various security checks
+- **Monitoring systems** - Continuous security monitoring
+- **Backup systems** - Redundant security measures
 
-**Essential Security Practices**
-- **Seed Phrase Security**: Never share or store digitally
-- **Device Security**: Use secure devices and networks
-- **Regular Updates**: Keep Telegram and devices updated
-- **Phishing Awareness**: Recognize and avoid phishing attempts
+### Security Auditing
 
-*[Image placeholder: Security best practices checklist]*
+**Regular Security Checks:**
+- **Code audits** - Regular security reviews
+- **Penetration testing** - Testing for vulnerabilities
+- **Security updates** - Regular security improvements
+- **Community feedback** - User-reported security issues
 
-**Advanced Security Measures**
-- **Hardware Wallets**: Consider hardware wallet integration
-- **Multi-Device Strategy**: Distribute risk across multiple devices
-- **Regular Audits**: Periodically review account security
-- **Backup Strategies**: Maintain multiple secure backups
+### Compliance
 
-### Common Security Threats
+**Security Standards:**
+- **Industry best practices** - Following security standards
+- **Regular updates** - Keeping security current
+- **Documentation** - Clear security procedures
+- **Training** - Team security awareness
 
-**Phishing Attacks**
-- **Fake Bots**: Beware of imposter bots and websites
-- **Social Engineering**: Recognize manipulation attempts
-- **Link Verification**: Always verify links and addresses
-- **Official Channels**: Only use official communication channels
+## Common Threats
 
-**Technical Threats**
-- **Malware**: Protect against keyloggers and screen capture malware
-- **Network Attacks**: Use secure networks and VPNs when necessary
-- **Device Compromise**: Secure your devices against unauthorized access
-- **Social Media**: Be cautious about sharing trading information
+### Phishing Attacks
 
-## 🔍 Security Audits & Transparency
+**Protect Against Fake Messages:**
+- **Verify sources** - Only trust official channels
+- **Check URLs** - Ensure you're on the right bot
+- **Never share** - Don't give out sensitive info
+- **Report suspicious** - Report fake messages
 
-### Regular Security Audits
+### Social Engineering
 
-**Internal Audits**
-- **Code Reviews**: Regular security code reviews
-- **Penetration Testing**: Simulated attacks to test defenses
-- **Vulnerability Scanning**: Automated security vulnerability detection
-- **Compliance Audits**: Regular compliance with security standards
+**Protect Against Manipulation:**
+- **Be skeptical** - Question unexpected requests
+- **Verify identity** - Confirm who you're talking to
+- **Take time** - Don't rush important decisions
+- **Get help** - Ask for second opinions
 
-**External Audits**
-- **Third-Party Security Audits**: Independent security assessments
-- **Bug Bounty Programs**: Incentivized security research
-- **Community Review**: Open-source components for community review
-- **Certification Processes**: Industry security certifications
+### Technical Attacks
 
-### Transparency Reports
+**Protect Against Hacking:**
+- **Keep updated** - Update all software regularly
+- **Use antivirus** - Protect your devices
+- **Secure networks** - Use trusted internet connections
+- **Monitor activity** - Watch for unusual behavior
 
-**Security Metrics**
-- **Incident Statistics**: Regular reporting of security incidents
-- **Response Times**: Average response times for security issues
-- **Success Rates**: Security measure effectiveness metrics
-- **User Education**: Security awareness and education metrics
+## Security Best Practices
 
-*[Image placeholder: Security transparency dashboard]*
+### For Beginners
 
-## 🆘 Security Support & Resources
+**Start Safe:**
+- **Learn basics** - Understand crypto security
+- **Start small** - Use small amounts while learning
+- **Ask questions** - Don't hesitate to ask for help
+- **Take time** - Don't rush into trading
 
-### Getting Security Help
+### For Advanced Users
 
-**Immediate Security Concerns**
-- **Emergency Contact**: Direct security team contact for urgent issues
-- **Incident Reporting**: Secure channels for reporting security incidents
-- **24/7 Support**: Round-the-clock security assistance
-- **Priority Handling**: Expedited handling of security-related issues
+**Enhanced Security:**
+- **Hardware wallets** - Consider cold storage
+- **Multiple wallets** - Diversify storage
+- **Regular audits** - Check your security regularly
+- **Stay informed** - Keep up with security news
 
-**Educational Resources**
-- **Security Guides**: Comprehensive security education materials
-- **Video Tutorials**: Visual guides for security best practices
-- **Community Forums**: Peer-to-peer security discussions
-- **Regular Updates**: Ongoing security education and updates
+### For Everyone
 
-### Security Community
+**Universal Rules:**
+- **Never share** seed phrases or private keys
+- **Backup everything** - Multiple secure backups
+- **Stay vigilant** - Always be security-conscious
+- **Keep learning** - Security is an ongoing process
 
-**Community Security**
-- **User Reporting**: Community-driven security threat reporting
-- **Shared Intelligence**: Collaborative threat intelligence sharing
-- **Security Discussions**: Open discussions about security practices
-- **Peer Support**: Community support for security questions
+## Getting Security Help
 
----
+### When to Get Help
 
-## 🎯 Security Commitment
+**Contact Support For:**
+- **Suspicious activity** - Unusual account behavior
+- **Lost access** - Can't access your wallet
+- **Security questions** - Need security advice
+- **Technical issues** - Problems with the bot
 
-Area51 Bot is committed to maintaining the highest security standards:
+### How to Get Help
 
-- **Continuous Improvement**: Ongoing security enhancements and updates
-- **User Education**: Comprehensive security education and awareness
-- **Transparency**: Open communication about security measures and incidents
-- **Innovation**: Adoption of latest security technologies and practices
+**Support Channels:**
+- **Bot commands** - Use /help for basic help
+- **Documentation** - Check security guides
+- **Community** - Ask experienced users
+- **Support team** - Contact for serious issues
 
----
+### Emergency Contacts
 
-**Your Security is Our Priority** 🛡️
+**Urgent Security Issues:**
+- **Immediate response** - Contact support immediately
+- **Provide details** - Explain the security issue
+- **Follow instructions** - Do what support recommends
+- **Stay calm** - Don't panic, help is available
 
-We implement enterprise-grade security so you can trade with confidence and peace of mind.
+## Security Updates
 
-*Last updated: September 2025*
+### Staying Current
+
+**Keep Security Updated:**
+- **Bot updates** - Bot automatically updates
+- **Documentation** - Check for security updates
+- **News** - Follow security announcements
+- **Community** - Learn from other users
+
+### New Threats
+
+**Evolving Security:**
+- **New attack methods** - Threats constantly evolve
+- **Updated defenses** - We continuously improve security
+- **User education** - Learn about new threats
+- **Community alerts** - Share security information
+
+## Next Steps
+
+- **Setup Wallet**: [Wallet Services](wallet-services.md)
+- **Start Trading**: [Trading Services](trading-services.md)
+- **Monitor Portfolio**: [Portfolio Management](portfolio-management.md)

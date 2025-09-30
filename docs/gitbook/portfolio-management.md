@@ -1,365 +1,193 @@
-# 📊 Portfolio Management
-
-Area51 Bot provides comprehensive portfolio management tools to track, analyze, and optimize your crypto investments on the Monad network. Monitor your performance in real-time with advanced analytics and insights.
-
-## 🎯 Portfolio Overview
-
-### Real-Time Portfolio Tracking
-- **Live Balance Updates**: Real-time token balances and values
-- **Profit/Loss Calculations**: Instant P&L tracking for all positions
-- **USD Valuations**: Current USD value of all holdings
-- **Performance Metrics**: ROI, percentage gains, and time-based returns
-
-### Portfolio Dashboard Features
-- **Total Portfolio Value**: Combined value of all holdings in MON and USD
-- **Asset Allocation**: Visual breakdown of portfolio composition
-- **Top Performers**: Best and worst performing tokens
-- **Recent Activity**: Latest transactions and changes
-
-*[Image placeholder: Portfolio dashboard overview]*
-
-## 📈 Viewing Your Portfolio
-
-### Access Portfolio Interface
-
-1. **Main Portfolio View**
-   - From main menu → **📊 Portfolio**
-   - Comprehensive overview of all holdings
-   - Real-time data with automatic updates
-
-*[Image placeholder: Main portfolio interface]*
-
-2. **Portfolio Information Display**
-   - **Token Symbol & Name**: Clear identification of each asset
-   - **Current Balance**: Exact token amounts held
-   - **USD Value**: Current market value in USD
-   - **MON Value**: Value in native MON tokens
-   - **24h Change**: Price movement in last 24 hours
-   - **Profit/Loss**: Gain or loss since purchase
-   - **ROI Percentage**: Return on investment percentage
-
-### Portfolio Pagination
-
-For users with many tokens:
-- **Page Navigation**: Browse through multiple pages of holdings
-- **Items per Page**: Configurable display options
-- **Search Function**: Find specific tokens quickly
-- **Sort Options**: Sort by value, P&L, or alphabetically
-
-*[Image placeholder: Portfolio pagination controls]*
-
-### Refresh & Updates
-
-- **Manual Refresh**: Click **🔄 Refresh** for latest data
-- **Auto-Update**: Automatic background updates every 5 minutes
-- **Cache Optimization**: Fast loading with smart caching
-- **Network Status**: Real-time connection status indicators
-
-## 💰 Profit & Loss Tracking
-
-### Real-Time P&L Calculations
-
-1. **Individual Token P&L**
-   - **Purchase Price**: Average buy price for each token
-   - **Current Price**: Real-time market price
-   - **Unrealized P&L**: Current profit/loss if sold now
-   - **Realized P&L**: Profit/loss from completed sales
-
-*[Image placeholder: Individual token P&L display]*
-
-2. **Portfolio-Wide Analytics**
-   - **Total Unrealized P&L**: Combined unrealized gains/losses
-   - **Total Realized P&L**: Combined realized gains/losses
-   - **Overall ROI**: Portfolio-wide return on investment
-   - **Performance Trends**: Historical performance tracking
-
-### P&L Calculation Methods
-
-**Average Cost Basis**
-- Calculates average purchase price across multiple buys
-- Accounts for different purchase amounts and prices
-- Updates automatically with each new purchase
-
-**FIFO (First In, First Out)**
-- Sells oldest tokens first for tax optimization
-- Tracks individual purchase lots
-- Provides detailed cost basis reporting
-
-## 📊 Portfolio Analytics
-
-### Performance Metrics
-
-1. **Time-Based Performance**
-   - **24h Performance**: Daily gains/losses
-   - **7d Performance**: Weekly performance trends
-   - **30d Performance**: Monthly performance analysis
-   - **All-Time Performance**: Complete historical performance
-
-*[Image placeholder: Performance metrics dashboard]*
-
-2. **Risk Analytics**
-   - **Portfolio Volatility**: Risk assessment of holdings
-   - **Concentration Risk**: Exposure to individual tokens
-   - **Correlation Analysis**: How tokens move relative to each other
-   - **Diversification Score**: Portfolio diversification rating
-
-### Asset Allocation
-
-**Visual Breakdown**
-- **Pie Charts**: Visual representation of portfolio composition
-- **Percentage Allocation**: Exact percentage of each holding
-- **Value Distribution**: Holdings sorted by value
-- **Rebalancing Suggestions**: Recommendations for optimization
-
-*[Image placeholder: Asset allocation pie chart]*
-
-**Allocation Categories**
-- **By Token**: Individual token percentages
-- **By Sector**: DeFi, Gaming, Infrastructure, etc.
-- **By Market Cap**: Large, mid, small cap distribution
-- **By Risk Level**: Conservative, moderate, aggressive holdings
-
-## 🔍 Individual Token Analysis
-
-### Detailed Token View
-
-Click on any token for comprehensive analysis:
-
-1. **Token Information**
-   - **Contract Address**: Verified contract information
-   - **Market Data**: Price, market cap, volume
-   - **Your Holdings**: Exact amounts and values
-   - **Purchase History**: All buy/sell transactions for this token
-
-*[Image placeholder: Individual token analysis screen]*
-
-2. **Performance Analysis**
-   - **Price Chart**: Historical price movements
-   - **Your Performance**: Personal P&L for this token
-   - **Benchmark Comparison**: Performance vs. MON or market
-   - **Key Metrics**: ROI, holding period, average cost
-
-### Transaction History
-
-**Complete Transaction Record**
-- **Buy Transactions**: All purchase records with prices and amounts
-- **Sell Transactions**: All sale records with P&L calculations
-- **Transaction Fees**: Gas costs and trading fees
-- **Net Performance**: Performance after all fees
-
-*[Image placeholder: Transaction history for individual token]*
-
-**Transaction Details**
-- **Timestamp**: Exact time of each transaction
-- **Transaction Hash**: Blockchain verification link
-- **Gas Used**: Actual gas consumption
-- **Status**: Confirmed, pending, or failed transactions
-
-## 📱 Portfolio Management Tools
-
-### Portfolio Actions
-
-1. **Quick Actions**
-   - **Sell Tokens**: Direct access to sell interface
-   - **Add to Watchlist**: Track tokens without owning
-   - **Set Alerts**: Price and performance notifications
-   - **Share Portfolio**: Export portfolio summary
-
-*[Image placeholder: Portfolio quick actions menu]*
-
-2. **Bulk Operations**
-   - **Sell Multiple**: Sell several tokens at once
-   - **Rebalance**: Automatic portfolio rebalancing
-   - **Export Data**: Download portfolio data
-   - **Tax Reporting**: Generate tax-ready reports
-
-### Portfolio Optimization
-
-**Rebalancing Tools**
-- **Target Allocation**: Set desired percentage for each token
-- **Automatic Rebalancing**: Maintain target allocations
-- **Threshold Triggers**: Rebalance when allocations drift
-- **Cost-Aware Rebalancing**: Consider gas costs in rebalancing
-
-**Risk Management**
-- **Position Limits**: Maximum allocation per token
-- **Stop-Loss Simulation**: Track when to consider selling
-- **Diversification Alerts**: Warnings for over-concentration
-- **Performance Alerts**: Notifications for significant changes
-
-## 📈 Advanced Portfolio Features
-
-### Portfolio Comparison
-
-**Benchmark Analysis**
-- **MON Performance**: Compare against MON token
-- **Market Index**: Compare against broader market
-- **Custom Benchmarks**: Set your own comparison metrics
-- **Peer Comparison**: Anonymous comparison with other users
-
-*[Image placeholder: Portfolio benchmark comparison]*
-
-### Historical Analysis
-
-**Time-Series Data**
-- **Portfolio Value Over Time**: Historical value charts
-- **Allocation Changes**: How portfolio composition changed
-- **Performance Attribution**: Which tokens drove performance
-- **Volatility Analysis**: Portfolio risk over time
-
-### Export & Reporting
-
-**Data Export Options**
-- **CSV Export**: Spreadsheet-compatible data
-- **PDF Reports**: Professional portfolio reports
-- **Tax Documents**: Tax-ready transaction summaries
-- **API Access**: Programmatic data access for advanced users
-
-*[Image placeholder: Export options menu]*
-
-## 🎯 Portfolio Strategies
-
-### Investment Approaches
-
-**Dollar-Cost Averaging (DCA)**
-- **Regular Investments**: Consistent investment amounts
-- **Time-Based Buying**: Scheduled purchase intervals
-- **Volatility Smoothing**: Reduce impact of price swings
-- **Performance Tracking**: Monitor DCA effectiveness
-
-**Growth Investing**
-- **High-Growth Tokens**: Focus on tokens with growth potential
-- **Long-Term Holding**: Extended holding periods
-- **Reinvestment Strategy**: Compound gains through reinvestment
-- **Performance Monitoring**: Track growth metrics
-
-**Value Investing**
-- **Undervalued Tokens**: Identify underpriced opportunities
-- **Fundamental Analysis**: Research-based investment decisions
-- **Patient Approach**: Wait for market recognition
-- **Risk Assessment**: Evaluate downside protection
-
-### Risk Management Strategies
-
-**Diversification**
-- **Sector Diversification**: Spread across different sectors
-- **Market Cap Diversification**: Mix of large, mid, small cap
-- **Geographic Diversification**: Different blockchain ecosystems
-- **Time Diversification**: Stagger entry and exit points
-
-**Position Sizing**
-- **Maximum Allocation**: Limit exposure to single tokens
-- **Risk-Based Sizing**: Larger positions in lower-risk tokens
-- **Kelly Criterion**: Mathematical position sizing
-- **Dynamic Sizing**: Adjust based on performance and volatility
-
-## 📊 Performance Monitoring
-
-### Key Performance Indicators (KPIs)
-
-1. **Return Metrics**
-   - **Total Return**: Overall portfolio performance
-   - **Annualized Return**: Year-over-year performance
-   - **Risk-Adjusted Return**: Return per unit of risk
-   - **Alpha Generation**: Outperformance vs. benchmark
-
-2. **Risk Metrics**
-   - **Portfolio Volatility**: Standard deviation of returns
-   - **Maximum Drawdown**: Largest peak-to-trough decline
-   - **Sharpe Ratio**: Risk-adjusted performance measure
-   - **Beta**: Sensitivity to market movements
-
-*[Image placeholder: KPI dashboard]*
-
-### Performance Alerts
-
-**Automated Notifications**
-- **Profit Targets**: Alerts when tokens reach profit goals
-- **Loss Limits**: Warnings when losses exceed thresholds
-- **Rebalancing Needs**: Notifications for portfolio drift
-- **Market Events**: Alerts for significant market movements
-
-**Custom Alert Settings**
-- **Percentage Thresholds**: Set custom percentage triggers
-- **Absolute Value Alerts**: Dollar amount notifications
-- **Time-Based Alerts**: Regular performance summaries
-- **Comparative Alerts**: Performance vs. benchmarks
-
-## 🔧 Portfolio Settings
-
-### Customization Options
-
-1. **Display Preferences**
-   - **Currency Display**: MON, USD, or both
-   - **Sorting Options**: Sort by value, P&L, name, or performance
-   - **Refresh Frequency**: Auto-update intervals
-   - **Decimal Precision**: Number of decimal places shown
-
-*[Image placeholder: Portfolio display settings]*
-
-2. **Calculation Methods**
-   - **Cost Basis Method**: FIFO, LIFO, or average cost
-   - **P&L Calculation**: Realized vs. unrealized preferences
-   - **Fee Inclusion**: Include or exclude gas fees in P&L
-   - **Tax Optimization**: Settings for tax-efficient calculations
-
-### Privacy & Security
-
-**Data Protection**
-- **Portfolio Privacy**: Control who can see your portfolio
-- **Anonymous Mode**: Hide identifying information
-- **Data Encryption**: All portfolio data encrypted
-- **Access Controls**: Secure access to portfolio features
-
-## 🆘 Portfolio Troubleshooting
-
-### Common Issues
-
-**Balance Not Updating**
+# Portfolio Management
+
+Track and manage your crypto investments with Area51 Bot.
+
+## Portfolio Overview
+
+### What You Can See:
+- **Token balances** - How many tokens you own
+- **USD values** - Current value in dollars
+- **MON values** - Value in MON tokens
+- **Profit/Loss** - Gain or loss since purchase
+- **24h changes** - Price movement in last 24 hours
+
+## Viewing Your Portfolio
+
+### Access Portfolio:
+1. **Main Menu** → **📊 Portfolio**
+2. See all your token holdings
+3. Real-time updates
+
+### Portfolio Information:
+- **Token name and symbol**
+- **Current balance** (exact amount)
+- **USD value** (current market value)
+- **MON value** (value in MON)
+- **24h change** (price movement)
+- **P&L** (profit or loss)
+- **ROI %** (return on investment)
+
+### Navigation:
+- **Multiple pages** - If you have many tokens
+- **Search** - Find specific tokens
+- **Sort options** - By value, P&L, or name
+- **Refresh** - Update all data
+
+## Portfolio Actions
+
+### From Portfolio View:
+- **Sell tokens** - Click sell button next to any token
+- **View details** - See detailed token information
+- **Refresh data** - Update prices and balances
+- **Export data** - Get portfolio summary
+
+### Selling from Portfolio:
+1. Click **Sell** next to token
+2. Choose percentage (25%, 50%, 75%, 100%)
+3. Review transaction details
+4. Confirm sale
+
+## Portfolio Analytics
+
+### Performance Tracking:
+- **Total portfolio value** - Combined value of all holdings
+- **Best performers** - Tokens with highest gains
+- **Worst performers** - Tokens with losses
+- **Asset allocation** - Breakdown by token
+
+### Profit/Loss Calculation:
+- **Real-time P&L** - Live profit/loss updates
+- **Percentage gains** - ROI for each token
+- **Total returns** - Overall portfolio performance
+- **Break-even prices** - Price needed to break even
+
+## Portfolio Settings
+
+### Display Options:
+- **Currency** - Show values in MON, USD, or both
+- **Sorting** - Sort by value, P&L, or alphabetically
+- **Refresh rate** - How often to update data
+- **Decimal places** - Precision for token amounts
+
+### Portfolio Filters:
+- **Show all tokens** - Including zero balances
+- **Hide dust** - Hide very small amounts
+- **Profitable only** - Show only profitable positions
+- **Recent activity** - Show recently traded tokens
+
+## Portfolio Management Tips
+
+### For Beginners:
+- Check portfolio regularly
+- Understand P&L calculations
+- Start with small positions
+- Don't panic on red days
+
+### For Advanced Users:
+- Monitor asset allocation
+- Set profit-taking targets
+- Track performance over time
+- Use portfolio for tax planning
+
+### Best Practices:
+- **Diversify** - Don't put all money in one token
+- **Take profits** - Sell some when tokens go up
+- **Cut losses** - Don't hold losing positions too long
+- **Keep records** - Track your trading history
+
+## Understanding Portfolio Data
+
+### Token Values:
+- **Balance** - Exact number of tokens you own
+- **Price** - Current price per token
+- **Value** - Balance × Price
+- **Change** - Price movement (24h)
+
+### Profit/Loss:
+- **Green numbers** - Profit (you're making money)
+- **Red numbers** - Loss (you're losing money)
+- **Percentage** - How much you've gained/lost
+- **Dollar amount** - Actual profit/loss in USD
+
+### Portfolio Totals:
+- **Total Value** - All tokens combined
+- **Total P&L** - Overall profit/loss
+- **Total ROI** - Return on investment percentage
+- **Cash (MON)** - Available MON balance
+
+## Portfolio Refresh
+
+### Auto-Refresh:
+- Portfolio updates automatically
+- Prices refresh every few minutes
+- Balances update after transactions
+
+### Manual Refresh:
 - Click **🔄 Refresh** button
-- Check network connection
-- Verify transaction confirmations
-- Wait for cache refresh (up to 5 minutes)
+- Updates all token data
+- Fetches latest prices
+- Recalculates P&L
 
-**Incorrect P&L Calculations**
-- Verify all transactions are recorded
-- Check for missing buy/sell records
-- Ensure correct cost basis method
-- Contact support for calculation errors
+### When to Refresh:
+- After making trades
+- When prices seem outdated
+- Before making decisions
+- If data looks incorrect
 
-**Missing Tokens**
-- Refresh portfolio data
-- Check if token is supported
-- Verify token contract address
-- Check transaction status on explorer
+## Portfolio Export
 
-### Performance Issues
+### Available Formats:
+- **Text summary** - Basic portfolio overview
+- **Detailed view** - Complete token breakdown
+- **Transaction history** - All your trades
+- **Tax report** - For tax purposes
 
-**Slow Loading**
+### How to Export:
+1. Go to portfolio
+2. Click **Export** or **Share**
+3. Choose format
+4. Copy or send data
+
+## Troubleshooting
+
+### Common Issues:
+
+**Portfolio not loading:**
 - Check internet connection
-- Clear browser cache if using web interface
-- Reduce number of tokens displayed per page
-- Contact support for persistent issues
+- Try refreshing the bot
+- Wait a few minutes
 
-**Data Synchronization**
-- Manual refresh to force update
-- Check Monad network status
-- Verify bot connectivity
-- Report sync issues to support team
+**Wrong balances:**
+- Click refresh button
+- Check if transactions are confirmed
+- Wait for network sync
 
----
+**Missing tokens:**
+- Check if you actually own them
+- Verify transaction was successful
+- Look for dust amounts (very small)
 
-## 🎯 Next Steps
+**Incorrect prices:**
+- Prices update every few minutes
+- Some tokens may have low liquidity
+- Check on external price sources
 
-Maximize your portfolio management:
-- **Advanced Trading**: Explore [Trading Services](trading-services.md)
-- **Security Features**: Learn about [Security Measures](security-features.md)
-- **Settings Optimization**: Customize [Bot Settings](settings.md)
+## Portfolio Security
 
----
+### Keep Safe:
+- **Never share** your portfolio screenshots publicly
+- **Don't reveal** exact amounts you own
+- **Be careful** with portfolio exports
+- **Protect** your wallet seed phrase
 
-**Track Smart, Invest Smarter** 📈
+### Privacy Tips:
+- Use portfolio for personal tracking only
+- Don't share detailed holdings
+- Be aware of what you post online
+- Keep financial information private
 
-Your portfolio is your financial future - monitor it wisely and make informed decisions.
+## Next Steps
 
-*Last updated: September 2025*
+- **Learn Trading**: [Trading Guide](trading-services.md)
+- **Wallet Management**: [Wallet Services](wallet-services.md)
+- **Security**: [Security Features](security-features.md)
