@@ -1,4 +1,4 @@
-const UnifiedCacheManager = require('./services/UnifiedCacheManager');
+const UnifiedCacheManager = require('./UnifiedCacheManager');
 
 class PortfolioService {
     constructor(monorailAPI, redis, monitoring) {
