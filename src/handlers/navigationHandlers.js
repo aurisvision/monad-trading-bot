@@ -1152,22 +1152,17 @@ ${tokenAddress}
             const percentagesArray = customPercentages.split(',').map(p => parseInt(p.trim()));
 
             // Professional sell interface message
-            const sellMessage = `🎉 **Purchase Successful!**
+            const sellMessage = `*${tokenName} | ${tokenSymbol}*
+• Contract: \`${tokenAddress}\`
 
-**📊 Token Information**
-• **Name:** ${tokenName}
-• **Symbol:** ${tokenSymbol}
-• **Contract:** \`${tokenAddress}\`
+*💼 Your Holdings*
+• Balance: ${tokenBalance.toFixed(2)} ${tokenSymbol}
+• Value (USD): $${tokenValueUSD.toFixed(2)}
+• Value (MON): ${tokenValueMON.toFixed(2)} MON
 
-**💼 Your Holdings**
-• **Balance:** ${tokenBalance.toFixed(2)} ${tokenSymbol}
-• **Value (USD):** $${tokenValueUSD.toFixed(2)}
-• **Value (MON):** ${tokenValueMON.toFixed(2)} MON
+_💡 Use Refresh button to update your balance._
 
-**✅ Transaction Confirmed**
-• **Hash:** \`${tradeResult.txHash}\`
-
-**Select percentage to sell:**`;
+Select percentage to sell:`;
 
             // Build sell percentage buttons using user's custom settings
             const buttons = [];

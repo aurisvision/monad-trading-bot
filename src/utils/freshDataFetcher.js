@@ -101,21 +101,15 @@ class FreshDataFetcher {
      * Generate updated sell message with fresh data
      */
     generateUpdatedSellMessage(tokenData, tokenAddress, tradeResult) {
-        return `**Purchase Successful**
+        return `*${tokenData.tokenName} | ${tokenData.tokenSymbol}*
+• Contract: \`${tokenAddress}\`
 
-**Token Information:**
-**Name:** ${tokenData.tokenName}
-**Symbol:** ${tokenData.tokenSymbol}
-**Contract:** \`${tokenAddress}\`
+*💼 Your Holdings*
+• Balance: ${tokenData.tokenBalance.toFixed(6)} ${tokenData.tokenSymbol}
+• Value (USD): $${tokenData.tokenValueUSD.toFixed(4)}
+• Value (MON): ${tokenData.tokenValueMON.toFixed(4)} MON
 
-**Your Holdings:**
-**Balance:** ${tokenData.tokenBalance.toFixed(6)} ${tokenData.tokenSymbol}
-**Value (USD):** $${tokenData.tokenValueUSD.toFixed(4)}
-**Value (MON):** ${tokenData.tokenValueMON.toFixed(4)} MON
-
-**Transaction:**
-**Hash:** \`${tradeResult.txHash}\`
-**Status:** Confirmed
+_💡 Use Refresh button to update your balance._
 
 ${tokenData.tokenBalance > 0 ? 'Select percentage to sell:' : '*Refreshing balance... Please wait or use refresh button.*'}`;
     }

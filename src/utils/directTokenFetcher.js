@@ -185,17 +185,15 @@ class DirectTokenFetcher {
     generateSellMessage(tokenData, tokenAddress, tradeResult) {
         const { balance, valueUSD, valueMON, symbol, name } = tokenData;
 
-        return `**Purchase Successful**
+        return `*${name || 'Unknown Token'} | ${symbol || 'Token'}*
+• Contract: \`${tokenAddress}\`
 
-**Token Information:**
-**Name:** ${name || 'Unknown Token'}
-**Symbol:** ${symbol || 'Token'}
-**Contract:** \`${tokenAddress}\`
+*💼 Your Holdings*
+• Balance: ${balance.toFixed(2)} ${symbol}
+• Value (USD): $${valueUSD.toFixed(2)}
+• Value (MON): ${valueMON.toFixed(2)} MON
 
-**Your Holdings:**
-**Balance:** ${balance.toFixed(2)} ${symbol}
-**Value (USD):** $${valueUSD.toFixed(2)}
-**Value (MON):** ${valueMON.toFixed(2)} MON
+_💡 Use Refresh button to update your balance._
 
 **Transaction:**
 **Hash:** \`${tradeResult.txHash}\`

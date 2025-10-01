@@ -506,17 +506,15 @@ Please enter the token contract address you want to buy:`;
             const percentagesArray = customPercentages.split(',').map(p => parseInt(p.trim()));
 
             // Professional sell interface message
-            const sellMessage = `**Purchase Successful**
+            const sellMessage = `*${tokenName} | ${tokenSymbol}*
+• Contract: \`${tokenAddress}\`
 
-**Token Information:**
-**Name:** ${tokenName}
-**Symbol:** ${tokenSymbol}
-**Contract:** \`${tokenAddress}\`
+*💼 Your Holdings*
+• Balance: ${tokenBalance.toFixed(6)} ${tokenSymbol}
+• Value (USD): $${tokenValueUSD.toFixed(4)}
+• Value (MON): ${tokenValueMON.toFixed(4)} MON
 
-**Your Holdings:**
-**Balance:** ${tokenBalance.toFixed(6)} ${tokenSymbol}
-**Value (USD):** $${tokenValueUSD.toFixed(4)}
-**Value (MON):** ${tokenValueMON.toFixed(4)} MON
+_💡 Use Refresh button to update your balance._
 
 **Transaction:**
 **Hash:** \`${tradeResult.txHash}\`
