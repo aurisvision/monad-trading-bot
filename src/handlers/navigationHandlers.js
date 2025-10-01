@@ -1784,13 +1784,13 @@ Confirm this transaction?`, {
             }
             
             // Unknown command
-            await ctx.reply(`❓ **أمر غير معروف**\n\n**الأوامر المتاحة:**\n• \`@${botUsername} search [token]\` - البحث عن توكن\n• \`@${botUsername} buy [token] [amount]\` - شراء توكن\n\n**مثال:**\n\`@${botUsername} search chog\`\n\`@${botUsername} buy chog 3\``, {
+            await ctx.reply(`❓ **Unknown Command**\n\n**Available Commands:**\n• \`@${botUsername} search [token]\` - Search for a token\n• \`@${botUsername} buy [token] [amount]\` - Buy a token\n\n**Examples:**\n\`@${botUsername} search chog\`\n\`@${botUsername} buy chog 3\``, {
                 parse_mode: 'Markdown'
             });
             
         } catch (error) {
             this.monitoring.logError('Group command handling failed', error, { userId, messageText });
-            await ctx.reply('❌ حدث خطأ في معالجة الأمر. حاول مرة أخرى.');
+            await ctx.reply('❌ An error occurred while processing the command. Please try again.');
         }
     }
 
@@ -1806,7 +1806,7 @@ Confirm this transaction?`, {
             
             if (!searchResults || !searchResults.success || !searchResults.tokens || searchResults.tokens.length === 0) {
                 const botUsername = ctx.botInfo?.username || 'MonAreaBot';
-                await ctx.reply(`❌ **لم يتم العثور على توكنات**\n\n🔍 البحث عن: \`${tokenQuery}\`\n👤 بواسطة: ${username}\n\n💡 جرب البحث باسم أو رمز مختلف مع @${botUsername}.`, {
+                await ctx.reply(`❌ **No tokens found**\n\n🔍 Search for: \`${tokenQuery}\`\n👤 By: ${username}\n\n💡 Try searching with a different name or symbol using @${botUsername}.`, {
                     parse_mode: 'Markdown'
                 });
                 return;
@@ -1820,7 +1820,7 @@ Confirm this transaction?`, {
             const tokenInfo = await this.monorailAPI.getTokenInfo(tokenAddress);
             
             if (!tokenInfo || !tokenInfo.success) {
-                await ctx.reply(`❌ **خطأ في جلب بيانات التوكن**\n\n🔍 البحث عن: \`${tokenQuery}\`\n👤 بواسطة: ${username}`, {
+                await ctx.reply(`❌ **Error fetching token data**\n\n🔍 Search for: \`${tokenQuery}\`\n👤 By: ${username}`, {
                     parse_mode: 'Markdown'
                 });
                 return;
@@ -1834,25 +1834,25 @@ Confirm this transaction?`, {
             
             const tokenText = `🟣 **${tokenData.symbol || 'Unknown'} | ${tokenData.name || 'Unknown Token'}**
 
-📍 **العنوان:** \`${tokenAddress}\`
+📍 **Address:** \`${tokenAddress}\`
 
-📊 **معلومات التوكن:**
-• **السعر:** \`${tokenPriceUSD.toFixed(4)} USD\`
-• **السعر بالمون:** \`${tokenPriceInMON.toFixed(4)} MON\`
-• **الثقة:** \`${confidence}%\`
+📊 **Token Information:**
+• **Price:** \`${tokenPriceUSD.toFixed(4)} USD\`
+• **Price in MON:** \`${tokenPriceInMON.toFixed(4)} MON\`
+• **Confidence:** \`${confidence}%\`
 
-🔍 **البحث بواسطة:** ${username}
-⏰ **الوقت:** ${new Date().toLocaleString('ar-EG')}
+🔍 **Searched by:** ${username}
+⏰ **Time:** ${new Date().toLocaleString('en-US')}
 
-💡 **للشراء استخدم:** \`@MonAreaBot buy ${tokenData.symbol || tokenQuery} [amount]\``;
+💡 **To buy use:** \`@MonAreaBot buy ${tokenData.symbol || tokenQuery} [amount]\``;
 
             await ctx.reply(tokenText, {
                 parse_mode: 'Markdown',
                 reply_markup: {
                     inline_keyboard: [
                         [
-                            { text: '🔍 عرض في المتصفح', url: `https://testnet.monadexplorer.com/token/${tokenAddress}` },
-                            { text: '💬 محادثة خاصة', url: `https://t.me/${ctx.botInfo?.username || 'MonAreaBot'}?start=token_${tokenAddress}` }
+                            { text: '🔍 View in Explorer', url: `https://testnet.monadexplorer.com/token/${tokenAddress}` },
+                            { text: '💬 Private Chat', url: `https://t.me/${ctx.botInfo?.username || 'MonAreaBot'}?start=token_${tokenAddress}` }
                         ]
                     ]
                 }
@@ -1860,7 +1860,7 @@ Confirm this transaction?`, {
             
         } catch (error) {
             this.monitoring.logError('Group token search failed', error, { userId, tokenQuery });
-            await ctx.reply(`❌ **خطأ في البحث**\n\n🔍 البحث عن: \`${tokenQuery}\`\n👤 بواسطة: ${username}\n\n💡 حاول مرة أخرى.`, {
+            await ctx.reply(`❌ **Search Error**\n\n🔍 Search for: \`${tokenQuery}\`\n👤 By: ${username}\n\n💡 Please try again.`, {
                 parse_mode: 'Markdown'
             });
         }
@@ -1875,7 +1875,7 @@ Confirm this transaction?`, {
         try {
             // Validate amount
             if (isNaN(amount) || amount <= 0) {
-                await ctx.reply(`❌ **مبلغ غير صحيح**\n\n💰 المبلغ: \`${amount}\`\n👤 بواسطة: ${username}\n\n💡 يجب أن يكون المبلغ رقم أكبر من صفر.`, {
+                await ctx.reply(`❌ **Invalid Amount**\n\n💰 Amount: \`${amount}\`\n👤 By: ${username}\n\n💡 Amount must be a number greater than zero.`, {
                     parse_mode: 'Markdown'
                 });
                 return;
@@ -1884,7 +1884,7 @@ Confirm this transaction?`, {
             // Check if user exists and has access
             const user = await this.database.getUserByTelegramId(userId);
             if (!user) {
-                await ctx.reply(`❌ **المستخدم غير مسجل**\n\n👤 ${username}\n\n💡 ابدأ محادثة خاصة مع البوت أولاً: @${ctx.botInfo?.username || 'MonAreaBot'}`, {
+                await ctx.reply(`❌ **User Not Registered**\n\n👤 ${username}\n\n💡 Start a private chat with the bot first: @${ctx.botInfo?.username || 'MonAreaBot'}`, {
                     parse_mode: 'Markdown'
                 });
                 return;
@@ -1894,7 +1894,7 @@ Confirm this transaction?`, {
             const searchResults = await this.monorailAPI.searchTokens(tokenQuery);
             
             if (!searchResults || !searchResults.success || !searchResults.tokens || searchResults.tokens.length === 0) {
-                await ctx.reply(`❌ **توكن غير موجود**\n\n🔍 البحث عن: \`${tokenQuery}\`\n👤 بواسطة: ${username}\n\n💡 تأكد من اسم أو رمز التوكن.`, {
+                await ctx.reply(`❌ **Token Not Found**\n\n🔍 Search for: \`${tokenQuery}\`\n👤 By: ${username}\n\n💡 Check the token name or symbol.`, {
                     parse_mode: 'Markdown'
                 });
                 return;
@@ -1907,7 +1907,7 @@ Confirm this transaction?`, {
             const userSettings = await this.database.getUserSettings(userId);
             
             // Send processing message
-            const processingMsg = await ctx.reply(`🔄 **جاري تنفيذ الشراء...**\n\n💰 المبلغ: \`${amount} MON\`\n🟣 التوكن: \`${token.symbol || tokenQuery}\`\n👤 بواسطة: ${username}`, {
+            const processingMsg = await ctx.reply(`🔄 **Processing Purchase...**\n\n💰 Amount: \`${amount} MON\`\n🟣 Token: \`${token.symbol || tokenQuery}\`\n👤 By: ${username}`, {
                 parse_mode: 'Markdown'
             });
             
@@ -1938,15 +1938,15 @@ Confirm this transaction?`, {
             if (result.success) {
                 // Success message
                 const explorerUrl = `https://testnet.monadexplorer.com/tx/${result.txHash}`;
-                const successText = `✅ **تم الشراء بنجاح!**
+                const successText = `✅ **Purchase Successful!**
 
-💰 **المبلغ:** \`${amount} MON\`
-🟣 **التوكن:** \`${result.tokenSymbol || token.symbol}\`
-📊 **الكمية المتوقعة:** \`${result.expectedTokenAmount || 'N/A'}\`
-👤 **بواسطة:** ${username}
-⏰ **الوقت:** ${new Date().toLocaleString('ar-EG')}
+💰 **Amount:** \`${amount} MON\`
+🟣 **Token:** \`${result.tokenSymbol || token.symbol}\`
+📊 **Expected Tokens:** \`${result.expectedTokenAmount || 'N/A'}\`
+👤 **By:** ${username}
+⏰ **Time:** ${new Date().toLocaleString('en-US')}
 
-🔗 **رابط المعاملة:** [عرض في المتصفح](${explorerUrl})`;
+🔗 **Transaction:** [View in Explorer](${explorerUrl})`;
 
                 await ctx.telegram.editMessageText(
                     ctx.chat.id,
@@ -1958,8 +1958,8 @@ Confirm this transaction?`, {
                         reply_markup: {
                             inline_keyboard: [
                                 [
-                                    { text: '🔍 عرض المعاملة', url: explorerUrl },
-                                    { text: '💬 محادثة خاصة', url: `https://t.me/${ctx.botInfo?.username || 'MonAreaBot'}` }
+                                    { text: '🔍 View Transaction', url: explorerUrl },
+                                    { text: '💬 Private Chat', url: `https://t.me/${ctx.botInfo?.username || 'MonAreaBot'}` }
                                 ]
                             ]
                         }
@@ -1968,14 +1968,14 @@ Confirm this transaction?`, {
                 
             } else {
                 // Error message
-                const errorText = `❌ **فشل في الشراء**
+                const errorText = `❌ **Purchase Failed**
 
-💰 المبلغ: \`${amount} MON\`
-🟣 التوكن: \`${token.symbol || tokenQuery}\`
-👤 بواسطة: ${username}
-❗ الخطأ: ${result.error || 'خطأ غير معروف'}
+💰 Amount: \`${amount} MON\`
+🟣 Token: \`${token.symbol || tokenQuery}\`
+👤 By: ${username}
+❗ Error: ${result.error || 'Unknown error'}
 
-💡 حاول مرة أخرى أو تحقق من رصيدك.`;
+💡 Try again or check your balance.`;
 
                 await ctx.telegram.editMessageText(
                     ctx.chat.id,
@@ -1988,7 +1988,7 @@ Confirm this transaction?`, {
             
         } catch (error) {
             this.monitoring.logError('Group token buy failed', error, { userId, tokenQuery, amount });
-            await ctx.reply(`❌ **خطأ في تنفيذ الشراء**\n\n💰 المبلغ: \`${amount} MON\`\n🟣 التوكن: \`${tokenQuery}\`\n👤 بواسطة: ${username}\n\n💡 حاول مرة أخرى.`, {
+            await ctx.reply(`❌ **Purchase Execution Error**\n\n💰 Amount: \`${amount} MON\`\n🟣 Token: \`${tokenQuery}\`\n👤 By: ${username}\n\n💡 Please try again.`, {
                 parse_mode: 'Markdown'
             });
         }
