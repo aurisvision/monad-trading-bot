@@ -34,6 +34,7 @@ const WalletHandlers = require('./handlers/walletHandlers');
 // const TradingHandlers = require('./handlers/tradingHandlers');
 const PortfolioHandlers = require('./handlers/portfolioHandlers');
 const NavigationHandlers = require('./handlers/navigationHandlers');
+const InlineHandlers = require('./handlers/inlineHandlers');
 
 // Simple Access Code System
 const SimpleAccessCode = require('./services/SimpleAccessCode');
@@ -332,6 +333,19 @@ class Area51BotModularSimple {
             this.cacheService
         );
         
+        // Initialize Inline Handlers for secure inline trading
+        const inlineDependencies = {
+            database: this.database,
+            monorailAPI: this.monorailAPI,
+            monitoring: this.monitoring,
+            redis: this.redis,
+            cacheService: this.cacheService,
+            tradingInterface: this.tradingInterface
+        };
+        
+        this.inlineHandlers = new InlineHandlers(this.bot, inlineDependencies);
+        console.log('✅ Inline Handlers initialized successfully');
+        
         // Legacy trading cache optimizer - REPLACED by unified system
         // this.tradingCacheOptimizer = new TradingCacheOptimizer(
         //     this.database,
@@ -459,7 +473,10 @@ class Area51BotModularSimple {
         // this.tradingHandlers.setupHandlers();
         this.portfolioHandlers.setupHandlers();
         
-        console.log('✅ All handlers setup complete (including unified trading system)');
+        // Setup Inline Mode handlers
+        this.inlineHandlers.setupHandlers();
+        
+        console.log('✅ All handlers setup complete (including unified trading system and inline mode)');
     }
 
     setupAdditionalHandlers() {
@@ -837,6 +854,50 @@ class Area51BotModularSimple {
                     // Delegate to navigationHandlers for all other states
                     await this.navigationHandlers.handleTextMessage(ctx);
                 }
+            }
+        });
+
+        // Inline Mode Action Handlers
+        this.bot.action(/^inline_buy_(.+)$/, async (ctx) => {
+            try {
+                const tokenAddress = ctx.match[1];
+                await ctx.answerCbQuery();
+                await this.inlineHandlers.handleInlineBuy(ctx, tokenAddress);
+            } catch (error) {
+                this.monitoring?.logError('Inline buy action failed', error, { userId: ctx.from.id });
+                await ctx.answerCbQuery('❌ خطأ في عملية الشراء');
+            }
+        });
+
+        this.bot.action(/^inline_sell_(.+)$/, async (ctx) => {
+            try {
+                const tokenAddress = ctx.match[1];
+                await ctx.answerCbQuery();
+                await this.inlineHandlers.handleInlineSell(ctx, tokenAddress);
+            } catch (error) {
+                this.monitoring?.logError('Inline sell action failed', error, { userId: ctx.from.id });
+                await ctx.answerCbQuery('❌ خطأ في عملية البيع');
+            }
+        });
+
+        this.bot.action(/^inline_auto_buy_(.+)$/, async (ctx) => {
+            try {
+                const tokenAddress = ctx.match[1];
+                await ctx.answerCbQuery();
+                await this.inlineHandlers.handleInlineAutoBuy(ctx, tokenAddress);
+            } catch (error) {
+                this.monitoring?.logError('Inline auto buy action failed', error, { userId: ctx.from.id });
+                await ctx.answerCbQuery('❌ خطأ في تفعيل الشراء التلقائي');
+            }
+        });
+
+        this.bot.action('inline_help', async (ctx) => {
+            try {
+                await ctx.answerCbQuery();
+                await this.inlineHandlers.sendHelpMessage(ctx);
+            } catch (error) {
+                this.monitoring?.logError('Inline help action failed', error, { userId: ctx.from.id });
+                await ctx.answerCbQuery('❌ خطأ في عرض المساعدة');
             }
         });
     }
