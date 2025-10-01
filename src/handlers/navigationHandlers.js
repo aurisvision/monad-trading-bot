@@ -937,6 +937,100 @@ Please try again or contact support if the issue persists.
             }
         }
     }
+    async processTokenByNameOnly(ctx, tokenAddress) {
+        const userId = ctx.from.id;
+        try {
+            const TradingInterface = require('../trading/TradingInterface');
+            const tradingDependencies = {
+                database: this.database,
+                monorailAPI: this.monorailAPI,
+                monitoring: this.monitoring,
+                redis: this.redis,
+                cacheService: this.cacheService
+            };
+            const tradingInterface = new TradingInterface(null, tradingDependencies);
+            const tokenInfo = await this.monorailAPI.getTokenInfo(tokenAddress);
+            if (!tokenInfo || !tokenInfo.success) {
+                await ctx.reply('❌ Token not found or not supported. Please check the address and try again.');
+                return;
+            }
+            
+            // Clear any existing user state and store token info for buy actions
+            await this.database.clearUserState(userId);
+            await this.database.setUserState(userId, 'token_selected', {
+                tokenAddress: tokenAddress,
+                tokenSymbol: tokenInfo.token.symbol || 'Unknown',
+                tokenName: tokenInfo.token.name || 'Unknown Token'
+            });
+            
+            // Get user wallet (no auto-buy check for name searches)
+            const user = await this.database.getUserByTelegramId(userId);
+            if (!user) {
+                await ctx.reply('❌ Please start the bot first with /start');
+                return;
+            }
+            
+            const monBalanceData = await this.monorailAPI.getMONBalance(user.wallet_address);
+            const monBalance = parseFloat(monBalanceData.balance || '0');
+            
+            // Get token price information directly from token info API
+            let tokenPriceUSD = 0;
+            let tokenPriceInMON = 0;
+            let confidence = 100;
+            if (tokenInfo.token.usd_per_token) {
+                tokenPriceUSD = parseFloat(tokenInfo.token.usd_per_token);
+            }
+            if (tokenInfo.token.mon_per_token) {
+                tokenPriceInMON = parseFloat(tokenInfo.token.mon_per_token);
+            }
+            if (tokenInfo.token.pconf) {
+                confidence = parseInt(tokenInfo.token.pconf);
+            }
+            
+            const tokenText = `*🟣 ${tokenInfo.token.symbol || 'Unknown'} | ${tokenInfo.token.name || 'Unknown Token'}*
+
+\`${tokenAddress}\`
+
+*📊 Token Information:*
+• *Price:* \`${tokenPriceUSD.toFixed(4)} USD\`
+• *Price in MON:* \`${tokenPriceInMON.toFixed(4)} MON\`
+• *Confidence:* \`${confidence}%\`
+
+*💼 Your Wallet:*
+• *MON Balance:* \`${monBalance.toFixed(6)} MON\`
+
+*💡 Select amount of MON to spend:*`;
+            
+            // Get user's custom buy amounts
+            const userSettings = await this.database.getUserSettings(userId);
+            let customAmounts = userSettings?.custom_buy_amounts || '0.1,0.5,1,5';
+            // Handle case where custom_buy_amounts might be null or not a string
+            if (!customAmounts || typeof customAmounts !== 'string') {
+                customAmounts = '0.1,0.5,1,5';
+            }
+            const amountsArray = customAmounts.split(',');
+            const keyboard = Markup.inlineKeyboard([
+                [
+                    Markup.button.callback(`${amountsArray[0]?.trim() || '0.1'} MON`, `buy_amount_${amountsArray[0]?.trim() || '0.1'}`), 
+                    Markup.button.callback(`${amountsArray[1]?.trim() || '0.5'} MON`, `buy_amount_${amountsArray[1]?.trim() || '0.5'}`)
+                ],
+                [
+                    Markup.button.callback(`${amountsArray[2]?.trim() || '1'} MON`, `buy_amount_${amountsArray[2]?.trim() || '1'}`), 
+                    Markup.button.callback(`${amountsArray[3]?.trim() || '5'} MON`, `buy_amount_${amountsArray[3]?.trim() || '5'}`)
+                ],
+                [Markup.button.callback('📝 Custom Amount', 'buy_amount_custom'), Markup.button.callback('🔍 View on Explorer', `view_explorer_${tokenAddress}`)],
+                [Markup.button.callback('🏠 Back to Main', 'back_to_main'), Markup.button.callback('🔄 Refresh Data', `refresh_token_${tokenAddress}`)]
+            ]);
+            await ctx.reply(tokenText, {
+                parse_mode: 'Markdown',
+                reply_markup: keyboard.reply_markup
+            });
+        } catch (error) {
+            this.monitoring.logError('Process token by name only failed', error, { userId, tokenAddress });
+            await ctx.reply('❌ Error processing token. Please try again.');
+        }
+    }
+
     async processTokenByName(ctx, searchQuery) {
         const userId = ctx.from.id;
         try {
@@ -952,8 +1046,8 @@ Please try again or contact support if the issue persists.
             const firstToken = searchResults.tokens[0];
             const tokenAddress = firstToken.address;
             
-            // Process this token address using existing logic
-            await this.processTokenAddress(ctx, tokenAddress);
+            // Process this token using the safe method (no auto-buy)
+            await this.processTokenByNameOnly(ctx, tokenAddress);
             
         } catch (error) {
             this.monitoring.logError('Process token by name failed', error, { userId, searchQuery });
@@ -1020,13 +1114,17 @@ Please try again or contact support if the issue persists.
                 confidence = parseInt(tokenInfo.token.pconf);
             }
             const tokenText = `*🟣 ${tokenInfo.token.symbol || 'Unknown'} | ${tokenInfo.token.name || 'Unknown Token'}*
-${tokenAddress}
+
+\`${tokenAddress}\`
+
 *📊 Token Information:*
-• Price: ${tokenPriceUSD.toFixed(4)} USD
-• Price in MON: ${tokenPriceInMON.toFixed(4)} MON
-• Confidence: ${confidence}%
+• *Price:* \`${tokenPriceUSD.toFixed(4)} USD\`
+• *Price in MON:* \`${tokenPriceInMON.toFixed(4)} MON\`
+• *Confidence:* \`${confidence}%\`
+
 *💼 Your Wallet:*
-• MON Balance: ${monBalance.toFixed(6)} MON
+• *MON Balance:* \`${monBalance.toFixed(6)} MON\`
+
 *💡 Select amount of MON to spend:*`;
             // Get user's custom buy amounts (userSettings already loaded above)
             let customAmounts = userSettings?.custom_buy_amounts || '0.1,0.5,1,5';
