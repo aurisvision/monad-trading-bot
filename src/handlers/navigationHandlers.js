@@ -1269,22 +1269,18 @@ Select percentage to sell:`;
             const customPercentages = userSettings?.custom_sell_percentages || '25,50,75,100';
             const percentagesArray = customPercentages.split(',').map(p => parseInt(p.trim()));
 
-            // Updated sell interface message
-            const sellMessage = `**Token Sell Interface**
+            // Updated sell interface message - using same format as initial display
+            const sellMessage = `*${tokenName} | ${tokenSymbol}*
+• Contract: \`${tokenAddress}\`
 
-**📊 Token Information**
-• **Name:** ${tokenName}
-• **Symbol:** ${tokenSymbol}
-• **Contract:** \`${tokenAddress}\`
+*💼 Your Holdings*
+• Balance: ${tokenBalance.toFixed(2)} ${tokenSymbol}
+• Value (USD): $${tokenValueUSD.toFixed(2)}
+• Value (MON): ${tokenValueMON.toFixed(2)} MON
 
-**💼 Your Holdings**
-• **Balance:** ${tokenBalance.toFixed(2)} ${tokenSymbol}
-• **Value (USD):** $${tokenValueUSD.toFixed(2)}
-• **Value (MON):** ${tokenValueMON.toFixed(2)} MON
+_💡 Use Refresh button to update your balance._
 
-🔄 *Last Updated: ${new Date().toLocaleTimeString()}*
-
-**Select percentage to sell:**`;
+Select percentage to sell:`;
 
             // Build sell percentage buttons using user's custom settings
             const buttons = [];
