@@ -30,7 +30,7 @@ _The main area for real nads!_
 💡 Click on the Refresh button to update your current balance.`;
 
         const keyboard = Markup.inlineKeyboard([
-            [Markup.button.callback('💰 Buy', 'buy'), Markup.button.callback('🔍 Search', 'token_search')],
+            [Markup.button.callback('💰 Buy', 'buy')],
             [Markup.button.callback('👛 Wallet', 'wallet'), Markup.button.callback('📊 Portfolio', 'portfolio')],
             [Markup.button.callback('📈 Categories', 'token_categories'), Markup.button.callback('⚙️ Settings', 'settings')],
             [Markup.button.callback('📤 Transfer', 'transfer'), Markup.button.callback('🔄 Refresh', 'refresh')],
