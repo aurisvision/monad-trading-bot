@@ -216,16 +216,16 @@ _🎯 Select percentage to sell:_`;
             const effectivePercentage = percentage === 100 ? 99.99 : percentage;
             const sellAmount = (balance * effectivePercentage / 100).toFixed(6);
             
-            const confirmText = `💸 **Confirm Sale**
+            const confirmText = `**Sale Confirmation**
 
-📋 **Token:** ${tokenSymbol}
-📊 **Percentage:** ${percentage}%
-💰 **Amount:** ${sellAmount} ${tokenSymbol}
+*Token:* ${tokenSymbol}
+*Percentage:* ${percentage}%
+*Amount:* ${sellAmount} ${tokenSymbol}
 
-Proceed with the sale?`;
+Confirm this transaction?`;
             const keyboard = Markup.inlineKeyboard([
-                [Markup.button.callback('✅ Confirm Sale', `confirm_portfolio_sell_${tokenSymbol}_${percentage}`)],
-                [Markup.button.callback('🔙 Back', `sell:${tokenSymbol}`)]
+                [Markup.button.callback('Confirm', `confirm_portfolio_sell_${tokenSymbol}_${percentage}`)],
+                [Markup.button.callback('Back', `sell:${tokenSymbol}`)]
             ]);
             await ctx.editMessageText(confirmText, {
                 parse_mode: 'Markdown',
@@ -325,19 +325,19 @@ Proceed with the sale?`;
                     balanceText = '_Not available_';
                 }
             }
-            const confirmText = `💳 *Purchase Confirmation*
+            const confirmText = `**Purchase Confirmation**
 
-📊 *Token Details:*
-• *Name:* ${tokenInfo.token.name}
-• *Symbol:* ${tokenInfo.token.symbol}
-• *Amount:* ${amount} MON
+*Token Details:*
+• Name: ${tokenInfo.token.name}
+• Symbol: ${tokenInfo.token.symbol}
+• Amount: ${amount} MON
 
-💼 *Your Balance:* ${balanceText}
+*Your Balance:* ${balanceText}
 
-_Proceed with the purchase?_`;
+Confirm this transaction?`;
             const keyboard = Markup.inlineKeyboard([
-                [Markup.button.callback('✅ Confirm', `confirm_buy_${tokenAddress}_${amount}`)],
-                [Markup.button.callback('🔙 Back', 'buy')]
+                [Markup.button.callback('Confirm', `confirm_buy_${tokenAddress}_${amount}`)],
+                [Markup.button.callback('Back', 'buy')]
             ]);
             await ctx.editMessageText(confirmText, {
                 parse_mode: 'Markdown',

@@ -1347,17 +1347,19 @@ Select percentage to sell:`;
             const tokenAddress = userState.data.tokenAddress;
             const tokenSymbol = userState.data.tokenSymbol || 'Token';
             // Show confirmation
-            await ctx.reply(`🔄 *Confirm Purchase*
-💰 *Amount:* ${amount} MON
-🪙 *Token:* ${tokenSymbol}
-📍 *Address:* \`${tokenAddress}\`
-Proceed with this purchase?`, {
+            await ctx.reply(`**Purchase Confirmation**
+
+*Amount:* ${amount} MON
+*Token:* ${tokenSymbol}
+*Address:* \`${tokenAddress}\`
+
+Confirm this transaction?`, {
                 parse_mode: 'Markdown',
                 reply_markup: {
                     inline_keyboard: [
                         [
-                            { text: '✅ Confirm', callback_data: `confirm_buy_${tokenAddress}_${amount}` },
-                            { text: '❌ Cancel', callback_data: 'cancel_trade' }
+                            { text: 'Confirm', callback_data: `confirm_buy_${tokenAddress}_${amount}` },
+                            { text: 'Cancel', callback_data: 'cancel_trade' }
                         ]
                     ]
                 }
