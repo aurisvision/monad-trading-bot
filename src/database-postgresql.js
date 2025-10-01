@@ -812,9 +812,10 @@ class DatabasePostgreSQL {
      * Clear all user states (for bot restart cleanup)
      */
     async clearAllUserStates() {
-        const query = `DELETE FROM user_states WHERE expires_at < CURRENT_TIMESTAMP + INTERVAL '1 hour'`;
+        const query = `DELETE FROM user_states`;
         try {
             const result = await this.query(query);
+            console.log(`🧹 Cleared ${result.rowCount || 0} user states on bot restart`);
             return result.rowCount || 0;
         } catch (error) {
             console.error('Error clearing all user states:', error);

@@ -83,8 +83,17 @@ class Area51BotModularSimple {
             
             // Clear any user states that might trigger old operations
             if (this.database) {
-                await this.database.clearAllUserStates();
-                console.log('🧹 Cleared all user states from previous session');
+                const clearedCount = await this.database.clearAllUserStates();
+                console.log(`🧹 Cleared ${clearedCount} user states from previous session`);
+            }
+            
+            // Clear user state cache entries
+            if (this.redis) {
+                const stateKeys = await this.redis.keys('area51:user_state:*');
+                if (stateKeys.length > 0) {
+                    await this.redis.del(...stateKeys);
+                    console.log(`🧹 Cleared ${stateKeys.length} user state cache entries`);
+                }
             }
             
             this.monitoring?.logInfo('Pending operations cleanup completed');

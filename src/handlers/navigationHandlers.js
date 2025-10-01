@@ -487,18 +487,38 @@ Please enter the recipient address:
         // Skip token detection if user is importing wallet OR in any transfer state (wallet addresses also start with 0x)
         if (tokenAddressMatch && (!userState || (userState.state !== 'importing_wallet' && userState.state !== 'awaiting_transfer_address' && userState.state !== 'awaiting_transfer_amount' && userState.state !== 'awaiting_transfer_details'))) {
             const tokenAddress = tokenAddressMatch[0];
+            // Clear any existing state before processing new token
+            await this.database.clearUserState(userId);
             // Let processTokenAddress handle both auto buy and manual buy logic
             await this.processTokenAddress(ctx, tokenAddress);
             return;
         }
-        // Then check if user has a specific state that needs processing
-        // Handle direct commands
+        
+        // Handle direct commands first (before state processing)
         if (messageText === '/transfer') {
             await this.handleTransfer(ctx);
             return;
         }
+        
+        // Check if this looks like a token search (before processing states)
+        const isTokenSearch = messageText.length >= 2 && messageText.length <= 50 && 
+                             !messageText.includes('\n') && !messageText.includes('/') &&
+                             !messageText.match(/^\d+(\.\d+)?$/); // Not just a number
+        
+        // If user has a state but input looks like token search, clear state and search
+        if (userState && userState.state && isTokenSearch) {
+            // Check if user is in buy/sell states and input looks like token name
+            const buyStates = ['custom_buy', 'token_selected'];
+            if (buyStates.includes(userState.state)) {
+                // Clear state and search for new token
+                await this.database.clearUserState(userId);
+                await this.processTokenByName(ctx, messageText);
+                return;
+            }
+        }
+        
+        // Process based on current user state
         if (userState && userState.state) {
-            // Process based on current user state
             switch (userState.state) {
                 case 'importing_wallet':
                     await this.processWalletImport(ctx, ctx.message.text);
@@ -543,13 +563,10 @@ Please enter the recipient address:
             }
         }
         
-        // If no state and not a token address, try token search by name/symbol
-        if (messageText.length >= 2) {
-            // Check if it looks like a search query (not just random text)
-            if (messageText.length <= 50 && !messageText.includes('\n') && !messageText.includes('/')) {
-                await this.processTokenByName(ctx, messageText);
-                return;
-            }
+        // If no state and input looks like token search, search for token
+        if (isTokenSearch) {
+            await this.processTokenByName(ctx, messageText);
+            return;
         }
         
         // Default response for no state or unrecognized input
