@@ -615,8 +615,19 @@ Please enter the recipient address:
         
         // Handle group commands first (for @MonAreaBot mentions)
         if (ctx.chat.type === 'group' || ctx.chat.type === 'supergroup') {
-            await this.handleGroupCommands(ctx, messageText);
-            return;
+            // Check if message mentions the bot
+            const botUsername = ctx.botInfo?.username || 'MonAreaBot';
+            const mentionPattern = new RegExp(`@${botUsername}\\s+(.+)`, 'i');
+            const match = messageText.match(mentionPattern);
+            
+            if (match) {
+                // This is a bot mention, handle it as a group command
+                await this.handleGroupCommands(ctx, messageText);
+                return;
+            } else {
+                // Not a bot mention in group, ignore the message
+                return;
+            }
         }
         
         const tokenAddressMatch = messageText.match(/0x[a-fA-F0-9]{40}/);
@@ -1191,7 +1202,8 @@ Please try again or contact support if the issue persists.
             const searchResults = await this.monorailAPI.searchTokens(searchQuery);
             
             if (!searchResults || !searchResults.success || !searchResults.tokens || searchResults.tokens.length === 0) {
-                await ctx.reply(`❌ No tokens found for "${searchQuery}". Try searching with a different name or symbol.`);
+                const botUsername = ctx.botInfo?.username || 'MonAreaBot';
+                await ctx.reply(`❌ No tokens found for "${searchQuery}" \n\nTry searching for: \n• Popular tokens: USDC, WETH, USDT \n• Token symbols: BTC, ETH \n• Full contract addresses \n• Different spelling variations \n\n🔍 Search again with @${botUsername}`);
                 return;
             }
             
@@ -1793,7 +1805,8 @@ Confirm this transaction?`, {
             const searchResults = await this.monorailAPI.searchTokens(tokenQuery);
             
             if (!searchResults || !searchResults.success || !searchResults.tokens || searchResults.tokens.length === 0) {
-                await ctx.reply(`❌ **لم يتم العثور على توكنات**\n\n🔍 البحث عن: \`${tokenQuery}\`\n👤 بواسطة: ${username}\n\n💡 جرب البحث باسم أو رمز مختلف.`, {
+                const botUsername = ctx.botInfo?.username || 'MonAreaBot';
+                await ctx.reply(`❌ **لم يتم العثور على توكنات**\n\n🔍 البحث عن: \`${tokenQuery}\`\n👤 بواسطة: ${username}\n\n💡 جرب البحث باسم أو رمز مختلف مع @${botUsername}.`, {
                     parse_mode: 'Markdown'
                 });
                 return;
