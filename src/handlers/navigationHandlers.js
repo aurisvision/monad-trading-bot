@@ -50,6 +50,19 @@ class NavigationHandlers {
         this.bot.action('transfer', async (ctx) => {
             await this.handleTransfer(ctx);
         });
+        // Token search handler
+        this.bot.action('token_search', async (ctx) => {
+            await ctx.answerCbQuery();
+            await ctx.reply('🔍 *Token Search*\n\nType the name, symbol, or contract address of the token you want to find.\n\nExample: "USDC", "Bitcoin", or paste a contract address.', {
+                parse_mode: 'Markdown',
+                reply_markup: {
+                    inline_keyboard: [[{
+                        text: '🔙 Back to Main',
+                        callback_data: 'back_to_main'
+                    }]]
+                }
+            });
+        });
         // Text message handler
         this.bot.on('text', async (ctx) => {
             await this.handleTextMessage(ctx);
@@ -542,8 +555,20 @@ Please enter the recipient address:
                     return;
             }
         }
+        
+        // If no state and not a token address, try token search
+        if (messageText.length >= 2) {
+            // Check if it looks like a search query (not just random text)
+            if (messageText.length <= 50 && !messageText.includes('\n') && !messageText.includes('/')) {
+                await this.handleTokenSearch(ctx, messageText);
+                return;
+            }
+        }
+        
         // Default response for no state or unrecognized input
-        await ctx.reply('Please use the menu buttons to interact with the bot.');
+        await ctx.reply('🔍 *Search for tokens by name, symbol, or address*\n\nJust type the token name (e.g., "USDC", "Bitcoin") or paste a contract address to search.\n\nOr use the menu buttons below to navigate.', {
+            parse_mode: 'Markdown'
+        });
     }
     async processTransferAddress(ctx, address) {
         const userId = ctx.from.id;
@@ -1442,6 +1467,91 @@ Confirm this transaction?`, {
             await ctx.reply('❌ Error refreshing data. Please try again.');
         }
     }
+
+    // Handle token search by name, symbol, or address
+    async handleTokenSearch(ctx, query) {
+        const userId = ctx.from.id;
+        
+        try {
+            this.monitoring.logInfo('Token search initiated', { userId, query });
+            
+            // Get user data for wallet address
+            const user = await this.database.getUser(userId);
+            if (!user) {
+                await ctx.reply('❌ User not found. Please start the bot first.');
+                return;
+            }
+
+            // Search for tokens
+            const searchResult = await this.monorailAPI.searchTokens(query, user.wallet_address);
+            
+            if (!searchResult.success) {
+                await ctx.reply(`❌ Search failed: ${searchResult.error}`);
+                return;
+            }
+
+            if (searchResult.tokens.length === 0) {
+                await ctx.reply(`🔍 No tokens found for "${query}"`);
+                return;
+            }
+
+            // Format search results
+            let message = `🔍 *Search Results for "${query}"*\n\n`;
+            
+            searchResult.tokens.slice(0, 10).forEach((token, index) => {
+                const balance = parseFloat(token.balance || '0');
+                const monValue = parseFloat(token.mon_value || '0');
+                const isVerified = token.categories && token.categories.includes('verified');
+                
+                message += `${index + 1}. ${isVerified ? '✅' : '⚠️'} *${token.name}* (${token.symbol})\n`;
+                message += `   📍 \`${token.address}\`\n`;
+                
+                if (balance > 0) {
+                    message += `   💰 Balance: ${balance} ${token.symbol}\n`;
+                    message += `   💎 Value: ${monValue} MON\n`;
+                }
+                
+                message += '\n';
+            });
+
+            if (searchResult.tokens.length > 10) {
+                message += `_Showing first 10 of ${searchResult.tokens.length} results_\n\n`;
+            }
+
+            // Create keyboard with token options
+            const keyboard = [];
+            
+            searchResult.tokens.slice(0, 5).forEach((token, index) => {
+                keyboard.push([{
+                    text: `📊 ${token.symbol} - ${token.name}`,
+                    callback_data: `token_${token.address}`
+                }]);
+            });
+
+            keyboard.push([{
+                text: '🏠 Main Menu',
+                callback_data: 'main_menu'
+            }]);
+
+            await ctx.reply(message, {
+                parse_mode: 'Markdown',
+                reply_markup: {
+                    inline_keyboard: keyboard
+                }
+            });
+
+            this.monitoring.logInfo('Token search completed', { 
+                userId, 
+                query, 
+                resultsCount: searchResult.tokens.length 
+            });
+
+        } catch (error) {
+            this.monitoring.logError('Token search failed', error, { userId, query });
+            await ctx.reply('❌ Error searching for tokens. Please try again.');
+        }
+    }
+
     // handleToggleTurboMode and handleConfirmTurboEnable removed - using updated versions from index-modular-simple.js
 }
 module.exports = NavigationHandlers;

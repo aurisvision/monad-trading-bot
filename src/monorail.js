@@ -875,6 +875,52 @@ class MonorailAPI {
             };
         }
     }
+
+    // Search tokens by name, symbol, or address
+    async searchTokens(query, walletAddress = null) {
+        try {
+            if (!query || query.trim().length === 0) {
+                return {
+                    success: false,
+                    error: 'Search query cannot be empty'
+                };
+            }
+
+            const params = new URLSearchParams();
+            params.append('find', query.trim());
+            
+            if (walletAddress) {
+                params.append('address', walletAddress);
+            }
+
+            const response = await axios.get(`${this.dataUrl}/tokens?${params.toString()}`, {
+                httpsAgent,
+                timeout: 10000,
+                headers: {
+                    'Accept': 'application/json',
+                    'User-Agent': 'Area51-Bot/1.0'
+                }
+            });
+
+            if (response.data && Array.isArray(response.data)) {
+                return {
+                    success: true,
+                    tokens: response.data
+                };
+            } else {
+                return {
+                    success: true,
+                    tokens: []
+                };
+            }
+        } catch (error) {
+            console.error('Error searching tokens:', error.message);
+            return {
+                success: false,
+                error: 'Failed to search tokens'
+            };
+        }
+    }
     // Validate token address
     isValidTokenAddress(address) {
         return /^0x[a-fA-F0-9]{40}$/.test(address);
@@ -1022,4 +1068,4 @@ class MonorailAPI {
         }
     }
 }
-module.exports = MonorailAPI;
+module.exports = MonorailAPI;
