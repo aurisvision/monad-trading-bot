@@ -1,193 +1,205 @@
 # Portfolio Management
 
-Track and manage your crypto investments with Area51 Bot.
+Comprehensive portfolio tracking and management for your Monad blockchain investments.
 
 ## Portfolio Overview
 
-### What You Can See:
-- **Token balances** - How many tokens you own
-- **USD values** - Current value in dollars
-- **MON values** - Value in MON tokens
-- **Profit/Loss** - Gain or loss since purchase
-- **24h changes** - Price movement in last 24 hours
+### Real-Time Portfolio Tracking
 
-## Viewing Your Portfolio
+**What You Can Monitor:**
+- **Token Holdings** - Complete list of owned tokens
+- **Current Values** - Live USD and MON valuations
+- **Portfolio Distribution** - Asset allocation overview
 
-### Access Portfolio:
-1. **Main Menu** → **📊 Portfolio**
-2. See all your token holdings
-3. Real-time updates
+*[Image placeholder: Portfolio overview dashboard]*
 
-### Portfolio Information:
-- **Token name and symbol**
-- **Current balance** (exact amount)
-- **USD value** (current market value)
-- **MON value** (value in MON)
-- **24h change** (price movement)
-- **P&L** (profit or loss)
-- **ROI %** (return on investment)
+## Accessing Your Portfolio
 
-### Navigation:
-- **Multiple pages** - If you have many tokens
-- **Search** - Find specific tokens
-- **Sort options** - By value, P&L, or name
-- **Refresh** - Update all data
+### Portfolio Navigation
+
+**How to View Portfolio:**
+1. From main menu → **📊 Portfolio**
+2. View comprehensive holdings summary
+3. Access real-time market data
+4. Monitor performance metrics
+
+*[Image placeholder: Portfolio access screen]*
+
+### Portfolio Information Display
+
+**Detailed Token Information:**
+- **Token Symbol & Name** - Clear identification
+- **Holdings Amount** - Exact token quantities
+- **Current USD Value** - Live market valuation
+- **MON Equivalent** - Value in native tokens
+- **24h Price Change** - Recent price movements
+- **Performance Tracking** - Profit/loss indicators
+
+### Portfolio Features
+
+**Advanced Portfolio Tools:**
+- **Multi-page Navigation** - Handle large portfolios
+- **Real-time Updates** - Live price refreshing
+- **Quick Actions** - Direct trading access
+- **Performance Analytics** - Comprehensive metrics
+
+*[Image placeholder: Portfolio features overview]*
 
 ## Portfolio Actions
 
-### From Portfolio View:
-- **Sell tokens** - Click sell button next to any token
-- **View details** - See detailed token information
-- **Refresh data** - Update prices and balances
-- **Export data** - Get portfolio summary
+### Direct Trading from Portfolio
 
-### Selling from Portfolio:
-1. Click **Sell** next to token
-2. Choose percentage (25%, 50%, 75%, 100%)
-3. Review transaction details
-4. Confirm sale
+**Available Actions:**
+- **Quick Sell** - Instant selling with percentage options
+- **Token Details** - Comprehensive token information
+- **Price Alerts** - Set price notifications
+- **Performance Analysis** - Detailed metrics view
+
+*[Image placeholder: Portfolio action buttons]*
+
+### Portfolio-Based Selling
+
+**Efficient Selling Process:**
+1. Select token from portfolio view
+2. Choose sell percentage (25%, 50%, 75%, 99.99%)
+3. Review transaction details and fees
+4. Confirm and execute sale
+5. Monitor transaction status
+
+**Note:** Use 99.99% instead of 100% to avoid precision issues with gas calculations.
+
+*[Image placeholder: Portfolio selling interface]*
 
 ## Portfolio Analytics
 
-### Performance Tracking:
-- **Total portfolio value** - Combined value of all holdings
-- **Best performers** - Tokens with highest gains
-- **Worst performers** - Tokens with losses
-- **Asset allocation** - Breakdown by token
+### Performance Metrics
 
-### Profit/Loss Calculation:
-- **Real-time P&L** - Live profit/loss updates
-- **Percentage gains** - ROI for each token
-- **Total returns** - Overall portfolio performance
-- **Break-even prices** - Price needed to break even
+**Comprehensive Analytics:**
+- **Total Portfolio Value** - Combined holdings value
+- **Performance Overview** - Gains and losses summary
+- **Asset Distribution** - Portfolio allocation breakdown
+- **Top Performers** - Best and worst performing tokens
 
-## Portfolio Settings
+*[Image placeholder: Portfolio analytics dashboard]*
 
-### Display Options:
-- **Currency** - Show values in MON, USD, or both
-- **Sorting** - Sort by value, P&L, or alphabetically
-- **Refresh rate** - How often to update data
-- **Decimal places** - Precision for token amounts
+### Real-Time Calculations
 
-### Portfolio Filters:
-- **Show all tokens** - Including zero balances
-- **Hide dust** - Hide very small amounts
-- **Profitable only** - Show only profitable positions
-- **Recent activity** - Show recently traded tokens
+**Live Performance Tracking:**
+- **Current Values** - Real-time token valuations
+- **24h Changes** - Recent price movements
+- **Portfolio Trends** - Performance over time
+- **Market Impact** - How market affects your holdings
 
-## Portfolio Management Tips
+### Investment Insights
 
-### For Beginners:
-- Check portfolio regularly
-- Understand P&L calculations
-- Start with small positions
-- Don't panic on red days
+**Smart Portfolio Analysis:**
+- **Diversification Metrics** - Portfolio balance assessment
+- **Risk Analysis** - Exposure evaluation
+- **Performance Comparison** - Market benchmark comparison
+- **Optimization Suggestions** - Portfolio improvement tips
 
-### For Advanced Users:
-- Monitor asset allocation
-- Set profit-taking targets
-- Track performance over time
-- Use portfolio for tax planning
+*[Image placeholder: Investment insights panel]*
 
-### Best Practices:
-- **Diversify** - Don't put all money in one token
-- **Take profits** - Sell some when tokens go up
-- **Cut losses** - Don't hold losing positions too long
-- **Keep records** - Track your trading history
+## Portfolio Management Best Practices
 
-## Understanding Portfolio Data
+### Smart Portfolio Management
 
-### Token Values:
-- **Balance** - Exact number of tokens you own
-- **Price** - Current price per token
-- **Value** - Balance × Price
-- **Change** - Price movement (24h)
+**Essential Strategies:**
+- **Regular Monitoring** - Check portfolio performance frequently
+- **Diversification** - Spread investments across multiple tokens
+- **Risk Management** - Set stop-losses and take-profit targets
+- **Performance Tracking** - Monitor gains and losses over time
 
-### Profit/Loss:
-- **Green numbers** - Profit (you're making money)
-- **Red numbers** - Loss (you're losing money)
-- **Percentage** - How much you've gained/lost
-- **Dollar amount** - Actual profit/loss in USD
+*[Image placeholder: Portfolio management strategies]*
 
-### Portfolio Totals:
-- **Total Value** - All tokens combined
-- **Total P&L** - Overall profit/loss
-- **Total ROI** - Return on investment percentage
-- **Cash (MON)** - Available MON balance
+### Understanding Portfolio Data
 
-## Portfolio Refresh
+**Key Metrics Explained:**
+- **Token Balance** - Exact quantity owned
+- **Current Price** - Live market price per token
+- **Total Value** - Balance × Current Price
+- **24h Change** - Recent price movement percentage
+- **Performance Indicators** - Profit/loss visualization
 
-### Auto-Refresh:
-- Portfolio updates automatically
-- Prices refresh every few minutes
-- Balances update after transactions
+### Portfolio Indicators
 
-### Manual Refresh:
-- Click **🔄 Refresh** button
-- Updates all token data
-- Fetches latest prices
-- Recalculates P&L
+**Visual Performance Cues:**
+- **🟢 Green Values** - Profitable positions
+- **🔴 Red Values** - Loss positions
+- **📈 Trend Arrows** - Price direction indicators
+- **💰 Total Value** - Combined portfolio worth
 
-### When to Refresh:
-- After making trades
-- When prices seem outdated
-- Before making decisions
-- If data looks incorrect
+*[Image placeholder: Portfolio indicators guide]*
 
-## Portfolio Export
+## Portfolio Refresh & Updates
 
-### Available Formats:
-- **Text summary** - Basic portfolio overview
-- **Detailed view** - Complete token breakdown
-- **Transaction history** - All your trades
-- **Tax report** - For tax purposes
+### Automatic Updates
 
-### How to Export:
-1. Go to portfolio
-2. Click **Export** or **Share**
-3. Choose format
-4. Copy or send data
+**Real-Time Data:**
+- Portfolio values update automatically
+- Price changes reflect immediately
+- Balance updates after confirmed transactions
+- Performance metrics recalculate continuously
+
+### Manual Refresh
+
+**When to Refresh Manually:**
+- After completing trades
+- When data appears outdated
+- Before making investment decisions
+- If experiencing display issues
+
+*[Image placeholder: Refresh functionality]*
 
 ## Troubleshooting
 
-### Common Issues:
+### Common Portfolio Issues
 
-**Portfolio not loading:**
-- Check internet connection
-- Try refreshing the bot
-- Wait a few minutes
+**Balance Discrepancies:**
+- Wait for transaction confirmations
+- Check network synchronization
+- Verify transaction completion
+- Use manual refresh if needed
 
-**Wrong balances:**
-- Click refresh button
-- Check if transactions are confirmed
-- Wait for network sync
-
-**Missing tokens:**
-- Check if you actually own them
-- Verify transaction was successful
-- Look for dust amounts (very small)
-
-**Incorrect prices:**
+**Price Display Issues:**
 - Prices update every few minutes
-- Some tokens may have low liquidity
-- Check on external price sources
+- Low liquidity tokens may show delays
+- Cross-reference with external sources
+- Contact support for persistent issues
 
-## Portfolio Security
+**Performance Problems:**
+- Check internet connectivity
+- Restart bot if necessary
+- Clear cache and retry
+- Report technical issues to support
 
-### Keep Safe:
-- **Never share** your portfolio screenshots publicly
-- **Don't reveal** exact amounts you own
-- **Be careful** with portfolio exports
-- **Protect** your wallet seed phrase
+*[Image placeholder: Troubleshooting steps]*
 
-### Privacy Tips:
-- Use portfolio for personal tracking only
-- Don't share detailed holdings
-- Be aware of what you post online
-- Keep financial information private
+## Portfolio Security & Privacy
+
+### Security Best Practices
+
+**Protect Your Portfolio:**
+- Never share portfolio screenshots publicly
+- Keep exact holdings private
+- Use secure networks for access
+- Protect your wallet credentials
+
+### Privacy Considerations
+
+**Smart Privacy Practices:**
+- Avoid revealing specific amounts
+- Be cautious with portfolio sharing
+- Keep financial information confidential
+- Use portfolio data for personal tracking only
+
+*[Image placeholder: Security and privacy tips]*
 
 ## Next Steps
 
-- **Learn Trading**: [Trading Guide](trading-services.md)
-- **Wallet Management**: [Wallet Services](wallet-services.md)
-- **Security**: [Security Features](security-features.md)
+Continue your Area51 Bot journey:
+
+- **📈 [Trading Services](trading-services.md)** - Advanced trading features
+- **💼 [Wallet Management](wallet-services.md)** - Secure wallet operations
+- **🔒 [Security Features](security-features.md)** - Enhanced security options
+- **❓ [FAQ](faq.md)** - Common questions and answers

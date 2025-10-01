@@ -1,337 +1,289 @@
-# Wallet Services
+# Wallet Management
 
-Manage your crypto wallet securely with Area51 Bot.
+Secure wallet management for Monad blockchain trading with Area51 Bot.
 
-## Wallet Setup
+## Initial Wallet Setup
 
-### Creating Your Wallet
+### After Access Code Entry
 
-**First Time Setup:**
-1. Start the bot with `/start`
-2. Click **🔐 Setup Wallet**
-3. Choose your setup method:
-   - **Generate New Wallet** - Create a fresh wallet
-   - **Import Existing** - Use your existing wallet
+Once you've entered your access code, you'll be prompted to set up your wallet:
 
-### Import Existing Wallet
+**Setup Options:**
+- **🆕 Create New Wallet** - Generate a fresh wallet
+- **📥 Import Existing Wallet** - Use your existing wallet
 
-**Using Seed Phrase:**
-1. Click **Import Wallet**
-2. Send your 12-word seed phrase
-3. Bot creates wallet from your phrase
-4. Confirm wallet address
+*[Image placeholder: Wallet setup options screen]*
 
-**Using Private Key:**
-1. Click **Import Private Key**
-2. Send your private key
-3. Bot imports your wallet
-4. Verify the address
+### Creating a New Wallet
 
-### Generate New Wallet
+**Step-by-Step Process:**
+1. Select **🆕 Create New Wallet**
+2. Bot generates a new wallet with seed phrase
+3. **CRITICAL**: Save your 12-word seed phrase securely
+4. Confirm you've saved the seed phrase
+5. Wallet is ready for use
 
-**Fresh Wallet Creation:**
-1. Click **Generate New Wallet**
-2. Bot creates new wallet
-3. **SAVE YOUR SEED PHRASE** - Write it down!
-4. Confirm you saved it
-5. Wallet is ready to use
+*[Image placeholder: New wallet creation flow]*
+
+### Importing Existing Wallet
+
+**Import Methods:**
+
+**Via Seed Phrase:**
+1. Select **📥 Import Existing Wallet**
+2. Choose **Seed Phrase** option
+3. Send your 12-word seed phrase (one message)
+4. Bot validates and imports your wallet
+5. Confirm the wallet address matches
+
+**Via Private Key:**
+1. Select **📥 Import Existing Wallet**
+2. Choose **Private Key** option
+3. Send your private key
+4. Bot imports and validates the wallet
+5. Verify the imported address
+
+*[Image placeholder: Wallet import options]*
 
 ## Wallet Security
 
-### Seed Phrase Protection
+### Critical Security Practices
 
-**Critical Security Rules:**
-- **Write down** your seed phrase on paper
-- **Never share** it with anyone
-- **Store safely** - not on your phone/computer
-- **Multiple copies** - keep backups in safe places
+**Seed Phrase Protection:**
+- **Write down** your seed phrase on paper (never digital)
+- **Never share** with anyone - not even support
+- **Store securely** - safe deposit box or secure location
+- **Multiple copies** - keep backups in different locations
+- **Test recovery** - verify your backup works
+
+*[Image placeholder: Seed phrase security best practices]*
 
 ### Bot Security Features
 
-**How We Protect You:**
-- **Encrypted storage** - Your keys are encrypted
-- **No logging** - We don't log sensitive data
-- **Secure deletion** - Old data is securely removed
-- **Local processing** - Keys processed locally
+**How Area51 Bot Protects You:**
+- **Encrypted storage** - All sensitive data encrypted
+- **No logging** - Private keys never logged
+- **Secure processing** - Keys processed securely
+- **Auto-cleanup** - Temporary data automatically cleared
 
 ### Security Best Practices
 
-**Keep Your Wallet Safe:**
-- **Never share** your seed phrase or private key
-- **Use strong passwords** for your devices
-- **Keep software updated** - phone, apps, etc.
-- **Be careful** with public WiFi
-- **Double-check** addresses before sending
+**Essential Security Rules:**
+- **Never share** seed phrase or private key
+- **Verify addresses** before sending transactions
+- **Use secure networks** - avoid public WiFi
+- **Keep devices updated** - latest security patches
+- **Be cautious** with links and downloads
 
-## Wallet Information
+*[Image placeholder: Security checklist]*
 
-### View Wallet Details
+## Wallet Information & Management
 
-**Access Wallet Info:**
-1. Main menu → **💼 Wallet**
-2. See your wallet information:
-   - **Address** - Your wallet address
-   - **MON Balance** - Available MON tokens
-   - **Token Balances** - All your tokens
-   - **USD Value** - Total value in dollars
+### Accessing Wallet Details
 
-### Wallet Address
+**View Your Wallet:**
+1. From main menu → **💼 Wallet**
+2. View comprehensive wallet information:
+   - **Wallet Address** - Your Monad address
+   - **MON Balance** - Native Monad tokens
+   - **Token Holdings** - All owned tokens
+   - **Portfolio Value** - Total USD value
+   - **Recent Activity** - Transaction history
 
-**Your Wallet Address:**
-- **Unique identifier** - Like your bank account number
-- **Receive funds** - Others send tokens to this address
-- **Public information** - Safe to share for receiving
-- **Copy/Share** - Easy copy button available
+*[Image placeholder: Wallet information screen]*
 
-### Balance Information
+### Understanding Your Wallet Address
+
+**Your Monad Address:**
+- **Unique identifier** - Your wallet's public address
+- **Safe to share** - For receiving tokens only
+- **Copy function** - Easy one-click copying
+- **QR code** - For easy sharing and scanning
+
+### Balance Overview
 
 **What You'll See:**
-- **MON Balance** - Native Monad tokens
-- **Token List** - All tokens you own
-- **USD Values** - Current dollar values
-- **24h Changes** - Price movements
-- **Total Portfolio** - Combined value
+- **MON Balance** - Native Monad testnet tokens
+- **Token List** - All tokens in your wallet
+- **USD Values** - Current market values
+- **Price Changes** - 24-hour price movements
+- **Total Portfolio** - Combined portfolio value
+
+*[Image placeholder: Balance overview screen]*
 
 ## Receiving Tokens
 
-### How to Receive
+### How to Receive Tokens
 
-**Getting Tokens:**
-1. Go to **💼 Wallet**
-2. Copy your wallet address
-3. Share address with sender
-4. Wait for transaction confirmation
-5. Tokens appear in your wallet
+**Simple Receiving Process:**
+1. Navigate to **💼 Wallet**
+2. Copy your wallet address using the copy button
+3. Share your address with the sender
+4. Wait for transaction confirmation on Monad network
+5. Tokens automatically appear in your wallet
 
-### Sharing Your Address
+*[Image placeholder: Receiving tokens process]*
 
-**Safe Ways to Share:**
-- **Copy button** - Click to copy address
-- **QR code** - Show QR for easy scanning
-- **Text message** - Send address via text
-- **Email** - Send to trusted contacts
+### Sharing Your Address Safely
 
-### Receiving Different Tokens
+**Secure Sharing Methods:**
+- **Copy button** - One-click address copying
+- **QR code** - Visual code for easy scanning
+- **Direct sharing** - Send via secure messaging
+- **Verify address** - Always double-check before sharing
 
-**Supported Tokens:**
-- **MON** - Native Monad token
-- **Stablecoins** - USDC, USDT, etc.
-- **DeFi Tokens** - Various DeFi project tokens
-- **New Tokens** - Newly launched tokens
+### Supported Token Types
 
-## Sending Tokens
+**What You Can Receive:**
+- **MON** - Native Monad testnet tokens
+- **ERC-20 Tokens** - Standard tokens on Monad
+- **New Launches** - Newly deployed tokens
+- **Trading Pairs** - Tokens available for trading
 
-### How to Send
+*[Image placeholder: Supported token types]*
 
-**Sending Process:**
-1. Go to **💼 Wallet**
-2. Click **📤 Send**
-3. Choose token to send
-4. Enter recipient address
-5. Enter amount to send
-6. Review transaction details
-7. Confirm and send
+## Wallet Backup & Recovery
 
-### Send Options
+### Why Backup is Critical
 
-**Amount Selection:**
-- **Exact amount** - Type specific amount
-- **Percentage** - Send 25%, 50%, 75%, or 100%
-- **USD value** - Send specific dollar amount
-- **Max amount** - Send everything (minus gas)
-
-### Transaction Fees
-
-**Gas Fees:**
-- **Normal Mode** - Standard gas fees
-- **Turbo Mode** - Higher fees for faster confirmation
-- **Fee Preview** - See fees before confirming
-- **Fee Estimation** - Estimated cost in MON and USD
-
-## Wallet Backup
+**Protect Your Investment:**
+- **Device loss** - Phone/computer replacement
+- **Bot unavailability** - Service interruptions
+- **Emergency access** - Always have control
+- **Peace of mind** - Your funds are always safe
 
 ### Backup Your Wallet
 
-**Why Backup:**
-- **Protect your funds** - Don't lose access
-- **Device changes** - Switch phones/computers
-- **Emergency access** - If bot stops working
-- **Peace of mind** - Know your funds are safe
-
-### Backup Methods
-
-**Seed Phrase Backup:**
+**Secure Backup Process:**
 1. Go to **💼 Wallet** → **🔐 Security**
-2. Click **Show Seed Phrase**
-3. **Write down** all 12 words in order
-4. **Store safely** - not digitally
-5. **Test recovery** - make sure it works
+2. Select **Show Seed Phrase**
+3. **Write down** all 12 words in exact order
+4. **Store physically** - never save digitally
+5. **Test recovery** - verify backup works
 
-**Private Key Backup:**
-1. Go to **💼 Wallet** → **🔐 Security**
-2. Click **Export Private Key**
-3. **Copy safely** - don't share
-4. **Store securely** - encrypted storage only
+*[Image placeholder: Backup process screen]*
 
-### Recovery Testing
+### Recovery Best Practices
 
-**Test Your Backup:**
-- **Try importing** your seed phrase in another wallet
-- **Verify address** matches your current wallet
-- **Small test** - send small amount to test
-- **Document process** - know how to recover
+**Ensure Successful Recovery:**
+- **Multiple copies** - store in different secure locations
+- **Test regularly** - verify your backup works
+- **Exact spelling** - words must be precisely correct
+- **Correct order** - sequence is critical
+- **Secure storage** - physical, not digital storage
+
+*[Image placeholder: Recovery checklist]*
 
 ## Wallet Recovery
 
-### When You Need Recovery
+### When Recovery is Needed
 
-**Common Scenarios:**
-- **Lost phone** - Need to access wallet
-- **Bot issues** - Bot not working
-- **New device** - Setting up on new phone
-- **Forgot password** - Need to restore access
+**Common Recovery Scenarios:**
+- **Device replacement** - New phone or computer
+- **Bot reinstallation** - Fresh bot setup
+- **Access issues** - Cannot access current wallet
 
 ### Recovery Process
 
-**Using Seed Phrase:**
-1. Start bot on new device
-2. Click **Import Wallet**
-3. Enter your 12-word seed phrase
-4. Confirm wallet address
-5. Access restored
+**Using Your Seed Phrase:**
+1. Start Area51 Bot and enter access code
+2. Select **📥 Import Existing Wallet**
+3. Choose **Seed Phrase** option
+4. Enter your 12-word seed phrase
+5. Confirm wallet address matches
+6. Access restored successfully
 
-**Using Private Key:**
-1. Start bot on new device
-2. Click **Import Private Key**
-3. Enter your private key
-4. Verify wallet address
-5. Wallet restored
+*[Image placeholder: Recovery process]*
 
-### Recovery Tips
+### Recovery Success Tips
 
-**Successful Recovery:**
-- **Have backup ready** - seed phrase or private key
-- **Check spelling** - words must be exact
-- **Correct order** - seed words in right sequence
-- **Be patient** - recovery may take a few minutes
-- **Verify balance** - check your tokens are there
+**Ensure Successful Recovery:**
+- **Exact spelling** - Every word must be correct
+- **Proper order** - Maintain original sequence
+- **Patient process** - Allow time for validation
+- **Verify address** - Confirm it matches your original wallet
 
-## Wallet Maintenance
+## Troubleshooting
 
-### Regular Maintenance
+### Common Wallet Issues
 
-**Keep Wallet Healthy:**
-- **Check balances** regularly
-- **Update backups** if needed
-- **Monitor transactions** for any issues
-- **Keep bot updated** for security
+**Balance Not Updating:**
+- Refresh wallet view
+- Check network connection
+- Wait for blockchain sync
+- Verify transaction confirmation
 
-### Wallet Cleanup
+**Import Problems:**
+- Double-check seed phrase spelling
+- Ensure correct word order
+- Try again with careful entry
+- Contact support if persistent
 
-**Organize Your Wallet:**
-- **Remove dust** - very small token amounts
-- **Consolidate tokens** - combine small amounts
-- **Track transactions** - know what you bought/sold
-- **Review holdings** - check what you own
+**Transaction Issues:**
+- Verify sufficient MON for gas fees
+- Check recipient address accuracy
+- Ensure network connectivity
+- Use Turbo Mode for faster processing
 
-### Performance Optimization
+*[Image placeholder: Troubleshooting guide]*
 
-**Faster Wallet Operations:**
-- **Use Turbo Mode** for urgent transactions
-- **Batch operations** when possible
-- **Monitor gas prices** for cheaper fees
-- **Plan transactions** during low-traffic times
-
-## Wallet Troubleshooting
-
-### Common Issues
-
-**Balance Not Showing:**
-- **Refresh wallet** - click refresh button
-- **Check network** - ensure good connection
-- **Wait for sync** - may take a few minutes
-- **Verify transaction** - check if it was confirmed
-
-**Transaction Failed:**
-- **Check gas fees** - may be too low
-- **Verify address** - ensure correct recipient
-- **Check balance** - ensure sufficient funds
-- **Try again** - network may be busy
-
-**Wallet Not Loading:**
-- **Restart bot** - /start command
-- **Check connection** - internet connectivity
-- **Clear cache** - refresh bot data
-- **Contact support** - if problem persists
-
-### Security Issues
-
-**Suspicious Activity:**
-- **Change passwords** immediately
-- **Move funds** to new wallet
-- **Check transactions** for unauthorized activity
-- **Report issues** to support
-
-**Lost Access:**
-- **Use backup** - seed phrase or private key
-- **Try recovery** - follow recovery process
-- **Check spelling** - ensure correct backup
-- **Contact support** - for additional help
-
-## Wallet Security Tips
-
-### Daily Security
-
-**Protect Yourself:**
-- **Never share** seed phrase or private key
-- **Double-check** addresses before sending
-- **Use secure networks** - avoid public WiFi
-- **Keep backups safe** - physical storage preferred
-
-### Advanced Security
-
-**Extra Protection:**
-- **Multiple backups** - store in different places
-- **Test recovery** - ensure backups work
-- **Monitor activity** - check transactions regularly
-- **Stay informed** - learn about new threats
-
-### Red Flags
+### Security Alerts
 
 **Warning Signs:**
-- **Unexpected transactions** - you didn't make
-- **Balance changes** - without your action
-- **Access issues** - can't access wallet
-- **Suspicious messages** - asking for keys
+- Unexpected balance changes
+- Unauthorized transactions
+- Access difficulties
+- Suspicious activity notifications
 
-## Getting Help
+**Immediate Actions:**
+- Secure your seed phrase
+- Check transaction history
+- Move funds if compromised
+- Contact support immediately
 
-### Support Options
+## Best Practices
+
+### Daily Wallet Management
+
+**Regular Maintenance:**
+- Monitor balances and transactions
+- Keep seed phrase secure
+- Use secure networks only
+- Verify all addresses before sending
+
+### Security Recommendations
+
+**Essential Security:**
+- Never share private information
+- Use official bot only: [@MonAreaBot](https://t.me/MonAreaBot)
+- Keep backups in multiple secure locations
+- Stay informed about security updates
+
+*[Image placeholder: Security best practices]*
+
+## Getting Support
+
+### Support Resources
+
+**Available Help:**
+- **Documentation** - Comprehensive guides
+- **Community** - User discussions and tips
+- **Support Team** - Technical assistance
+- **FAQ** - Common questions answered
+
+### Contact Information
 
 **When You Need Help:**
-- **Bot commands** - /help for basic help
-- **Documentation** - check guides and FAQs
-- **Community** - ask other users
-- **Support team** - contact for serious issues
-
-### Before Contacting Support
-
-**Information to Prepare:**
-- **Wallet address** - your public address
-- **Transaction hash** - if about specific transaction
-- **Error messages** - exact text of any errors
-- **Steps taken** - what you were trying to do
-
-### Emergency Situations
-
-**Urgent Issues:**
-- **Funds at risk** - contact support immediately
-- **Unauthorized access** - move funds to safety
-- **Lost access** - try recovery first
-- **Technical issues** - provide detailed information
+- **Bot Issues** - Use /help command
+- **Technical Problems** - Contact support with details
+- **Security Concerns** - Report immediately
+- **General Questions** - Check FAQ first
 
 ## Next Steps
 
-- **Start Trading**: [Trading Services](trading-services.md)
-- **Track Portfolio**: [Portfolio Management](portfolio-management.md)
-- **Learn Security**: [Security Features](security-features.md)
+Ready to start trading? Continue with:
+
+- **🚀 [Quick Start Guide](quick-start.md)** - Begin your trading journey
+- **📈 [Trading Services](trading-services.md)** - Learn about trading features
+- **📊 [Portfolio Management](portfolio-management.md)** - Track your investments
+- **🔒 [Security Features](security-features.md)** - Advanced security options

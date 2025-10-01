@@ -1,108 +1,103 @@
-# Area51 Bot - Monad Trading Bot
+# Area51 Bot - Advanced Telegram Trading Bot
 
-Simple Telegram bot for trading tokens on the Monad blockchain testnet.
+**The most advanced Telegram trading bot for the Monad blockchain testnet.**
 
 ## What is Area51 Bot?
 
-Area51 Bot lets you trade tokens on Monad directly from Telegram. Buy, sell, and manage your portfolio with simple commands.
+Area51 Bot is a sophisticated Telegram trading bot that enables seamless token trading on the Monad blockchain. Trade tokens, manage your portfolio, and access advanced features directly from Telegram.
 
-### Main Features
+**Bot Link:** [@MonAreaBot](https://t.me/MonAreaBot)
 
-- **Wallet Management** - Create or import wallets securely
-- **Token Trading** - Buy and sell tokens with one click
-- **Portfolio Tracking** - View your holdings and profit/loss
-- **Turbo Mode** - Ultra-fast trading 
-- **Auto-Buy** - Automatically buy tokens just by sending CA
-- **Custom Settings** - Adjust gas, slippage, and amounts
+## 🚀 Key Features
 
-## Key Trading Features
+### **Secure Access System**
+- **Access Code Required** - Follow [@0xArea](https://twitter.com/0xArea) to get your access code
+- **Secure Authentication** - Protected access to ensure quality user experience
 
-### **Turbo Mode** 🚀
-- Maximum speed trading
-- Fixed 100 Gwei gas price
-- 20% slippage tolerance
-- Instant execution
+### **Advanced Wallet Management**
+- **Create New Wallets** - Generate secure wallets with encrypted seed phrases
+- **Import Existing Wallets** - Support for private keys and seed phrases
+- **Military-Grade Security** - AES-256 encryption for all sensitive data
 
-### **Auto-Buy** 🤖
-- Automatically buy tokens just by sending CA
-- Configurable MON amount
-- Separate gas and slippage settings
-- Can be combined with Turbo Mode
+### **Professional Trading Features**
+- **Turbo Mode** - Ultra-fast trading with optimized gas settings
+- **Auto-Buy** - Automatically purchase tokens by sending contract addresses
+- **Smart Slippage** - Dynamic slippage adjustment for optimal execution
+- **Portfolio Tracking** - Real-time P&L tracking and portfolio analytics
 
-### **Smart Trading**
-- Integration with Monorail DEX aggregator
-- Real-time price data
-- Customizable gas and slippage
-- Portfolio profit/loss tracking
+### **Monorail Integration**
+- **DEX Aggregator** - Best prices across all Monad exchanges
+- **Real-Time Data** - Live token prices and market information
+- **Optimized Routing** - Smart order routing for minimal slippage
 
-## 🎮 Quick Start
+## 🎯 Getting Started
 
-1. **Start** - Send `/start` to the bot
-2. **Wallet** - Create or import your wallet
-3. **Fund** - Add MON tokens from testnet faucet
-4. **Trade** - Start buying and selling tokens
+### Step 1: Get Access
+1. Follow [@0xArea](https://twitter.com/0xArea) on Twitter
+2. Get your access code from project announcements
+3. Start the bot: [@MonAreaBot](https://t.me/MonAreaBot)
 
-[**→ Detailed Setup Guide**](quick-start.md)
+### Step 2: Setup
+1. Enter your access code
+2. Create or import your wallet
+3. Fund with MON tokens from testnet faucet
+4. Start trading!
+
+[**→ Complete Setup Guide**](quick-start.md)
 
 ## 📚 Documentation
 
-This documentation is organized into the following sections:
+This documentation covers everything you need to know about Area51 Bot:
 
 ### 🏁 **Getting Started**
-- [Quick Start Guide](quick-start.md) - Get up and running in 5 minutes
-- [Wallet Setup](wallet-services.md#wallet-setup) - Create and secure your wallet
-- [First Trade](trading-services.md#your-first-trade) - Execute your first transaction
+- [Quick Start Guide](quick-start.md) - Complete setup in 5 minutes
+- [Access & Setup](access-setup.md) - Get your access code and initial setup
+- [Wallet Management](wallet-services.md) - Create and secure your wallet
 
-### 💼 **Core Services**
-- [Wallet Services](wallet-services.md) - Complete wallet management guide
-- [Trading Services](trading-services.md) - Advanced trading features and strategies
-- [Portfolio Management](portfolio-management.md) - Track and analyze your investments
-
-### ⚙️ **Advanced Features**
-- [Security Features](security-features.md) - Understand our security measures
+### 💼 **Core Features**
+- [Trading Guide](trading-services.md) - Buy, sell, and advanced trading features
+- [Portfolio Management](portfolio-management.md) - Track your investments and P&L
 - [Settings & Customization](settings.md) - Customize your trading experience
-- [API Integration](api-reference.md) - For developers and advanced users
 
-### 🆘 **Support**
-- [FAQ](faq.md) - Frequently asked questions
-- [Troubleshooting](troubleshooting.md) - Common issues and solutions
-- [Contact Support](support.md) - Get help when you need it
+### 🔒 **Security & Support**
+- [Security Features](security-features.md) - Understand our security measures
+- [FAQ](faq.md) - Frequently asked questions and troubleshooting
+- [Contact & Support](support.md) - Get help when you need it
 
-## 🌐 Monad Network Information
+## 🌐 Monad Network
 
-Area51 Bot operates exclusively on the **Monad blockchain**, a high-performance EVM-compatible network designed for the future of DeFi.
+Area51 Bot operates on the **Monad blockchain testnet**, a high-performance EVM-compatible network.
 
 ### **Network Details**
 - **Chain ID**: 41454
-- **Native Token**: MON
+- **Native Token**: MON (testnet)
 - **RPC URL**: `https://testnet-rpc.monad.xyz`
-- **Explorer**: [Monad Explorer](https://testnet.monadexplorer.com)
+- **Explorer**: [Monad Testnet Explorer](https://testnet.monadexplorer.com)
 
-### **Supported DEX**
-- **Monorail DEX** - Advanced DEX aggregator for optimal trade execution
+### **DEX Integration**
+- **Monorail DEX** - Advanced DEX aggregator for optimal execution
 - **Real-time liquidity** across multiple pools
-- **MEV protection** for safer trading
+- **Smart routing** for best prices
 
-## 🔗 Quick Links
+## 🔗 Important Links
 
-- 🤖 **Bot**: [@Area51Bot](https://t.me/Area51Bot)
-- 🌐 **Website**: [area51bot.com](https://area51bot.com)
-- 📱 **Telegram Channel**: [@Area51Updates](https://t.me/Area51Updates)
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/devYahia/area51-bot/issues)
-- 💬 **Community**: [@Area51Community](https://t.me/Area51Community)
+- 🤖 **Bot**: [@MonAreaBot](https://t.me/MonAreaBot)
+- 🐦 **Project Twitter**: [@0xArea](https://twitter.com/0xArea)
+- 👨‍💻 **Developer**: [@yahia_crypto](https://twitter.com/yahia_crypto)
+- 💧 **MON Faucet**: [Monad Testnet Faucet](https://faucet.monad.xyz)
 
-## ⚠️ Important Disclaimers
+## ⚠️ Important Notice
 
-- **Testnet Only**: Currently operating on Monad testnet for testing purposes
-- **Educational Use**: This bot is for educational and testing purposes
-- **Risk Warning**: Trading cryptocurrencies involves substantial risk
-- **No Financial Advice**: This bot does not provide financial advice
+- **Testnet Only**: Currently operating on Monad testnet
+- **Access Required**: Follow [@0xArea](https://twitter.com/0xArea) for access codes
+- **Educational Purpose**: For testing and learning DeFi trading
+- **No Real Value**: Testnet tokens have no monetary value
 
 ---
 
-**Ready to explore the future of DeFi trading?** 
+**Ready to start trading on Monad?** 
 
-[**🚀 Start Trading Now**](https://t.me/Area51Bot) | [**📖 Quick Start Guide**](quick-start.md)
+[**🚀 Get Started**](https://t.me/MonAreaBot) | [**📖 Setup Guide**](quick-start.md)
 
 ---
 

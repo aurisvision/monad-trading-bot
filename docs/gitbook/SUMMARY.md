@@ -1,27 +1,29 @@
-# Table of contents
+# Table of Contents
 
 ## Getting Started
 
 * [Introduction](README.md)
 * [Quick Start Guide](quick-start.md)
 
-## User Guide
+## Core Features
 
+* [Access & Setup](access-setup.md)
 * [Wallet Management](wallet-services.md)
 * [Trading Guide](trading-services.md)
-* [Portfolio Tracking](portfolio-management.md)
+* [Portfolio Management](portfolio-management.md)
 
-## Security & Help
+## Advanced Features
 
 * [Security Features](security-features.md)
-* [Frequently Asked Questions](faq.md)
+* [Settings & Customization](settings.md)
 
 ## Monad Network
 
 * [About Monad](monad-network.md)
-* [Getting MON Tokens](getting-mon-tokens.md)
 * [Network Information](network-info.md)
+* [Getting MON Tokens](getting-mon-tokens.md)
 
-## Support
+## Support & Help
 
-* [@yahia\_crypto](https://t.me/yahia_crypto)
+* [Frequently Asked Questions](faq.md)
+* [Contact & Support](support.md)
