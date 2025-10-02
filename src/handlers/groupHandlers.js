@@ -12,7 +12,7 @@ class GroupHandlers {
         this.tradingEngine = dependencies.tradingEngine;
         this.walletManager = dependencies.walletManager;
         this.cacheService = dependencies.cacheService;
-        this.botUsername = null;
+        this.botUsername = dependencies.botUsername || 'area51bot';
     }
 
     /**
@@ -167,6 +167,77 @@ class GroupHandlers {
     }
 
     /**
+     * Handle token recognition in messages (contract addresses only)
+     */
+    async handleTokenRecognition(ctx, message) {
+        try {
+            // Only recognize contract addresses (0x followed by 40 hex characters)
+            const contractRegex = /0x[a-fA-F0-9]{40}/g;
+            const matches = message.match(contractRegex);
+            
+            if (matches && matches.length > 0) {
+                // Take the first contract address found
+                const contractAddress = matches[0];
+                
+                // Get token info
+                const tokenInfoResponse = await this.monorailAPI.getTokenInfo(contractAddress);
+                
+                if (tokenInfoResponse && tokenInfoResponse.success && tokenInfoResponse.token) {
+                    await this.sendTokenInfoToGroup(ctx, tokenInfoResponse.token);
+                    return true;
+                }
+            }
+            
+            return false;
+        } catch (error) {
+            this.monitoring?.logError('Token recognition error', error);
+            return false;
+        }
+    }
+
+    /**
+     * Send formatted token information to group
+     */
+    async sendTokenInfoToGroup(ctx, tokenData) {
+        try {
+            // Extract data with proper fallbacks
+            const symbol = tokenData.symbol || 'Unknown';
+            const name = tokenData.name || 'Unknown Token';
+            const address = tokenData.address || 'N/A';
+            const price = tokenData.usd_per_token ? `$${this.formatNumber(tokenData.usd_per_token)}` : 'N/A';
+            const marketCap = tokenData.marketCap ? `$${this.formatNumber(tokenData.marketCap)}` : 'N/A';
+            const volume24h = tokenData.volume24h ? `$${this.formatNumber(tokenData.volume24h)}` : 'N/A';
+            
+            // Create clean tree-structured message inspired by Phanes bot
+            const message = 
+                `🪙 *${symbol}* (${name})\n` +
+                `├ \`${address}\`\n` +
+                `└ #MON (Monad) | 🌱 Active\n\n` +
+                `📊 *Token Stats*\n` +
+                `├ USD: ${price}\n` +
+                `├ MC:  ${marketCap}\n` +
+                `└ Vol: ${volume24h}\n\n` +
+                `💡 *Quick Buy*\n` +
+                `└ @${this.botUsername || 'area51bot'} buy ${address} <amount>`;
+
+            await ctx.reply(message, { 
+                parse_mode: 'Markdown',
+                disable_web_page_preview: true
+            });
+
+        } catch (error) {
+            this.monitoring?.logError('Send token info error', error);
+            
+            // Fallback without formatting
+            await ctx.reply(
+                `Token: ${tokenData.symbol || 'Unknown'}\n` +
+                `Contract: ${tokenData.address || 'N/A'}\n` +
+                `To buy: @${this.botUsername || 'area51bot'} buy ${tokenData.address || 'N/A'} <amount>`
+            );
+        }
+    }
+
+    /**
      * Execute buy operation in group
      */
     async executeBuyInGroup(ctx, tokenAddress, amount, user) {
@@ -196,18 +267,28 @@ class GroupHandlers {
             }
 
             if (result.success) {
-                // Success message
-                await ctx.reply(
+                // Get token info for better display
+                const tokenInfoResponse = await this.monorailAPI.getTokenInfo(tokenAddress);
+                const tokenSymbol = tokenInfoResponse?.token?.symbol || 'Token';
+                
+                // Create proper explorer URL instead of just hash
+                const explorerUrl = result.txHash ? 
+                    `https://testnet.monadexplorer.com/tx/${result.txHash}` : 
+                    (result.explorerUrl || '#');
+                
+                // Clean success message
+                const successMessage = 
                     `✅ *Purchase Successful*\n\n` +
-                    `💰 Amount: ${amount} MON\n` +
-                    `🪙 Token: \`${tokenAddress}\`\n` +
-                    `⚡ Mode: ${tradeType.toUpperCase()}\n` +
-                    `🔗 [View Transaction](${result.explorerUrl || '#'})`,
-                    { 
-                        parse_mode: 'Markdown',
-                        disable_web_page_preview: true
-                    }
-                );
+                    `👤 ${ctx.from.first_name || 'User'}\n` +
+                    `🪙 ${tokenSymbol}\n` +
+                    `💰 ${amount} MON\n` +
+                    `⚡ ${tradeType.toUpperCase()}\n\n` +
+                    `🔗 [View Transaction](${explorerUrl})`;
+
+                await ctx.reply(successMessage, { 
+                    parse_mode: 'Markdown',
+                    disable_web_page_preview: true
+                });
             } else {
                 // Error message
                 await ctx.reply(`❌ Purchase failed: ${result.error || 'Unknown error'}`);
@@ -223,69 +304,6 @@ class GroupHandlers {
             });
 
             await ctx.reply('❌ Purchase failed. Please try again later.');
-        }
-    }
-
-    /**
-     * Handle token recognition in messages (contract addresses only)
-     */
-    async handleTokenRecognition(ctx, message) {
-        try {
-            // Only recognize contract addresses (0x followed by 40 hex characters)
-            const contractRegex = /0x[a-fA-F0-9]{40}/g;
-            const matches = message.match(contractRegex);
-            
-            if (matches && matches.length > 0) {
-                // Take the first contract address found
-                const contractAddress = matches[0];
-                
-                // Get token info
-                const tokenInfo = await this.monorailAPI.getTokenInfo(contractAddress);
-                
-                if (tokenInfo) {
-                    await this.sendTokenInfoToGroup(ctx, tokenInfo);
-                    return true;
-                }
-            }
-            
-            return false;
-        } catch (error) {
-            this.monitoring?.logError('Token recognition error', error);
-            return false;
-        }
-    }
-
-    /**
-     * Send formatted token information to group
-     */
-    async sendTokenInfoToGroup(ctx, tokenInfo) {
-        try {
-            const price = tokenInfo.price ? `$${this.formatNumber(tokenInfo.price)}` : 'N/A';
-            const marketCap = tokenInfo.market_cap ? `$${this.formatNumber(tokenInfo.market_cap)}` : 'N/A';
-            const change24h = tokenInfo.price_change_24h ? `${tokenInfo.price_change_24h > 0 ? '+' : ''}${tokenInfo.price_change_24h.toFixed(2)}%` : 'N/A';
-            
-            const message = 
-                `🪙 *${tokenInfo.symbol}* (${tokenInfo.name})\n\n` +
-                `📍 *Contract:* \`${tokenInfo.address}\`\n` +
-                `💰 *Price:* ${price}\n` +
-                `📊 *Market Cap:* ${marketCap}\n` +
-                `📈 *24h Change:* ${change24h}\n\n` +
-                `To buy use: @${this.botUsername} buy ${tokenInfo.address} <amount>`;
-
-            await ctx.reply(message, { 
-                parse_mode: 'Markdown',
-                disable_web_page_preview: true
-            });
-
-        } catch (error) {
-            this.monitoring?.logError('Send token info error', error);
-            
-            // Fallback without formatting
-            await ctx.reply(
-                `Token: ${tokenInfo.symbol || 'Unknown'}\n` +
-                `Contract: ${tokenInfo.address}\n` +
-                `To buy use: @${this.botUsername} buy ${tokenInfo.address} <amount>`
-            );
         }
     }
 
@@ -320,20 +338,25 @@ _For access to all features, start a private chat with the bot_`;
     }
 
     /**
-     * Format large numbers
+     * Format large numbers for display
      */
     formatNumber(num) {
-        if (!num) return null;
+        if (!num || isNaN(num)) return '0';
         
-        if (num >= 1e9) {
-            return (num / 1e9).toFixed(2) + 'B';
-        } else if (num >= 1e6) {
-            return (num / 1e6).toFixed(2) + 'M';
-        } else if (num >= 1e3) {
-            return (num / 1e3).toFixed(2) + 'K';
+        const number = parseFloat(num);
+        
+        if (number >= 1e9) {
+            return (number / 1e9).toFixed(2) + 'B';
+        } else if (number >= 1e6) {
+            return (number / 1e6).toFixed(2) + 'M';
+        } else if (number >= 1e3) {
+            return (number / 1e3).toFixed(2) + 'K';
+        } else if (number >= 1) {
+            return number.toFixed(4);
+        } else {
+            // For very small numbers, show more decimal places
+            return number.toFixed(8).replace(/\.?0+$/, '');
         }
-        
-        return num.toFixed(2);
     }
 }
 
