@@ -52,17 +52,23 @@ class InlineHandlers {
      */
     async searchTokens(ctx, searchTerm) {
         try {
-            // Get tokens from API
-            const response = await this.monorailAPI.get('/tokens');
-            if (!response?.data?.tokens) {
-                return await ctx.answerInlineQuery([]);
+            // Use the correct MonorailAPI searchTokens method
+            const searchResults = await this.monorailAPI.searchTokens(searchTerm);
+            
+            if (!searchResults?.success || !searchResults?.tokens || searchResults.tokens.length === 0) {
+                return await ctx.answerInlineQuery([{
+                    type: 'article',
+                    id: 'no_results',
+                    title: 'No tokens found',
+                    description: `No results for "${searchTerm}"`,
+                    input_message_content: {
+                        message_text: `No tokens found for "${searchTerm}"`
+                    }
+                }]);
             }
 
-            // Filter tokens by search term
-            const tokens = response.data.tokens.filter(token => 
-                token.symbol?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                token.name?.toLowerCase().includes(searchTerm.toLowerCase())
-            ).slice(0, 10);
+            // Use the tokens from search results
+            const tokens = searchResults.tokens.slice(0, 10);
 
             if (tokens.length === 0) {
                 return await ctx.answerInlineQuery([{

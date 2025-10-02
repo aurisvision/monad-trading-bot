@@ -267,40 +267,35 @@ _Executed by Area51 Bot_`;
                 const contractAddress = contractMatches[0];
                 tokenInfo = await this.monorailAPI.getTokenInfo(contractAddress);
             } else {
-                // Check for token symbols/names (3-10 characters, letters/numbers only)
-                const tokenNameRegex = /\b[A-Za-z][A-Za-z0-9]{2,9}\b/g;
-                const nameMatches = message.match(tokenNameRegex);
+                // Only check for well-known token symbols to avoid false positives
+                const commonTokens = ['USDC', 'USDT', 'ETH', 'BTC', 'WETH', 'DAI', 'MATIC', 'LINK', 'UNI', 'AAVE', 'MON', 'WMON'];
                 
-                if (nameMatches && nameMatches.length > 0) {
-                    // Common token symbols to check
-                    const commonTokens = ['USDC', 'USDT', 'ETH', 'BTC', 'WETH', 'DAI', 'MATIC', 'LINK', 'UNI', 'AAVE'];
-                    
-                    for (const match of nameMatches) {
+                // Create a regex that only matches these specific tokens as whole words
+                const tokenRegex = new RegExp(`\\b(${commonTokens.join('|')})\\b`, 'gi');
+                const tokenMatches = message.match(tokenRegex);
+                
+                if (tokenMatches && tokenMatches.length > 0) {
+                    for (const match of tokenMatches) {
                         const upperMatch = match.toUpperCase();
                         
-                        // Only process if it looks like a token symbol
-                        if (commonTokens.includes(upperMatch) || 
-                            (upperMatch.length >= 3 && upperMatch.length <= 6 && /^[A-Z0-9]+$/.test(upperMatch))) {
-                            
-                            try {
-                                 const searchResults = await this.monorailAPI.searchTokens(upperMatch);
-                                 if (searchResults && searchResults.success && searchResults.tokens && searchResults.tokens.length > 0) {
-                                     // Convert to expected format
-                                     const firstToken = searchResults.tokens[0];
-                                     tokenInfo = {
-                                         token: firstToken,
-                                         price: {
-                                             usd: firstToken.usd_per_token,
-                                             market_cap: firstToken.market_cap,
-                                             change_24h: firstToken.change_24h
-                                         }
-                                     };
-                                     break; // Found a token, stop searching
-                                 }
-                             } catch (searchError) {
-                                 // Continue to next match if search fails
-                                 continue;
-                             }
+                        try {
+                            const searchResults = await this.monorailAPI.searchTokens(upperMatch);
+                            if (searchResults && searchResults.success && searchResults.tokens && searchResults.tokens.length > 0) {
+                                // Convert to expected format
+                                const firstToken = searchResults.tokens[0];
+                                tokenInfo = {
+                                    token: firstToken,
+                                    price: {
+                                        usd: firstToken.usd_per_token,
+                                        market_cap: firstToken.market_cap,
+                                        change_24h: firstToken.change_24h
+                                    }
+                                };
+                                break; // Found a token, stop searching
+                            }
+                        } catch (searchError) {
+                            // Continue to next match if search fails
+                            continue;
                         }
                     }
                 }

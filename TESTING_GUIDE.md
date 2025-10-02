@@ -1,211 +1,282 @@
-# 🧪 دليل اختبار وظائف المجموعة - Area51 Bot
+# 🧪 Group Functionality Testing Guide - Area51 Bot
 
-## 📋 نظرة عامة
+## 📋 Overview
 
-هذا الدليل يوضح كيفية اختبار جميع وظائف المجموعة الجديدة في بوت Area51.
+This guide explains how to test all new group functionalities in the Area51 bot.
 
-## 🔧 الاختبار المحلي
+## 🔧 Local Testing
 
-### 1. تشغيل الاختبارات التلقائية
+### 1. Running Automated Tests
 
 ```bash
-# تشغيل الاختبار الشامل
-node test-group-complete.js
+# Run comprehensive test
+npm run test:group
 
-# تشغيل اختبار سريع
-node test-group-functionality.js
+# Run quick test
+npm run test:quick
+
+# Run syntax check
+npm run test:syntax
 ```
 
-### 2. فحص الكود
+### 2. Code Validation
 
 ```bash
-# فحص الأخطاء النحوية
+# Check syntax errors
 node -c src/handlers/groupHandlers.js
 node -c src/index-modular-simple.js
 
-# فحص جميع الملفات
+# Check all files
 find src -name "*.js" -exec node -c {} \;
 ```
 
-## 🤖 الاختبار مع Telegram
+## 🤖 Testing with Telegram
 
-### المتطلبات الأساسية
+### Prerequisites
 
-1. **إنشاء مجموعة اختبار:**
-   - أنشئ مجموعة جديدة في Telegram
-   - أضف البوت للمجموعة
-   - امنح البوت صلاحيات الإدارة (اختياري)
+1. **Create Test Group:**
+   - Create a new group in Telegram
+   - Add the bot to the group
+   - Grant admin permissions to the bot (optional)
 
-2. **تحضير البيانات:**
-   - تأكد من وجود محفظة للمستخدم
-   - تأكد من اتصال قاعدة البيانات
-   - تأكد من عمل MonorailAPI
+2. **Prepare Data:**
+   - Ensure user has a wallet
+   - Ensure database connection
+   - Ensure MonorailAPI is working
 
-### سيناريوهات الاختبار
+### Testing Scenarios
 
-#### 🪙 اختبار التعرف على العملات
+#### 🪙 Token Recognition Testing
 
-**1. عنوان العقد:**
+**1. Contract Address:**
 ```
 0x1234567890123456789012345678901234567890
 ```
-**النتيجة المتوقعة:** عرض معلومات العملة مع أزرار التداول
 
-**2. رمز العملة:**
-```
-What do you think about USDC?
-```
-**النتيجة المتوقعة:** التعرف على USDC وعرض معلوماتها
+**Expected Result:**
+- Bot should automatically recognize the contract
+- Display token information
+- Show price, market cap, 24h change
+- Provide buy button/instructions
 
-**3. نص عادي:**
+**2. Token Symbol:**
 ```
-Hello everyone!
+USDC
+ETH
+WETH
 ```
-**النتيجة المتوقعة:** تجاهل الرسالة
 
-#### 🛒 اختبار أوامر الشراء
+**Expected Result:**
+- Bot should recognize common token symbols
+- Display token information automatically
+- Show relevant market data
 
-**1. أمر شراء صحيح:**
-```
-@YourBotUsername buy USDC 100
-```
-**النتيجة المتوقعة:** تنفيذ عملية الشراء أو رسالة خطأ واضحة
+#### 💰 Buy Command Testing
 
-**2. أمر شراء بدون مبلغ:**
+**1. Basic Buy Command:**
 ```
+@YourBotUsername buy USDC 5
+```
+
+**Expected Result:**
+- Bot processes the command
+- Shows processing message
+- Executes the trade
+- Shows success/failure message
+- Displays transaction hash
+
+**2. Buy with Contract Address:**
+```
+@YourBotUsername buy 0x1234567890123456789012345678901234567890 10
+```
+
+**Expected Result:**
+- Bot recognizes contract address
+- Processes the buy order
+- Shows transaction details
+
+**3. Invalid Commands:**
+```
+@YourBotUsername buy
 @YourBotUsername buy USDC
+@YourBotUsername buy USDC abc
 ```
-**النتيجة المتوقعة:** رسالة خطأ توضح الاستخدام الصحيح
 
-**3. أمر شراء بعملة غير موجودة:**
-```
-@YourBotUsername buy INVALIDTOKEN 100
-```
-**النتيجة المتوقعة:** رسالة خطأ "العملة غير موجودة"
+**Expected Result:**
+- Bot shows error messages
+- Provides correct usage format
+- Doesn't execute invalid trades
 
-#### ❓ اختبار أمر المساعدة
+#### ❓ Help Command Testing
 
-**الأمر:**
+**1. Help Command:**
 ```
 @YourBotUsername help
 ```
-**النتيجة المتوقعة:** عرض قائمة الأوامر المتاحة
 
-#### 🔒 اختبار الأمان
+**Expected Result:**
+- Shows available commands
+- Explains usage format
+- Provides examples
 
-**1. رسالة في محادثة خاصة:**
+#### 🔒 Security Testing
+
+**1. Normal Messages (Should be Ignored):**
 ```
-0x1234567890123456789012345678901234567890
+Hello everyone!
+How are you?
+Check this out: https://example.com
 ```
-**النتيجة المتوقعة:** تجاهل الرسالة (لا يعمل في المحادثات الخاصة)
 
-**2. مستخدم بدون محفظة:**
-```
-@YourBotUsername buy USDC 100
-```
-**النتيجة المتوقعة:** رسالة خطأ "يجب إنشاء محفظة أولاً"
+**Expected Result:**
+- Bot ignores normal conversation
+- Only responds to token addresses/symbols
+- Only responds to @mentions
 
-## 📊 مراقبة الأداء
+**2. Private Chat Messages:**
+- Test that group handlers don't interfere with private chats
+- Ensure private chat functionality remains intact
 
-### 1. فحص اللوجز
+## 📊 Performance Monitoring
+
+### Key Metrics to Watch
+
+1. **Response Time:**
+   - Token recognition: < 2 seconds
+   - Buy commands: < 5 seconds
+   - Help commands: < 1 second
+
+2. **Error Rates:**
+   - API errors should be handled gracefully
+   - User-friendly error messages
+   - No bot crashes
+
+3. **Memory Usage:**
+   - Monitor for memory leaks
+   - Check cache efficiency
+   - Ensure proper cleanup
+
+### Monitoring Commands
 
 ```bash
-# مراقبة لوجز البوت
+# Check bot logs
 tail -f logs/bot.log
 
-# البحث عن أخطاء المجموعة
-grep "Group" logs/bot.log
+# Monitor system resources
+htop
 
-# فحص أخطاء التداول
-grep "Trading" logs/bot.log
+# Check database connections
+psql -h localhost -U your_user -d your_db -c "SELECT count(*) FROM pg_stat_activity;"
 ```
 
-### 2. مراقبة قاعدة البيانات
+## 🐛 Troubleshooting
 
-```sql
--- فحص نشاط المجموعات
-SELECT * FROM user_activity WHERE action_type = 'group_interaction';
+### Common Issues
 
--- فحص عمليات التداول من المجموعات
-SELECT * FROM trades WHERE source = 'group';
-```
+**1. Bot Not Responding in Groups:**
+- Check if group handlers are properly set up
+- Verify bot has necessary permissions
+- Check logs for errors
 
-### 3. مراقبة الذاكرة والأداء
+**2. Token Recognition Not Working:**
+- Verify MonorailAPI connection
+- Check token address format
+- Ensure API endpoints are accessible
+
+**3. Buy Commands Failing:**
+- Check user wallet status
+- Verify sufficient balance
+- Check gas price settings
+- Ensure token approval
+
+**4. API Errors:**
+- Check MonorailAPI status
+- Verify network connectivity
+- Check rate limiting
+
+### Debug Commands
 
 ```bash
-# استخدام الذاكرة
-ps aux | grep node
+# Test specific functionality
+node quick-test.js contract
+node quick-test.js symbol
+node quick-test.js buy
 
-# مراقبة CPU
-top -p $(pgrep -f "node.*index-modular-simple.js")
+# Check configuration
+node -e "console.log(require('./test-config.json'))"
+
+# Validate handlers
+node -e "const GroupHandlers = require('./src/handlers/groupHandlers.js'); console.log('✅ GroupHandlers loaded successfully');"
 ```
 
-## 🐛 استكشاف الأخطاء
+## ✅ Success Criteria
 
-### الأخطاء الشائعة
+### Group Functionality Should:
 
-**1. "Bot not responding in groups"**
-- تحقق من إضافة البوت للمجموعة
-- تحقق من صلاحيات البوت
-- فحص اللوجز للأخطاء
+1. **✅ Recognize Token Contracts:**
+   - Automatically detect 0x addresses
+   - Display token information
+   - Show market data
 
-**2. "Token not recognized"**
-- تحقق من اتصال MonorailAPI
-- فحص صحة عنوان العقد
-- تحقق من قاعدة بيانات العملات
+2. **✅ Recognize Token Symbols:**
+   - Detect common token symbols
+   - Show relevant token info
+   - Handle multiple tokens in one message
 
-**3. "Buy command fails"**
-- تحقق من وجود محفظة للمستخدم
-- فحص رصيد المحفظة
-- تحقق من اتصال شبكة Monad
+3. **✅ Process Buy Commands:**
+   - Handle @bot mentions correctly
+   - Execute trades successfully
+   - Provide clear feedback
 
-### أدوات التشخيص
+4. **✅ Show Help Information:**
+   - Display available commands
+   - Provide usage examples
+   - Guide users effectively
 
-```bash
-# اختبار اتصال قاعدة البيانات
-node -e "
-const Database = require('./src/database/Database');
-const db = new Database();
-db.testConnection().then(console.log).catch(console.error);
-"
+5. **✅ Maintain Security:**
+   - Ignore irrelevant messages
+   - Validate user permissions
+   - Handle errors gracefully
 
-# اختبار MonorailAPI
-node -e "
-const MonorailAPI = require('./src/monorail');
-const api = new MonorailAPI();
-api.searchTokens('USDC').then(console.log).catch(console.error);
-"
+6. **✅ Performance:**
+   - Fast response times
+   - Efficient resource usage
+   - Stable operation
+
+## 📝 Test Results Template
+
+```
+Date: ___________
+Tester: ___________
+Bot Version: ___________
+
+✅ Token Contract Recognition: PASS/FAIL
+✅ Token Symbol Recognition: PASS/FAIL  
+✅ Buy Commands: PASS/FAIL
+✅ Help Command: PASS/FAIL
+✅ Security (Ignoring Normal Messages): PASS/FAIL
+✅ Error Handling: PASS/FAIL
+✅ Performance: PASS/FAIL
+
+Notes:
+_________________________________
+_________________________________
+_________________________________
 ```
 
-## ✅ قائمة التحقق النهائية
+## 🚀 Deployment Checklist
 
-- [ ] الاختبارات التلقائية تمر بنجاح
-- [ ] البوت يتعرف على عناوين العقود
-- [ ] البوت يتعرف على رموز العملات
-- [ ] أوامر الشراء تعمل بشكل صحيح
-- [ ] أمر المساعدة يعرض المعلومات الصحيحة
-- [ ] الأمان يعمل (تجاهل المحادثات الخاصة)
-- [ ] رسائل الخطأ واضحة ومفيدة
-- [ ] الأداء مقبول (استجابة سريعة)
-- [ ] اللوجز تسجل الأحداث بشكل صحيح
+Before deploying to production:
 
-## 🚀 النشر للإنتاج
+- [ ] All tests pass locally
+- [ ] No syntax errors
+- [ ] Group functionality tested in test environment
+- [ ] Performance metrics acceptable
+- [ ] Error handling verified
+- [ ] Security measures confirmed
+- [ ] Documentation updated
+- [ ] Monitoring alerts configured
 
-بعد نجاح جميع الاختبارات:
+---
 
-```bash
-# التأكد من حفظ التغييرات
-git add .
-git commit -m "Group functionality tested and verified"
-git push origin main
-```
-
-سيتم النشر تلقائياً عبر Coolify.
-
-## 📞 الدعم
-
-في حالة وجود مشاكل:
-1. فحص اللوجز أولاً
-2. تشغيل الاختبارات التشخيصية
-3. التحقق من حالة الخدمات الخارجية
-4. مراجعة هذا الدليل للحلول الشائعة
+**Need Help?** Check the logs or contact the development team for assistance.
