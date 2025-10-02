@@ -213,28 +213,29 @@ class GroupHandlers {
             
             // USD Price (always show if available)
             if (token.usd_per_token && token.usd_per_token !== 'N/A' && token.usd_per_token > 0) {
-                tokenStats.push(`├ USD: $${this.formatNumber(token.usd_per_token)}`);
+                tokenStats.push(`├ USD Price: $${this.formatNumber(token.usd_per_token)}`);
             }
             
             // MON Price (show if available)
             if (token.mon_per_token && token.mon_per_token !== 'N/A' && token.mon_per_token > 0) {
-                tokenStats.push(`├ MON: ${this.formatNumber(token.mon_per_token)} MON`);
+                tokenStats.push(`├ MON Price: ${this.formatNumber(token.mon_per_token)} MON`);
             }
             
-            // Confidence (show if available and meaningful)
+            // Confidence (show if available and meaningful) - Fix percentage calculation
             if (token.pconf && token.pconf !== 'N/A' && token.pconf > 0) {
-                const confidence = Math.round(token.pconf * 100);
+                // pconf is already a percentage value, don't multiply by 100
+                const confidence = Math.round(token.pconf);
                 tokenStats.push(`├ Confidence: ${confidence}%`);
             }
             
             // Market Cap (only show if available and not N/A)
             if (token.marketCap && token.marketCap !== 'N/A' && token.marketCap > 0) {
-                tokenStats.push(`├ MC: $${this.formatNumber(token.marketCap)}`);
+                tokenStats.push(`├ Market Cap: $${this.formatNumber(token.marketCap)}`);
             }
             
             // Volume 24h (only show if available and not N/A)
             if (token.volume24h && token.volume24h !== 'N/A' && token.volume24h > 0) {
-                tokenStats.push(`└ Vol: $${this.formatNumber(token.volume24h)}`);
+                tokenStats.push(`└ 24h Volume: $${this.formatNumber(token.volume24h)}`);
             }
             
             // Fix the last item to use └ instead of ├
@@ -243,15 +244,15 @@ class GroupHandlers {
                 tokenStats[lastIndex] = tokenStats[lastIndex].replace('├', '└');
             }
 
-            const message = `🪙 ${token.name || token.symbol} (${token.symbol})
+            const message = `🪙 **${token.name || token.symbol}** (${token.symbol})
 ├ ${token.address}
 └ #MON (Monad) | 🌱 Active
 
-${tokenStats.length > 0 ? `📊 Token Stats
+${tokenStats.length > 0 ? `**📊 Token Stats**
 ${tokenStats.join('\n')}
 
-` : ''}💡 Quick Buy
-└ @${this.botUsername} buy ${token.address} <amount>`;
+` : ''}**💡 Quick Buy**
+└ \`@${this.botUsername} buy ${token.address} <amount>\``;
 
             await ctx.reply(message, { parse_mode: 'Markdown' });
         } catch (error) {
@@ -299,14 +300,14 @@ ${tokenStats.join('\n')}
                     `https://testnet.monadexplorer.com/tx/${result.txHash}` : 
                     (result.explorerUrl || '#');
                 
-                // Clean success message
+                // Clean success message with bold headers
                 const successMessage = 
-                    `✅ *Purchase Successful*\n\n` +
-                    `👤 ${ctx.from.first_name || 'User'}\n` +
-                    `🪙 ${tokenSymbol}\n` +
-                    `💰 ${amount} MON\n` +
-                    `⚡ ${tradeType.toUpperCase()}\n\n` +
-                    `🔗 [View Transaction](${explorerUrl})`;
+                    `**✅ Purchase Successful**\n\n` +
+                    `**👤 User:** ${ctx.from.first_name || 'User'}\n` +
+                    `**🪙 Token:** ${tokenSymbol}\n` +
+                    `**💰 Amount:** ${amount} MON\n` +
+                    `**⚡ Mode:** ${tradeType.toUpperCase()}\n\n` +
+                    `**🔗 Transaction:** [View on Explorer](${explorerUrl})`;
 
                 await ctx.reply(successMessage, { 
                     parse_mode: 'Markdown',
