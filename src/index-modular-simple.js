@@ -35,6 +35,7 @@ const WalletHandlers = require('./handlers/walletHandlers');
 const PortfolioHandlers = require('./handlers/portfolioHandlers');
 const NavigationHandlers = require('./handlers/navigationHandlers');
 const InlineHandlers = require('./handlers/inlineHandlers');
+const GroupHandlers = require('./handlers/groupHandlers');
 
 // Simple Access Code System
 const SimpleAccessCode = require('./services/SimpleAccessCode');
@@ -344,6 +345,19 @@ class Area51BotModularSimple {
         
         this.inlineHandlers = new InlineHandlers(this.bot, inlineDependencies);
         console.log('✅ Basic Inline Handlers initialized successfully');
+        
+        // Initialize Group Handlers for group chat functionality
+        const groupDependencies = {
+            database: this.database,
+            monorailAPI: this.monorailAPI,
+            monitoring: this.monitoring,
+            tradingEngine: this.tradingInterface,
+            walletManager: this.walletManager,
+            cacheService: this.cacheService
+        };
+        
+        this.groupHandlers = new GroupHandlers(groupDependencies);
+        console.log('✅ Group Handlers initialized successfully');
         
         // Legacy trading cache optimizer - REPLACED by unified system
         // this.tradingCacheOptimizer = new TradingCacheOptimizer(
@@ -823,8 +837,13 @@ class Area51BotModularSimple {
             await this.navigationHandlers.handleStart(ctx);
         });
 
-        // Text message handler for custom input
+        // Text message handler for custom input and group functionality
         this.bot.on('text', async (ctx) => {
+            // First, check if this is a group message and handle it
+            const botUsername = this.bot.botInfo?.username;
+            if (botUsername && await this.groupHandlers.handleGroupMessage(ctx, botUsername)) {
+                return; // Group message was handled, don't process further
+            }
 
             const userState = await this.database.getUserState(ctx.from.id);
             this.monitoring?.logInfo('User state retrieved', { userId: ctx.from.id, state: userState?.state });
@@ -919,6 +938,11 @@ class Area51BotModularSimple {
             
             // Start the bot
             await this.bot.launch();
+            
+            // Get bot info for group functionality
+            this.bot.botInfo = await this.bot.telegram.getMe();
+            console.log(`✅ Bot info retrieved: @${this.bot.botInfo.username}`);
+            
             this.monitoring?.logInfo('Bot launched successfully');
             this.monitoring.logInfo('🚀 Modular Area51 Bot started successfully');
             
