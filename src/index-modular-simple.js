@@ -489,7 +489,10 @@ class Area51BotModularSimple {
         // Setup Inline Mode handlers
         this.inlineHandlers.setupHandlers();
         
-        console.log('✅ All handlers setup complete (including unified trading system and inline mode)');
+        // Setup Group handlers for group chat functionality
+        this.groupHandlers.setupHandlers(this.bot);
+        
+        console.log('✅ All handlers setup complete (including unified trading system, inline mode, and group functionality)');
     }
 
     setupAdditionalHandlers() {

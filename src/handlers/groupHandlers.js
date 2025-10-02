@@ -12,6 +12,39 @@ class GroupHandlers {
         this.tradingEngine = dependencies.tradingEngine;
         this.walletManager = dependencies.walletManager;
         this.cacheService = dependencies.cacheService;
+        this.botUsername = null;
+    }
+
+    /**
+     * Setup handlers for group functionality
+     */
+    setupHandlers(bot) {
+        this.bot = bot;
+        
+        // Get bot username
+        if (bot.botInfo && bot.botInfo.username) {
+            this.botUsername = bot.botInfo.username;
+        }
+
+        // Handle all text messages in groups
+        bot.on('text', async (ctx, next) => {
+            try {
+                // Only handle group messages
+                if (this.isGroupChat(ctx)) {
+                    const handled = await this.handleGroupMessage(ctx, this.botUsername);
+                    if (handled) {
+                        return; // Message was handled, don't continue
+                    }
+                }
+                // Continue to next handler if not handled
+                return next();
+            } catch (error) {
+                this.monitoring?.logError('Group text handler error', error);
+                return next();
+            }
+        });
+
+        console.log('✅ Group handlers setup complete');
     }
 
     /**
@@ -25,6 +58,7 @@ class GroupHandlers {
      * Check if message mentions the bot
      */
     isBotMentioned(ctx, botUsername) {
+        if (!botUsername) return false;
         const message = ctx.message.text;
         return message.includes(`@${botUsername}`);
     }
@@ -97,7 +131,7 @@ class GroupHandlers {
     async handleGroupBuyCommand(ctx, args) {
         try {
             if (args.length < 2) {
-                await ctx.reply('❌ استخدام خاطئ. الصيغة الصحيحة: @bot buy <token> <amount>\n\nمثال: @bot buy USDC 5');
+                await ctx.reply('❌ Invalid usage. Correct format: @bot buy <token> <amount>\n\nExample: @bot buy USDC 5');
                 return true;
             }
 
@@ -105,14 +139,14 @@ class GroupHandlers {
             const amount = parseFloat(args[1]);
 
             if (isNaN(amount) || amount <= 0) {
-                await ctx.reply('❌ المبلغ يجب أن يكون رقم صحيح أكبر من صفر');
+                await ctx.reply('❌ Amount must be a valid number greater than zero');
                 return true;
             }
 
             // Check if user has wallet
             const user = await this.database.getUserByTelegramId(ctx.from.id);
             if (!user || !user.wallet_address || user.wallet_address === 'pending_wallet_creation') {
-                await ctx.reply('❌ يجب إنشاء محفظة أولاً. ابدأ محادثة خاصة مع البوت واستخدم /start');
+                await ctx.reply('❌ You need to create a wallet first. Start a private chat with the bot and use /start');
                 return true;
             }
 
@@ -125,7 +159,7 @@ class GroupHandlers {
                 // It's a symbol, search for it
                 const searchResults = await this.monorailAPI.searchTokens(tokenSymbolOrAddress);
                 if (!searchResults || !searchResults.success || !searchResults.tokens || searchResults.tokens.length === 0) {
-                    await ctx.reply(`❌ لم يتم العثور على العملة: ${tokenSymbolOrAddress}`);
+                    await ctx.reply(`❌ Token not found: ${tokenSymbolOrAddress}`);
                     return true;
                 }
                 // Convert to expected format
@@ -141,7 +175,7 @@ class GroupHandlers {
             }
 
             if (!tokenInfo || !tokenInfo.token) {
-                await ctx.reply(`❌ لم يتم العثور على العملة: ${tokenSymbolOrAddress}`);
+                await ctx.reply(`❌ Token not found: ${tokenSymbolOrAddress}`);
                 return true;
             }
 
@@ -154,7 +188,7 @@ class GroupHandlers {
                 userId: ctx.from.id,
                 args: args.join(' ')
             });
-            await ctx.reply('❌ حدث خطأ أثناء تنفيذ عملية الشراء. حاول مرة أخرى.');
+            await ctx.reply('❌ An error occurred while executing the purchase. Please try again.');
             return true;
         }
     }
@@ -165,7 +199,7 @@ class GroupHandlers {
     async executeBuyInGroup(ctx, tokenAddress, amount, user) {
         try {
             // Show processing message
-            const processingMsg = await ctx.reply('⏳ جاري تنفيذ عملية الشراء...');
+            const processingMsg = await ctx.reply('⏳ Processing purchase...');
 
             // Get user settings
             const userSettings = await this.database.getUserSettings(ctx.from.id);
@@ -193,18 +227,18 @@ class GroupHandlers {
                 const tokenInfo = await this.monorailAPI.getTokenInfo(tokenAddress);
                 const tokenSymbol = tokenInfo?.token?.symbol || 'Unknown';
                 
-                const successText = `✅ **تم الشراء بنجاح!**
+                const successText = `✅ **Purchase Successful!**
 
-👤 المشتري: ${ctx.from.first_name}
-🪙 العملة: ${tokenSymbol}
-💰 المبلغ: ${amount} MON
+👤 Buyer: ${ctx.from.first_name}
+🪙 Token: ${tokenSymbol}
+💰 Amount: ${amount} MON
 🔗 Transaction: \`${result.txHash}\`
 
-_تم التنفيذ بواسطة Area51 Bot_`;
+_Executed by Area51 Bot_`;
 
                 await ctx.reply(successText, { parse_mode: 'Markdown' });
             } else {
-                await ctx.reply(`❌ فشل في تنفيذ عملية الشراء: ${result.error || 'خطأ غير معروف'}`);
+                await ctx.reply(`❌ Purchase failed: ${result.error || 'Unknown error'}`);
             }
 
         } catch (error) {
@@ -213,7 +247,7 @@ _تم التنفيذ بواسطة Area51 Bot_`;
                 tokenAddress,
                 amount
             });
-            await ctx.reply('❌ حدث خطأ أثناء تنفيذ عملية الشراء');
+            await ctx.reply('❌ An error occurred while executing the purchase');
         }
     }
 
@@ -297,15 +331,15 @@ _تم التنفيذ بواسطة Area51 Bot_`;
             const token = tokenInfo.token;
             const price = tokenInfo.price || {};
 
-            const tokenText = `🪙 **معلومات العملة**
+            const tokenText = `🪙 **Token Information**
 
 **${token.symbol}** (${token.name})
-📍 العقد: \`${token.address}\`
-💰 السعر: $${price.usd || 'N/A'}
+📍 Contract: \`${token.address}\`
+💰 Price: $${price.usd || 'N/A'}
 📊 Market Cap: $${this.formatNumber(price.market_cap) || 'N/A'}
 📈 24h Change: ${price.change_24h ? (price.change_24h > 0 ? '+' : '') + price.change_24h.toFixed(2) + '%' : 'N/A'}
 
-_للشراء استخدم: @MonAreaBot buy ${token.symbol} <amount>_`;
+_To buy use: @${this.botUsername || 'bot'} buy ${token.symbol} <amount>_`;
 
             const keyboard = Markup.inlineKeyboard([
                 [
@@ -331,20 +365,21 @@ _للشراء استخدم: @MonAreaBot buy ${token.symbol} <amount>_`;
      */
     async handleGroupHelpCommand(ctx) {
         try {
-            const helpText = `🤖 **Area51 Bot - مساعدة الجروبات**
+            const botMention = this.botUsername ? `@${this.botUsername}` : '@bot';
+            const helpText = `🤖 **Area51 Bot - Group Help**
 
-**الأوامر المتاحة:**
-• \`@MonAreaBot buy <token> <amount>\` - شراء عملة
-• \`@MonAreaBot help\` - عرض هذه المساعدة
+**Available Commands:**
+• \`${botMention} buy <token> <amount>\` - Buy a token
+• \`${botMention} help\` - Show this help
 
-**التعرف التلقائي:**
-• إرسال عقد العملة (0x...) سيعرض معلوماتها تلقائياً
+**Automatic Recognition:**
+• Posting a token contract (0x...) will automatically display its information
 
-**أمثلة:**
-• \`@MonAreaBot buy USDC 5\`
-• \`@MonAreaBot buy 0x1234...abcd 10\`
+**Examples:**
+• \`${botMention} buy USDC 5\`
+• \`${botMention} buy 0x1234...abcd 10\`
 
-_للوصول إلى جميع الميزات، ابدأ محادثة خاصة مع البوت_`;
+_For access to all features, start a private chat with the bot_`;
 
             await ctx.reply(helpText, { parse_mode: 'Markdown' });
             return true;
