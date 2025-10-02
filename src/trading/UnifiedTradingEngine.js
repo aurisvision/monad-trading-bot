@@ -1,7 +1,7 @@
 /**
- * Unified Trading Engine - المحرك الموحد للتداول
- * نقطة دخول موحدة لجميع أنواع التداول (Normal, Turbo, Auto Buy)
- * يحل محل جميع محركات التداول القديمة
+ * Unified Trading Engine - Core Trading System
+ * Unified entry point for all trading types (Normal, Turbo, Auto Buy)
+ * Replaces all legacy trading engines
  */
 const TradingDataManager = require('./TradingDataManager');
 const TradingConfig = require('./TradingConfig');
@@ -13,7 +13,7 @@ class UnifiedTradingEngine {
         this.walletManager = dependencies.walletManager;
         this.database = dependencies.database;
         this.monitoring = dependencies.monitoring;
-        // إحصائيات الأداء
+        // Performance statistics
         this.stats = {
             totalTrades: 0,
             successfulTrades: 0,
@@ -26,19 +26,19 @@ class UnifiedTradingEngine {
         };
     }
     /**
-     * 🎯 نقطة الدخول الموحدة لجميع أنواع التداول
+     * 🎯 Unified entry point for all trading types
      */
     async executeTrade(request) {
         const startTime = Date.now();
         const { type, action, userId, tokenAddress, amount, ctx, preloadedUser, preloadedSettings } = request;
         try {
-            // التحقق من صحة نوع التداول
+            // Validate trade type
             if (!this.config.isValidTradeType(type)) {
                 throw new Error(`Invalid trade type: ${type}`);
             }
-            // 1️⃣ تحضير البيانات مرة واحدة فقط (مع استخدام البيانات المحملة مسبقاً للسرعة)
+            // 1️⃣ Prepare data once only (using preloaded data for speed)
             const tradeData = await this.dataManager.prepareTradeData(userId, type, preloadedUser, preloadedSettings);
-            // 2️⃣ تنفيذ التداول حسب النوع والإجراء
+            // 2️⃣ Execute trade by type and action
             let result;
             if (action === 'buy') {
                 result = await this.executeBuyByType(type, tradeData, tokenAddress, amount);
@@ -47,14 +47,14 @@ class UnifiedTradingEngine {
             } else {
                 throw new Error(`Invalid action: ${action}`);
             }
-            // 3️⃣ تنظيف الكاش بعد التداول الناجح
+            // 3️⃣ Clean cache after successful trade
             if (result.success) {
                 await this.dataManager.postTradeCleanup(userId, tradeData.user.wallet_address, result);
             }
-            // 4️⃣ تحديث الإحصائيات
+            // 4️⃣ Update statistics
             const executionTime = Date.now() - startTime;
             this.updateStats(type, result.success, executionTime);
-            // إضافة معلومات إضافية للنتيجة
+            // Add additional information to result
             result.executionTime = executionTime;
             result.type = type;
             result.action = action;
@@ -72,7 +72,7 @@ class UnifiedTradingEngine {
         }
     }
     /**
-     * 💰 تنفيذ عمليات الشراء حسب النوع
+     * 💰 Execute buy operations by type
      */
     async executeBuyByType(type, tradeData, tokenAddress, amount) {
         switch (type) {
@@ -359,4 +359,4 @@ class UnifiedTradingEngine {
     }
 
 }
-module.exports = UnifiedTradingEngine;
+module.exports = UnifiedTradingEngine;
