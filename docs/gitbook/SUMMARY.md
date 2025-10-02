@@ -17,6 +17,12 @@
 * [Security Features](security-features.md)
 * [Settings & Customization](settings.md)
 
+## Group Features
+
+* [Group Trading](group-trading.md)
+* [Token Information Display](token-info-display.md)
+* [Group Commands](group-commands.md)
+
 ## Monad Network
 
 * [About Monad](monad-network.md)
