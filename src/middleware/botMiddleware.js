@@ -46,6 +46,16 @@ class BotMiddleware {
                 if (ctx.callbackQuery && ['generate_wallet', 'import_wallet'].includes(ctx.callbackQuery.data)) {
                     return next();
                 }
+                
+                // Skip auth for group messages - allow group functionality without requiring wallets
+                if (ctx.chat && (ctx.chat.type === 'group' || ctx.chat.type === 'supergroup')) {
+                    return next();
+                }
+                
+                // Skip auth for inline queries - allow inline functionality
+                if (ctx.inlineQuery) {
+                    return next();
+                }
                 // Check if user exists in database
                 let user = null;
                 // Try unified cache first
@@ -223,4 +233,4 @@ module.exports = BotMiddleware;
 module.exports.createBotMiddleware = function(database, monitoring, redis = null, cacheService = null) {
     const middleware = new BotMiddleware(database, monitoring, redis, cacheService);
     return middleware.getAllMiddleware();
-};
+};
