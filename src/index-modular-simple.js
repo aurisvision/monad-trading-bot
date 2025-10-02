@@ -762,10 +762,28 @@ class Area51BotModularSimple {
 
         // Refresh handler removed - handled by navigationHandlers.js to avoid conflicts
 
-        // Command handlers - mirror button functionality
+        // Security helper function to check if command is allowed in groups
+        const isGroupChat = (ctx) => ctx.chat.type === 'group' || ctx.chat.type === 'supergroup';
+        
+        const sendSecurityWarning = async (ctx, commandName) => {
+            await ctx.reply(
+                `🔒 الكوماند /${commandName} غير متاح في المجموعات لأسباب أمنية.\n\n` +
+                `📱 يرجى استخدام هذا الكوماند في المحادثة الخاصة مع البوت لحماية معلوماتك الشخصية.`,
+                { reply_to_message_id: ctx.message.message_id }
+            );
+        };
+
+        // Command handlers - mirror button functionality with security filtering
         this.bot.command('buy', async (ctx) => {
             try {
-                this.monitoring?.logInfo('Buy command received', { userId: ctx.from.id });
+                this.monitoring?.logInfo('Buy command received', { userId: ctx.from.id, chatType: ctx.chat.type });
+                
+                // Block buy command in groups for security
+                if (isGroupChat(ctx)) {
+                    await sendSecurityWarning(ctx, 'buy');
+                    return;
+                }
+                
                 await this.tradingInterface.handleBuyInterface(ctx);
             } catch (error) {
                 this.monitoring?.logError('Buy command failed', error, { userId: ctx.from.id });
@@ -775,7 +793,14 @@ class Area51BotModularSimple {
 
         this.bot.command('wallet', async (ctx) => {
             try {
-                this.monitoring?.logInfo('Wallet command received', { userId: ctx.from.id });
+                this.monitoring?.logInfo('Wallet command received', { userId: ctx.from.id, chatType: ctx.chat.type });
+                
+                // Block wallet command in groups for security (exposes private keys)
+                if (isGroupChat(ctx)) {
+                    await sendSecurityWarning(ctx, 'wallet');
+                    return;
+                }
+                
                 await this.walletHandlers.showWalletInterface(ctx);
             } catch (error) {
                 this.monitoring?.logError('Wallet command failed', error, { userId: ctx.from.id });
@@ -785,7 +810,14 @@ class Area51BotModularSimple {
 
         this.bot.command('portfolio', async (ctx) => {
             try {
-                this.monitoring?.logInfo('Portfolio command received', { userId: ctx.from.id });
+                this.monitoring?.logInfo('Portfolio command received', { userId: ctx.from.id, chatType: ctx.chat.type });
+                
+                // Block portfolio command in groups for security (exposes balances)
+                if (isGroupChat(ctx)) {
+                    await sendSecurityWarning(ctx, 'portfolio');
+                    return;
+                }
+                
                 await this.portfolioHandlers.handleNewPortfolio(ctx);
             } catch (error) {
                 this.monitoring?.logError('Portfolio command failed', error, { userId: ctx.from.id });
@@ -805,7 +837,14 @@ class Area51BotModularSimple {
 
         this.bot.command('settings', async (ctx) => {
             try {
-                this.monitoring?.logInfo('Settings command received', { userId: ctx.from.id });
+                this.monitoring?.logInfo('Settings command received', { userId: ctx.from.id, chatType: ctx.chat.type });
+                
+                // Block settings command in groups for security (personal settings)
+                if (isGroupChat(ctx)) {
+                    await sendSecurityWarning(ctx, 'settings');
+                    return;
+                }
+                
                 await this.showSettings(ctx);
             } catch (error) {
                 this.monitoring?.logError('Settings command failed', error, { userId: ctx.from.id });
@@ -815,7 +854,14 @@ class Area51BotModularSimple {
 
         this.bot.command('transfer', async (ctx) => {
             try {
-                this.monitoring?.logInfo('Transfer command received', { userId: ctx.from.id });
+                this.monitoring?.logInfo('Transfer command received', { userId: ctx.from.id, chatType: ctx.chat.type });
+                
+                // Block transfer command in groups for security (financial transactions)
+                if (isGroupChat(ctx)) {
+                    await sendSecurityWarning(ctx, 'transfer');
+                    return;
+                }
+                
                 await this.navigationHandlers.handleTransfer(ctx);
             } catch (error) {
                 this.monitoring?.logError('Transfer command failed', error, { userId: ctx.from.id });
