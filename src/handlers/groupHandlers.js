@@ -245,14 +245,14 @@ class GroupHandlers {
             }
 
             const message = `🪙 **${token.name || token.symbol}** (${token.symbol})
-├ ${token.address}
-└ #MON (Monad) | 🌱 Active
+┌─ 📍 ${token.address}
+└─ #MON (Monad) | 🌱 Active
 
 ${tokenStats.length > 0 ? `**📊 Token Stats**
 ${tokenStats.join('\n')}
 
 ` : ''}**💡 Quick Buy**
-└ \`@${this.botUsername} buy ${token.address} <amount>\``;
+└─ \`@${this.botUsername} buy ${token.address} <amount>\``;
 
             await ctx.reply(message, { parse_mode: 'Markdown' });
         } catch (error) {
@@ -300,14 +300,14 @@ ${tokenStats.join('\n')}
                     `https://testnet.monadexplorer.com/tx/${result.txHash}` : 
                     (result.explorerUrl || '#');
                 
-                // Clean success message with bold headers
+                // Clean success message with tree structure and bold headers
                 const successMessage = 
-                    `**✅ Purchase Successful**\n\n` +
-                    `**👤 User:** ${ctx.from.first_name || 'User'}\n` +
-                    `**🪙 Token:** ${tokenSymbol}\n` +
-                    `**💰 Amount:** ${amount} MON\n` +
-                    `**⚡ Mode:** ${tradeType.toUpperCase()}\n\n` +
-                    `**🔗 Transaction:** [View on Explorer](${explorerUrl})`;
+                    `**✅ Purchase Successful**\n` +
+                    `├─ **👤 User:** ${ctx.from.first_name || 'User'}\n` +
+                    `├─ **🪙 Token:** ${tokenSymbol}\n` +
+                    `├─ **💰 Amount:** ${amount} MON\n` +
+                    `├─ **⚡ Mode:** ${tradeType.toUpperCase()}\n` +
+                    `└─ **🔗 Transaction:** [View on Explorer](${explorerUrl})`;
 
                 await ctx.reply(successMessage, { 
                     parse_mode: 'Markdown',
