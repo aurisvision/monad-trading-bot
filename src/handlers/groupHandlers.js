@@ -12,7 +12,7 @@ class GroupHandlers {
         this.tradingEngine = dependencies.tradingEngine;
         this.walletManager = dependencies.walletManager;
         this.cacheService = dependencies.cacheService;
-        this.botUsername = dependencies.botUsername || 'area51bot';
+        this.botUsername = dependencies.botUsername || 'MonAreaBot';
     }
 
     /**

@@ -354,7 +354,7 @@ class Area51BotModularSimple {
             tradingEngine: this.tradingInterface,
             walletManager: this.walletManager,
             cacheService: this.cacheService,
-            botUsername: this.bot.botInfo?.username || 'area51bot'
+            botUsername: this.bot.botInfo?.username || 'MonAreaBot'
         };
         
         this.groupHandlers = new GroupHandlers(groupDependencies);
