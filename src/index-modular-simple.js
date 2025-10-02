@@ -339,13 +339,11 @@ class Area51BotModularSimple {
             monorailAPI: this.monorailAPI,
             monitoring: this.monitoring,
             redis: this.redis,
-            cacheService: this.cacheService,
-            tradingEngine: this.tradingInterface.tradingEngine,
-            walletManager: this.walletManager
+            cacheService: this.cacheService
         };
         
         this.inlineHandlers = new InlineHandlers(this.bot, inlineDependencies);
-        console.log('✅ Enhanced Inline Handlers initialized successfully');
+        console.log('✅ Basic Inline Handlers initialized successfully');
         
         // Legacy trading cache optimizer - REPLACED by unified system
         // this.tradingCacheOptimizer = new TradingCacheOptimizer(
@@ -858,49 +856,7 @@ class Area51BotModularSimple {
             }
         });
 
-        // Inline Mode Action Handlers
-        this.bot.action(/^inline_buy_(.+)$/, async (ctx) => {
-            try {
-                const tokenAddress = ctx.match[1];
-                await ctx.answerCbQuery();
-                await this.inlineHandlers.handleInlineBuy(ctx, tokenAddress);
-            } catch (error) {
-                this.monitoring?.logError('Inline buy action failed', error, { userId: ctx.from.id });
-                await ctx.answerCbQuery('❌ خطأ في عملية الشراء');
-            }
-        });
 
-        this.bot.action(/^inline_sell_(.+)$/, async (ctx) => {
-            try {
-                const tokenAddress = ctx.match[1];
-                await ctx.answerCbQuery();
-                await this.inlineHandlers.handleInlineSell(ctx, tokenAddress);
-            } catch (error) {
-                this.monitoring?.logError('Inline sell action failed', error, { userId: ctx.from.id });
-                await ctx.answerCbQuery('❌ خطأ في عملية البيع');
-            }
-        });
-
-        this.bot.action(/^inline_auto_buy_(.+)$/, async (ctx) => {
-            try {
-                const tokenAddress = ctx.match[1];
-                await ctx.answerCbQuery();
-                await this.inlineHandlers.handleInlineAutoBuy(ctx, tokenAddress);
-            } catch (error) {
-                this.monitoring?.logError('Inline auto buy action failed', error, { userId: ctx.from.id });
-                await ctx.answerCbQuery('❌ خطأ في تفعيل الشراء التلقائي');
-            }
-        });
-
-        this.bot.action('inline_help', async (ctx) => {
-            try {
-                await ctx.answerCbQuery();
-                await this.inlineHandlers.sendHelpMessage(ctx);
-            } catch (error) {
-                this.monitoring?.logError('Inline help action failed', error, { userId: ctx.from.id });
-                await ctx.answerCbQuery('❌ خطأ في عرض المساعدة');
-            }
-        });
     }
 
     async showSettings(ctx) {
