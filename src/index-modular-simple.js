@@ -340,11 +340,12 @@ class Area51BotModularSimple {
             monitoring: this.monitoring,
             redis: this.redis,
             cacheService: this.cacheService,
-            tradingInterface: this.tradingInterface
+            tradingEngine: this.tradingInterface.tradingEngine,
+            walletManager: this.walletManager
         };
         
         this.inlineHandlers = new InlineHandlers(this.bot, inlineDependencies);
-        console.log('✅ Inline Handlers initialized successfully');
+        console.log('✅ Enhanced Inline Handlers initialized successfully');
         
         // Legacy trading cache optimizer - REPLACED by unified system
         // this.tradingCacheOptimizer = new TradingCacheOptimizer(
