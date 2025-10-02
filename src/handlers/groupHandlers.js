@@ -55,146 +55,119 @@ class GroupHandlers {
     }
 
     /**
-     * Check if message mentions the bot
+     * Check if bot is mentioned in the message
      */
     isBotMentioned(ctx, botUsername) {
-        if (!botUsername) return false;
         const message = ctx.message.text;
         return message.includes(`@${botUsername}`);
     }
 
     /**
-     * Handle group text messages
+     * Handle group messages - check for token recognition and bot mentions
      */
     async handleGroupMessage(ctx, botUsername) {
         try {
-            if (!this.isGroupChat(ctx)) {
-                return false; // Not a group message
-            }
-
-            const message = ctx.message.text.trim();
-            const isMentioned = this.isBotMentioned(ctx, botUsername);
-
-            // Handle mention commands (buy, etc.)
-            if (isMentioned) {
+            const message = ctx.message.text;
+            
+            // Handle bot mentions (commands)
+            if (this.isBotMentioned(ctx, botUsername)) {
                 return await this.handleMentionCommand(ctx, message, botUsername);
             }
-
-            // Handle token contract recognition without mention
-            return await this.handleTokenRecognition(ctx, message);
-
+            
+            // Handle token recognition (contract addresses only, no symbols)
+            const handled = await this.handleTokenRecognition(ctx, message);
+            return handled;
+            
         } catch (error) {
-            this.monitoring?.logError('Group message handling failed', error, { 
-                userId: ctx.from.id,
-                chatId: ctx.chat.id 
-            });
+            this.monitoring?.logError('Group message handling error', error);
             return false;
         }
     }
 
     /**
-     * Handle mention commands like @bot buy token amount
+     * Handle commands when bot is mentioned
      */
     async handleMentionCommand(ctx, message, botUsername) {
         try {
-            // Remove bot mention from message
+            // Remove bot mention and get clean command
             const cleanMessage = message.replace(`@${botUsername}`, '').trim();
-            const parts = cleanMessage.split(' ').filter(part => part.length > 0);
-
-            if (parts.length === 0) {
-                return false;
-            }
-
-            const command = parts[0].toLowerCase();
+            const args = cleanMessage.split(' ');
+            const command = args[0].toLowerCase();
 
             switch (command) {
                 case 'buy':
-                    return await this.handleGroupBuyCommand(ctx, parts.slice(1));
+                    if (args.length >= 3) {
+                        return await this.handleGroupBuyCommand(ctx, args);
+                    } else {
+                        await ctx.reply('❌ Usage: @bot buy <contract_address> <amount>');
+                        return true;
+                    }
+                
                 case 'help':
                     return await this.handleGroupHelpCommand(ctx);
+                
                 default:
+                    // Unknown command - ignore
                     return false;
             }
-
         } catch (error) {
-            this.monitoring?.logError('Mention command handling failed', error, { 
-                userId: ctx.from.id,
-                message: message.substring(0, 50) + '...'
+            this.monitoring?.logError('Group mention command error', error, { 
+                userId: ctx.from.id, 
+                message: message 
             });
             return false;
         }
     }
 
     /**
-     * Handle buy command in groups: @bot buy token amount
+     * Handle buy command in groups
      */
     async handleGroupBuyCommand(ctx, args) {
         try {
-            if (args.length < 2) {
-                await ctx.reply('❌ Invalid usage. Correct format: @bot buy <token> <amount>\n\nExample: @bot buy USDC 5');
+            const tokenAddress = args[1];
+            const amount = args[2];
+
+            // Validate contract address format
+            if (!tokenAddress || !tokenAddress.match(/^0x[a-fA-F0-9]{40}$/)) {
+                await ctx.reply('❌ Invalid contract address format. Please use a valid Ethereum address.');
                 return true;
             }
 
-            const tokenSymbolOrAddress = args[0];
-            const amount = parseFloat(args[1]);
-
-            if (isNaN(amount) || amount <= 0) {
-                await ctx.reply('❌ Amount must be a valid number greater than zero');
+            // Validate amount
+            if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+                await ctx.reply('❌ Invalid amount. Please enter a valid number.');
                 return true;
             }
 
-            // Check if user has wallet
-            const user = await this.database.getUserByTelegramId(ctx.from.id);
-            if (!user || !user.wallet_address || user.wallet_address === 'pending_wallet_creation') {
-                await ctx.reply('❌ You need to create a wallet first. Start a private chat with the bot and use /start');
+            // Check if user exists in database
+            const user = await this.database.getUser(ctx.from.id);
+            if (!user) {
+                await ctx.reply('❌ You need to start the bot privately first to create a wallet: /start');
                 return true;
             }
 
-            // Get token info
-            let tokenInfo;
-            if (tokenSymbolOrAddress.startsWith('0x')) {
-                // It's a contract address
-                tokenInfo = await this.monorailAPI.getTokenInfo(tokenSymbolOrAddress);
-            } else {
-                // It's a symbol, search for it
-                const searchResults = await this.monorailAPI.searchTokens(tokenSymbolOrAddress);
-                if (!searchResults || !searchResults.success || !searchResults.tokens || searchResults.tokens.length === 0) {
-                    await ctx.reply(`❌ Token not found: ${tokenSymbolOrAddress}`);
-                    return true;
-                }
-                // Convert to expected format
-                const firstToken = searchResults.tokens[0];
-                tokenInfo = {
-                    token: firstToken,
-                    price: {
-                        usd: firstToken.usd_per_token,
-                        market_cap: firstToken.market_cap,
-                        change_24h: firstToken.change_24h
-                    }
-                };
-            }
-
-            if (!tokenInfo || !tokenInfo.token) {
-                await ctx.reply(`❌ Token not found: ${tokenSymbolOrAddress}`);
+            // Check if user has a wallet
+            if (!user.wallet_address) {
+                await ctx.reply('❌ You need to create or import a wallet first. Use /start in private chat.');
                 return true;
             }
 
-            // Execute buy
-            const result = await this.executeBuyInGroup(ctx, tokenInfo.token.address, amount, user);
+            // Execute the buy
+            await this.executeBuyInGroup(ctx, tokenAddress, amount, user);
             return true;
 
         } catch (error) {
-            this.monitoring?.logError('Group buy command failed', error, { 
-                userId: ctx.from.id,
-                args: args.join(' ')
+            this.monitoring?.logError('Group buy command error', error, { 
+                userId: ctx.from.id, 
+                args: args 
             });
-            await ctx.reply('❌ An error occurred while executing the purchase. Please try again.');
+            await ctx.reply('❌ An error occurred while processing your buy request.');
             return true;
         }
     }
 
     /**
-     * Execute buy transaction in group
+     * Execute buy operation in group
      */
     async executeBuyInGroup(ctx, tokenAddress, amount, user) {
         try {
@@ -204,9 +177,9 @@ class GroupHandlers {
             // Get user settings
             const userSettings = await this.database.getUserSettings(ctx.from.id);
             
-            // Execute buy using unified trading engine
+            // Execute buy using unified trading engine - FIX: use engine.executeTrade
             const tradeType = userSettings?.turbo_mode ? 'turbo' : 'normal';
-            const result = await this.tradingEngine.executeTrade({
+            const result = await this.tradingEngine.engine.executeTrade({
                 type: tradeType,
                 action: 'buy',
                 userId: ctx.from.id,
@@ -219,139 +192,100 @@ class GroupHandlers {
             try {
                 await ctx.deleteMessage(processingMsg.message_id);
             } catch (e) {
-                // Ignore if can't delete
+                // Ignore deletion errors
             }
 
             if (result.success) {
-                // Get token info for response
-                const tokenInfo = await this.monorailAPI.getTokenInfo(tokenAddress);
-                const tokenSymbol = tokenInfo?.token?.symbol || 'Unknown';
-                
-                const successText = `✅ **Purchase Successful!**
-
-👤 Buyer: ${ctx.from.first_name}
-🪙 Token: ${tokenSymbol}
-💰 Amount: ${amount} MON
-🔗 Transaction: \`${result.txHash}\`
-
-_Executed by Area51 Bot_`;
-
-                await ctx.reply(successText, { parse_mode: 'Markdown' });
+                // Success message
+                await ctx.reply(
+                    `✅ *Purchase Successful*\n\n` +
+                    `💰 Amount: ${amount} MON\n` +
+                    `🪙 Token: \`${tokenAddress}\`\n` +
+                    `⚡ Mode: ${tradeType.toUpperCase()}\n` +
+                    `🔗 [View Transaction](${result.explorerUrl || '#'})`,
+                    { 
+                        parse_mode: 'Markdown',
+                        disable_web_page_preview: true
+                    }
+                );
             } else {
+                // Error message
                 await ctx.reply(`❌ Purchase failed: ${result.error || 'Unknown error'}`);
             }
 
         } catch (error) {
-            this.monitoring?.logError('Group buy execution failed', error, { 
+            this.monitoring?.logError('Group buy execution failed', {
+                error: error.message,
+                stack: error.stack,
                 userId: ctx.from.id,
                 tokenAddress,
                 amount
             });
-            await ctx.reply('❌ An error occurred while executing the purchase');
+
+            await ctx.reply('❌ Purchase failed. Please try again later.');
         }
     }
 
     /**
-     * Handle token recognition without mention
+     * Handle token recognition in messages (contract addresses only)
      */
     async handleTokenRecognition(ctx, message) {
         try {
-            let tokenInfo = null;
-            
-            // First, check if message contains a token contract address
+            // Only recognize contract addresses (0x followed by 40 hex characters)
             const contractRegex = /0x[a-fA-F0-9]{40}/g;
-            const contractMatches = message.match(contractRegex);
-
-            if (contractMatches && contractMatches.length > 0) {
-                // Process the first contract address found
-                const contractAddress = contractMatches[0];
-                tokenInfo = await this.monorailAPI.getTokenInfo(contractAddress);
-            } else {
-                // Only check for well-known token symbols to avoid false positives
-                const commonTokens = ['USDC', 'USDT', 'ETH', 'BTC', 'WETH', 'DAI', 'MATIC', 'LINK', 'UNI', 'AAVE', 'MON', 'WMON'];
+            const matches = message.match(contractRegex);
+            
+            if (matches && matches.length > 0) {
+                // Take the first contract address found
+                const contractAddress = matches[0];
                 
-                // Create a regex that only matches these specific tokens as whole words
-                const tokenRegex = new RegExp(`\\b(${commonTokens.join('|')})\\b`, 'gi');
-                const tokenMatches = message.match(tokenRegex);
+                // Get token info
+                const tokenInfo = await this.monorailAPI.getTokenInfo(contractAddress);
                 
-                if (tokenMatches && tokenMatches.length > 0) {
-                    for (const match of tokenMatches) {
-                        const upperMatch = match.toUpperCase();
-                        
-                        try {
-                            const searchResults = await this.monorailAPI.searchTokens(upperMatch);
-                            if (searchResults && searchResults.success && searchResults.tokens && searchResults.tokens.length > 0) {
-                                // Convert to expected format
-                                const firstToken = searchResults.tokens[0];
-                                tokenInfo = {
-                                    token: firstToken,
-                                    price: {
-                                        usd: firstToken.usd_per_token,
-                                        market_cap: firstToken.market_cap,
-                                        change_24h: firstToken.change_24h
-                                    }
-                                };
-                                break; // Found a token, stop searching
-                            }
-                        } catch (searchError) {
-                            // Continue to next match if search fails
-                            continue;
-                        }
-                    }
+                if (tokenInfo) {
+                    await this.sendTokenInfoToGroup(ctx, tokenInfo);
+                    return true;
                 }
             }
             
-            if (!tokenInfo || !tokenInfo.token) {
-                return false; // No valid token found
-            }
-
-            // Send token info
-            await this.sendTokenInfoToGroup(ctx, tokenInfo);
-            return true;
-
+            return false;
         } catch (error) {
-            this.monitoring?.logError('Token recognition failed', error, { 
-                userId: ctx.from.id,
-                message: message.substring(0, 50) + '...'
-            });
+            this.monitoring?.logError('Token recognition error', error);
             return false;
         }
     }
 
     /**
-     * Send token information to group
+     * Send formatted token information to group
      */
     async sendTokenInfoToGroup(ctx, tokenInfo) {
         try {
-            const token = tokenInfo.token;
-            const price = tokenInfo.price || {};
+            const price = tokenInfo.price ? `$${this.formatNumber(tokenInfo.price)}` : 'N/A';
+            const marketCap = tokenInfo.market_cap ? `$${this.formatNumber(tokenInfo.market_cap)}` : 'N/A';
+            const change24h = tokenInfo.price_change_24h ? `${tokenInfo.price_change_24h > 0 ? '+' : ''}${tokenInfo.price_change_24h.toFixed(2)}%` : 'N/A';
+            
+            const message = 
+                `🪙 *${tokenInfo.symbol}* (${tokenInfo.name})\n\n` +
+                `📍 *Contract:* \`${tokenInfo.address}\`\n` +
+                `💰 *Price:* ${price}\n` +
+                `📊 *Market Cap:* ${marketCap}\n` +
+                `📈 *24h Change:* ${change24h}\n\n` +
+                `To buy use: @${this.botUsername} buy ${tokenInfo.address} <amount>`;
 
-            const tokenText = `🪙 **Token Information**
-
-**${token.symbol}** (${token.name})
-📍 Contract: \`${token.address}\`
-💰 Price: $${price.usd || 'N/A'}
-📊 Market Cap: $${this.formatNumber(price.market_cap) || 'N/A'}
-📈 24h Change: ${price.change_24h ? (price.change_24h > 0 ? '+' : '') + price.change_24h.toFixed(2) + '%' : 'N/A'}
-
-_To buy use: @${this.botUsername || 'bot'} buy ${token.symbol} <amount>_`;
-
-            const keyboard = Markup.inlineKeyboard([
-                [
-                    Markup.button.url('📊 Chart', `https://dexscreener.com/monad/${token.address}`),
-                    Markup.button.url('🔍 Explorer', `https://explorer.monad.xyz/token/${token.address}`)
-                ]
-            ]);
-
-            await ctx.reply(tokenText, { 
+            await ctx.reply(message, { 
                 parse_mode: 'Markdown',
-                reply_markup: keyboard.reply_markup
+                disable_web_page_preview: true
             });
 
         } catch (error) {
-            this.monitoring?.logError('Send token info to group failed', error, { 
-                tokenAddress: tokenInfo?.token?.address
-            });
+            this.monitoring?.logError('Send token info error', error);
+            
+            // Fallback without formatting
+            await ctx.reply(
+                `Token: ${tokenInfo.symbol || 'Unknown'}\n` +
+                `Contract: ${tokenInfo.address}\n` +
+                `To buy use: @${this.botUsername} buy ${tokenInfo.address} <amount>`
+            );
         }
     }
 
