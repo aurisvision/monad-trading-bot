@@ -198,42 +198,65 @@ class GroupHandlers {
     /**
      * Send formatted token information to group
      */
-    async sendTokenInfoToGroup(ctx, tokenData) {
+    async sendTokenInfoToGroup(ctx, tokenInfo) {
         try {
-            // Extract data with proper fallbacks
-            const symbol = tokenData.symbol || 'Unknown';
-            const name = tokenData.name || 'Unknown Token';
-            const address = tokenData.address || 'N/A';
-            const price = tokenData.usd_per_token ? `$${this.formatNumber(tokenData.usd_per_token)}` : 'N/A';
-            const marketCap = tokenData.marketCap ? `$${this.formatNumber(tokenData.marketCap)}` : 'N/A';
-            const volume24h = tokenData.volume24h ? `$${this.formatNumber(tokenData.volume24h)}` : 'N/A';
+            // Access token data correctly from API response structure
+            const token = tokenInfo.token || tokenInfo;
             
-            // Create clean tree-structured message inspired by Phanes bot
-            const message = 
-                `🪙 *${symbol}* (${name})\n` +
-                `├ \`${address}\`\n` +
-                `└ #MON (Monad) | 🌱 Active\n\n` +
-                `📊 *Token Stats*\n` +
-                `├ USD: ${price}\n` +
-                `├ MC:  ${marketCap}\n` +
-                `└ Vol: ${volume24h}\n\n` +
-                `💡 *Quick Buy*\n` +
-                `└ @${this.botUsername || 'area51bot'} buy ${address} <amount>`;
+            if (!token || !token.symbol) {
+                await ctx.reply('❌ Token information not available');
+                return;
+            }
 
-            await ctx.reply(message, { 
-                parse_mode: 'Markdown',
-                disable_web_page_preview: true
-            });
+            // Build token stats dynamically - only show available data
+            let tokenStats = [];
+            
+            // USD Price (always show if available)
+            if (token.usd_per_token && token.usd_per_token !== 'N/A' && token.usd_per_token > 0) {
+                tokenStats.push(`├ USD: $${this.formatNumber(token.usd_per_token)}`);
+            }
+            
+            // MON Price (show if available)
+            if (token.mon_per_token && token.mon_per_token !== 'N/A' && token.mon_per_token > 0) {
+                tokenStats.push(`├ MON: ${this.formatNumber(token.mon_per_token)} MON`);
+            }
+            
+            // Confidence (show if available and meaningful)
+            if (token.pconf && token.pconf !== 'N/A' && token.pconf > 0) {
+                const confidence = Math.round(token.pconf * 100);
+                tokenStats.push(`├ Confidence: ${confidence}%`);
+            }
+            
+            // Market Cap (only show if available and not N/A)
+            if (token.marketCap && token.marketCap !== 'N/A' && token.marketCap > 0) {
+                tokenStats.push(`├ MC: $${this.formatNumber(token.marketCap)}`);
+            }
+            
+            // Volume 24h (only show if available and not N/A)
+            if (token.volume24h && token.volume24h !== 'N/A' && token.volume24h > 0) {
+                tokenStats.push(`└ Vol: $${this.formatNumber(token.volume24h)}`);
+            }
+            
+            // Fix the last item to use └ instead of ├
+            if (tokenStats.length > 0) {
+                const lastIndex = tokenStats.length - 1;
+                tokenStats[lastIndex] = tokenStats[lastIndex].replace('├', '└');
+            }
 
+            const message = `🪙 ${token.name || token.symbol} (${token.symbol})
+├ ${token.address}
+└ #MON (Monad) | 🌱 Active
+
+${tokenStats.length > 0 ? `📊 Token Stats
+${tokenStats.join('\n')}
+
+` : ''}💡 Quick Buy
+└ @${this.botUsername} buy ${token.address} <amount>`;
+
+            await ctx.reply(message, { parse_mode: 'Markdown' });
         } catch (error) {
-            this.monitoring?.logError('Send token info error', error);
-            
-            // Fallback without formatting
-            await ctx.reply(
-                `Token: ${tokenData.symbol || 'Unknown'}\n` +
-                `Contract: ${tokenData.address || 'N/A'}\n` +
-                `To buy: @${this.botUsername || 'area51bot'} buy ${tokenData.address || 'N/A'} <amount>`
-            );
+            console.error('Error sending token info to group:', error);
+            await ctx.reply('❌ Error displaying token information');
         }
     }
 
