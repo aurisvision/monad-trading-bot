@@ -208,50 +208,39 @@ class GroupHandlers {
                 return;
             }
 
-            // Build token stats dynamically - only show available data
-            let tokenStats = [];
+            // Build token price section exactly as in screenshot
+            let tokenPriceSection = [];
             
             // USD Price (always show if available)
             if (token.usd_per_token && token.usd_per_token !== 'N/A' && token.usd_per_token > 0) {
-                tokenStats.push(`├ USD Price: $${this.formatNumber(token.usd_per_token)}`);
+                tokenPriceSection.push(`├ In USD: $${this.formatNumber(token.usd_per_token)}`);
             }
             
             // MON Price (show if available)
             if (token.mon_per_token && token.mon_per_token !== 'N/A' && token.mon_per_token > 0) {
-                tokenStats.push(`├ MON Price: ${this.formatNumber(token.mon_per_token)} MON`);
+                tokenPriceSection.push(`├ In MON: ${this.formatNumber(token.mon_per_token)} MON`);
             }
             
             // Confidence (show if available and meaningful) - Fix percentage calculation
             if (token.pconf && token.pconf !== 'N/A' && token.pconf > 0) {
                 // pconf is already a percentage value, don't multiply by 100
                 const confidence = Math.round(token.pconf);
-                tokenStats.push(`├ Confidence: ${confidence}%`);
-            }
-            
-            // Market Cap (only show if available and not N/A)
-            if (token.marketCap && token.marketCap !== 'N/A' && token.marketCap > 0) {
-                tokenStats.push(`├ Market Cap: $${this.formatNumber(token.marketCap)}`);
-            }
-            
-            // Volume 24h (only show if available and not N/A)
-            if (token.volume24h && token.volume24h !== 'N/A' && token.volume24h > 0) {
-                tokenStats.push(`└ 24h Volume: $${this.formatNumber(token.volume24h)}`);
+                tokenPriceSection.push(`└ Confidence: ${confidence}%`);
             }
             
             // Fix the last item to use └ instead of ├
-            if (tokenStats.length > 0) {
-                const lastIndex = tokenStats.length - 1;
-                tokenStats[lastIndex] = tokenStats[lastIndex].replace('├', '└');
+            if (tokenPriceSection.length > 0) {
+                const lastIndex = tokenPriceSection.length - 1;
+                tokenPriceSection[lastIndex] = tokenPriceSection[lastIndex].replace('├', '└');
             }
 
-            const message = `🪙 **${token.name || token.symbol}** (${token.symbol})
-┌─ 📍 ${token.address}
-└─ #MON (Monad) | 🌱 Active
+            const message = `🟣 **${token.name || token.symbol}** (${token.symbol})
+└─ ${token.address}
 
-${tokenStats.length > 0 ? `**📊 Token Stats**
-${tokenStats.join('\n')}
+${tokenPriceSection.length > 0 ? `📊 **Token Price**
+${tokenPriceSection.join('\n')}
 
-` : ''}**💡 Quick Buy**
+` : ''}⚡️ **Quick Buy**
 └─ \`@${this.botUsername} buy ${token.address} <amount>\``;
 
             await ctx.reply(message, { parse_mode: 'Markdown' });
@@ -300,14 +289,14 @@ ${tokenStats.join('\n')}
                     `https://testnet.monadexplorer.com/tx/${result.txHash}` : 
                     (result.explorerUrl || '#');
                 
-                // Clean success message with tree structure and bold headers
+                // Clean success message with exact format from screenshot
                 const successMessage = 
-                    `**✅ Purchase Successful**\n` +
-                    `├─ **👤 User:** ${ctx.from.first_name || 'User'}\n` +
-                    `├─ **🪙 Token:** ${tokenSymbol}\n` +
-                    `├─ **💰 Amount:** ${amount} MON\n` +
-                    `├─ **⚡ Mode:** ${tradeType.toUpperCase()}\n` +
-                    `└─ **🔗 Transaction:** [View on Explorer](${explorerUrl})`;
+                    `✅ **Purchase Successful**\n\n` +
+                    `├─ **User:** ${ctx.from.first_name || 'User'}\n` +
+                    `├─ **Token:** ${tokenSymbol}\n` +
+                    `├─ **Amount:** ${amount} MON\n` +
+                    `├─ **Mode:** ${tradeType.toUpperCase()}\n` +
+                    `└─ 🔗 **View on Explorer**`;
 
                 await ctx.reply(successMessage, { 
                     parse_mode: 'Markdown',
@@ -376,10 +365,11 @@ _For access to all features, start a private chat with the bot_`;
         } else if (number >= 1e3) {
             return (number / 1e3).toFixed(2) + 'K';
         } else if (number >= 1) {
-            return number.toFixed(4);
+            // For numbers >= 1, show 2 decimal places and remove trailing zeros
+            return parseFloat(number.toFixed(2)).toString();
         } else {
-            // For very small numbers, show more decimal places
-            return number.toFixed(8).replace(/\.?0+$/, '');
+            // For very small numbers, show more decimal places and remove trailing zeros
+            return parseFloat(number.toFixed(8)).toString();
         }
     }
 }
