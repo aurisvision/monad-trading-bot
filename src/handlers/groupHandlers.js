@@ -235,7 +235,7 @@ class GroupHandlers {
             }
 
             const message = `🟣 *${token.name || token.symbol}* (${token.symbol})
-└─ ${token.address}
+└─ \`${token.address}\`
 
 ${tokenPriceSection.length > 0 ? `📊 *Token Price*
 ${tokenPriceSection.join('\n')}
@@ -368,8 +368,8 @@ _For access to all features, start a private chat with the bot_`;
             // For numbers >= 1, show up to 2 decimal places, remove trailing zeros
             return number.toFixed(2).replace(/\.?0+$/, '');
         } else if (number > 0) {
-            // For small numbers, show up to 8 decimal places, remove trailing zeros
-            return number.toFixed(8).replace(/\.?0+$/, '');
+            // For small numbers, show up to 3 decimal places maximum, remove trailing zeros
+            return number.toFixed(3).replace(/\.?0+$/, '');
         } else {
             return '0';
         }

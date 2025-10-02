@@ -843,39 +843,46 @@ class Area51BotModularSimple {
 
         // Text message handler for custom input and group functionality
         this.bot.on('text', async (ctx) => {
-            // First, check if this is a group message and handle it
-            const botUsername = this.bot.botInfo?.username;
-            if (botUsername && await this.groupHandlers.handleGroupMessage(ctx, botUsername)) {
-                return; // Group message was handled, don't process further
-            }
+            try {
+                // Check if this is a group message first
+                if (ctx.chat.type === 'group' || ctx.chat.type === 'supergroup') {
+                    // Handle group messages using groupHandlers
+                    const botUsername = this.bot.botInfo?.username;
+                    if (botUsername) {
+                        await this.groupHandlers.handleGroupMessage(ctx, botUsername);
+                    }
+                    return; // Always return after group message handling
+                }
 
-            const userState = await this.database.getUserState(ctx.from.id);
-            this.monitoring?.logInfo('User state retrieved', { userId: ctx.from.id, state: userState?.state });
-            
-            if (userState?.state === 'awaiting_custom_buy_amounts') {
-                await this.handleCustomBuyAmountsInput(ctx);
-            } else if (userState?.state === 'awaiting_custom_sell_percentages') {
-                await this.handleCustomSellPercentagesInput(ctx);
-            } else if (userState?.state === 'awaiting_transfer_address') {
-                await this.navigationHandlers.processTransferAddress(ctx, ctx.message.text);
-            } else if (userState?.state === 'awaiting_transfer_amount') {
-                await this.navigationHandlers.processTransferAmount(ctx, ctx.message.text, userState.data?.recipientAddress);
-            } else if (userState?.state?.startsWith('awaiting_edit_buy_amount_')) {
-                const buttonIndex = parseInt(userState.state.split('_').pop());
-                await this.handleEditBuyAmountInput(ctx, buttonIndex);
-            } else if (userState?.state?.startsWith('awaiting_edit_sell_percentage_')) {
-                const buttonIndex = parseInt(userState.state.split('_').pop());
-                await this.handleEditSellPercentageInput(ctx, buttonIndex);
-            } else {
-                // Handle token address input for auto buy
-                const message = ctx.message.text.trim();
-                if (/^0x[a-fA-F0-9]{40}$/.test(message)) {
-                    // Valid token address - trigger auto buy
-                    await this.navigationHandlers.processTokenAddress(ctx, message);
+                // This is a private chat - handle normally
+                const userState = await this.database.getUserState(ctx.from.id);
+                this.monitoring?.logInfo('User state retrieved', { userId: ctx.from.id, state: userState?.state });
+                
+                if (userState?.state === 'awaiting_custom_buy_amounts') {
+                    await this.handleCustomBuyAmountsInput(ctx);
+                } else if (userState?.state === 'awaiting_custom_sell_percentages') {
+                    await this.handleCustomSellPercentagesInput(ctx);
+                } else if (userState?.state === 'awaiting_transfer_address') {
+                    await this.navigationHandlers.processTransferAddress(ctx, ctx.message.text);
+                } else if (userState?.state === 'awaiting_transfer_amount') {
+                    await this.navigationHandlers.processTransferAmount(ctx, ctx.message.text, userState.data?.recipientAddress);
+                } else if (userState?.state?.startsWith('awaiting_edit_buy_amount_')) {
+                    const buttonIndex = parseInt(userState.state.split('_').pop());
+                    await this.handleEditBuyAmountInput(ctx, buttonIndex);
+                } else if (userState?.state?.startsWith('awaiting_edit_sell_percentage_')) {
+                    const buttonIndex = parseInt(userState.state.split('_').pop());
+                    await this.handleEditSellPercentageInput(ctx, buttonIndex);
                 } else {
-                    // Delegate to navigationHandlers for all other states
+                    // Delegate to navigationHandlers for private chat token processing and other states
                     await this.navigationHandlers.handleTextMessage(ctx);
                 }
+            } catch (error) {
+                this.monitoring?.logError('Text message handler error', error, { 
+                    userId: ctx.from.id, 
+                    chatType: ctx.chat.type,
+                    messageText: ctx.message.text?.substring(0, 100) // Log first 100 chars only
+                });
+                await ctx.reply('❌ حدث خطأ في معالجة الرسالة. يرجى المحاولة مرة أخرى.');
             }
         });
 

@@ -1036,12 +1036,12 @@ Please try again or contact support if the issue persists.
 \`${tokenAddress}\`
 
 *📊 Token Information:*
-• *Price:* \`${tokenPriceUSD.toFixed(4)} USD\`
-• *Price in MON:* \`${tokenPriceInMON.toFixed(4)} MON\`
+• *Price:* \`${this.formatNumber(tokenPriceUSD)} USD\`
+• *Price in MON:* \`${this.formatNumber(tokenPriceInMON)} MON\`
 • *Confidence:* \`${confidence}%\`
 
 *💼 Your Wallet:*
-• *MON Balance:* \`${monBalance.toFixed(6)} MON\`
+• *MON Balance:* \`${this.formatNumber(monBalance)} MON\`
 
 *💡 Select amount of MON to spend:*`;
             
@@ -1163,12 +1163,12 @@ Please try again or contact support if the issue persists.
 \`${tokenAddress}\`
 
 *📊 Token Information:*
-• *Price:* \`${tokenPriceUSD.toFixed(4)} USD\`
-• *Price in MON:* \`${tokenPriceInMON.toFixed(4)} MON\`
+• *Price:* \`${this.formatNumber(tokenPriceUSD)} USD\`
+• *Price in MON:* \`${this.formatNumber(tokenPriceInMON)} MON\`
 • *Confidence:* \`${confidence}%\`
 
 *💼 Your Wallet:*
-• *MON Balance:* \`${monBalance.toFixed(6)} MON\`
+• *MON Balance:* \`${this.formatNumber(monBalance)} MON\`
 
 *💡 Select amount of MON to spend:*`;
             // Get user's custom buy amounts (userSettings already loaded above)
@@ -1873,5 +1873,31 @@ Confirm this transaction?`, {
             });
         }
     }
+
+    /**
+     * Format numbers for display with limited decimal places
+     */
+    formatNumber(num) {
+        if (!num || isNaN(num)) return '0';
+        
+        const number = parseFloat(num);
+        
+        if (number >= 1e9) {
+            return (number / 1e9).toFixed(2).replace(/\.?0+$/, '') + 'B';
+        } else if (number >= 1e6) {
+            return (number / 1e6).toFixed(2).replace(/\.?0+$/, '') + 'M';
+        } else if (number >= 1e3) {
+            return (number / 1e3).toFixed(2).replace(/\.?0+$/, '') + 'K';
+        } else if (number >= 1) {
+            // For numbers >= 1, show up to 2 decimal places, remove trailing zeros
+            return number.toFixed(2).replace(/\.?0+$/, '');
+        } else if (number > 0) {
+            // For small numbers, show up to 3 decimal places maximum, remove trailing zeros
+            return number.toFixed(3).replace(/\.?0+$/, '');
+        } else {
+            return '0';
+        }
+    }
 }
+
 module.exports = NavigationHandlers;
