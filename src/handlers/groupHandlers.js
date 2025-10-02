@@ -234,13 +234,13 @@ class GroupHandlers {
                 tokenPriceSection[lastIndex] = tokenPriceSection[lastIndex].replace('├', '└');
             }
 
-            const message = `🟣 **${token.name || token.symbol}** (${token.symbol})
+            const message = `🟣 *${token.name || token.symbol}* (${token.symbol})
 └─ ${token.address}
 
-${tokenPriceSection.length > 0 ? `📊 **Token Price**
+${tokenPriceSection.length > 0 ? `📊 *Token Price*
 ${tokenPriceSection.join('\n')}
 
-` : ''}⚡️ **Quick Buy**
+` : ''}⚡️ *Quick Buy*
 └─ \`@${this.botUsername} buy ${token.address} <amount>\``;
 
             await ctx.reply(message, { parse_mode: 'Markdown' });
@@ -291,12 +291,12 @@ ${tokenPriceSection.join('\n')}
                 
                 // Clean success message with exact format from screenshot
                 const successMessage = 
-                    `✅ **Purchase Successful**\n\n` +
-                    `├─ **User:** ${ctx.from.first_name || 'User'}\n` +
-                    `├─ **Token:** ${tokenSymbol}\n` +
-                    `├─ **Amount:** ${amount} MON\n` +
-                    `├─ **Mode:** ${tradeType.toUpperCase()}\n` +
-                    `└─ 🔗 **View on Explorer**`;
+                    `✅ *Purchase Successful*\n\n` +
+                    `├─ *User:* ${ctx.from.first_name || 'User'}\n` +
+                    `├─ *Token:* ${tokenSymbol}\n` +
+                    `├─ *Amount:* ${amount} MON\n` +
+                    `├─ *Mode:* ${tradeType.toUpperCase()}\n` +
+                    `└─ 🔗 [View on Explorer](${explorerUrl})`;
 
                 await ctx.reply(successMessage, { 
                     parse_mode: 'Markdown',
@@ -359,17 +359,19 @@ _For access to all features, start a private chat with the bot_`;
         const number = parseFloat(num);
         
         if (number >= 1e9) {
-            return (number / 1e9).toFixed(2) + 'B';
+            return (number / 1e9).toFixed(2).replace(/\.?0+$/, '') + 'B';
         } else if (number >= 1e6) {
-            return (number / 1e6).toFixed(2) + 'M';
+            return (number / 1e6).toFixed(2).replace(/\.?0+$/, '') + 'M';
         } else if (number >= 1e3) {
-            return (number / 1e3).toFixed(2) + 'K';
+            return (number / 1e3).toFixed(2).replace(/\.?0+$/, '') + 'K';
         } else if (number >= 1) {
-            // For numbers >= 1, show 2 decimal places and remove trailing zeros
-            return parseFloat(number.toFixed(2)).toString();
+            // For numbers >= 1, show up to 2 decimal places, remove trailing zeros
+            return number.toFixed(2).replace(/\.?0+$/, '');
+        } else if (number > 0) {
+            // For small numbers, show up to 8 decimal places, remove trailing zeros
+            return number.toFixed(8).replace(/\.?0+$/, '');
         } else {
-            // For very small numbers, show more decimal places and remove trailing zeros
-            return parseFloat(number.toFixed(8)).toString();
+            return '0';
         }
     }
 }
