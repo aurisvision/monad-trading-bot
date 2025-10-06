@@ -222,19 +222,22 @@ Send your private key (0x123...) or mnemonic phrase (12-24 words) now:`;
                 const trustLevel = await this.security.getUserTrustLevel(userId);
                 const baseLimit = this.security.config.rateLimits.private_key_access.limit;
                 const adjustedLimit = this.security.getAdjustedLimit(baseLimit, trustLevel);
-                const friendlyMessage = `🔐 **Private Key Access**
-⏰ You've reached your access limit for now.
-📊 **Your Account Status:**
+                const friendlyMessage = `🔐 **Access Limit Reached**
+
+⏰ **Current Status:**
 • Trust Level: ${this.getTrustLevelEmoji(trustLevel)} ${trustLevel.toUpperCase()}
-• Access Limit: ${adjustedLimit} per hour
-• Next reset: In ${Math.ceil(this.security.config.rateLimits.private_key_access.window / 60000)} minutes
-🚀 **Increase Your Limits:**
-• New users: 5 per hour
-• Regular users (3+ days): 10 per hour  
-• Trusted users (14+ days): 15 per hour
-• VIP users (30+ days): 20 per hour
-💡 **Tip:** Keep trading to build trust and increase your limits!
-🛡️ This system protects your wallet from potential attacks while giving you reasonable access.`;
+• Limit: ${adjustedLimit} access per hour
+• Reset: ${Math.ceil(this.security.config.rateLimits.private_key_access.window / 60000)} minutes
+
+📈 **Trust Level Benefits:**
+• **New:** 5 access/hour
+• **Regular:** 10 access/hour
+• **Trusted:** 15 access/hour
+• **VIP:** 20 access/hour
+
+💡 **Increase Limits:** Continue trading to build trust and unlock higher access levels.
+
+🛡️ **Security:** This system protects your wallet from potential attacks while ensuring reasonable access.`;
                 return ctx.reply(friendlyMessage);
             }
             const keyboard = Markup.inlineKeyboard([
@@ -295,19 +298,22 @@ Send your private key (0x123...) or mnemonic phrase (12-24 words) now:`;
                 const trustLevel = await this.security.getUserTrustLevel(ctx.from.id);
                 const baseLimit = this.security.config.rateLimits.private_key_reveal.limit;
                 const adjustedLimit = this.security.getAdjustedLimit(baseLimit, trustLevel);
-                const friendlyMessage = `🔐 **Private Key Reveal**
-⏰ You've reached your reveal limit for now.
-📊 **Your Account Status:**
+                const friendlyMessage = `🔐 **Access Limit Reached**
+
+⏰ **Current Status:**
 • Trust Level: ${this.getTrustLevelEmoji(trustLevel)} ${trustLevel.toUpperCase()}
-• Reveal Limit: ${adjustedLimit} per hour
-• Next reset: In ${Math.ceil(this.security.config.rateLimits.private_key_reveal.window / 60000)} minutes
-🚀 **Your Benefits by Trust Level:**
-• New users: 2-3 reveals per hour
-• Regular users: 5 reveals per hour  
-• Trusted users: 7-8 reveals per hour
-• VIP users: 10 reveals per hour
-💡 **Build Trust:** Keep using the bot and trading to unlock higher limits!
-🛡️ This balanced system protects you while giving reasonable access to your own funds.`;
+• Limit: ${adjustedLimit} reveals per hour
+• Reset: ${Math.ceil(this.security.config.rateLimits.private_key_reveal.window / 60000)} minutes
+
+📈 **Trust Level Benefits:**
+• **New:** 2-3 reveals/hour
+• **Regular:** 5 reveals/hour
+• **Trusted:** 7-8 reveals/hour
+• **VIP:** 10 reveals/hour
+
+💡 **Increase Limits:** Continue trading to build trust and unlock higher access levels.
+
+🛡️ **Security:** This system protects your wallet while ensuring reasonable access to your funds.`;
                 return ctx.reply(friendlyMessage);
             }
             const user = await this.database.getUserByTelegramId(ctx.from.id);
