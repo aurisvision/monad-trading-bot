@@ -101,14 +101,17 @@ Manage your wallet securely:`;
             // Use existing wallet manager with unified security
             const walletManager = this.walletManager;
             const wallet = await walletManager.generateWallet();
-            await this.database.updateUserWallet(userId, wallet.address, wallet.encryptedPrivateKey, wallet.encryptedMnemonic);
-            // Clear cache again after wallet creation to ensure fresh data
-            if (this.cacheService) {
+            const updatedUser = await this.database.updateUserWallet(userId, wallet.address, wallet.encryptedPrivateKey, wallet.encryptedMnemonic);
+            
+            // CRITICAL: Update cache with new user data immediately after wallet creation
+            if (this.cacheService && updatedUser) {
                 try {
-                    await this.cacheService.delete('user', userId);
+                    await this.cacheService.set('user', userId, updatedUser);
+                    // Clear main_menu cache to force refresh with new wallet data
                     await this.cacheService.delete('main_menu', userId);
+                    console.log('✅ User cache updated with new wallet data:', userId);
                 } catch (cacheError) {
-                    console.log('⚠️ Post-wallet cache cleanup error:', cacheError.message);
+                    console.log('⚠️ Post-wallet cache update error:', cacheError.message);
                 }
             }
             // Use wallet success interface with Start Trading button
@@ -509,4 +512,4 @@ Use /start to create a new wallet.`, {
         return privateKey.substring(0, 6) + '...' + privateKey.substring(privateKey.length - 4);
     }
 }
-module.exports = WalletHandlers;
+module.exports = WalletHandlers;
