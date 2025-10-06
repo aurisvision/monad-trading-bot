@@ -6,6 +6,7 @@ class RPCManager {
         // RPC endpoints بالترتيب حسب الأولوية
         this.rpcEndpoints = [
             process.env.MONAD_RPC_URL || 'https://testnet-rpc.monad.xyz',
+            'https://lb.drpc.live/monad-testnet/AuKJ2niSbUfnkBV_Go7QZm7JL68eouQR8IE-wg8TMB_n',
             'https://rpc.ankr.com/monad_testnet',
             'https://rpc-testnet.monad.xyz',
             'https://testnet.monad.network',
