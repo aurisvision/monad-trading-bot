@@ -333,16 +333,22 @@ class SimpleAccessHandler {
      */
     async showAccessPrompt(ctx) {
         const message = 
-            `🔐 *Access Required*\n\n` +
-            `This bot requires an access code to use.\n\n` +
-            `If you have a code, click below to enter it.`;
+            `🛸 *Welcome to Area51 Bot*\n\n` +
+            `🚀 *Experience Lightning-Fast Trading on Monad*\n\n` +
+            `To access our advanced trading platform, you'll need an exclusive access code.\n\n` +
+            `🎯 *Get Your Access Code:*\n` +
+            `Follow our official X page for instant access to Area51 Bot:\n\n` +
+            `👉 **https://x.com/0xArea**\n\n` +
+            `📈 Join thousands of traders already experiencing Monad's revolutionary speed and efficiency.\n\n` +
+            `Once you have your access code, click below to enter it and start trading.`;
         
         await ctx.reply(message, {
             parse_mode: 'Markdown',
             reply_markup: {
-                inline_keyboard: [[
-                    { text: 'Enter Access Code', callback_data: 'enter_code' }
-                ]]
+                inline_keyboard: [
+                    [{ text: '🐦 Follow @0xArea', url: 'https://x.com/0xArea' }],
+                    [{ text: '🎫 Enter Access Code', callback_data: 'enter_code' }]
+                ]
             }
         });
     }

@@ -1,6 +1,7 @@
 const axios = require('axios');
 const https = require('https');
 const { ethers } = require('ethers');
+const RPCManager = require('./utils/RPCManager');
 // Configure axios to use HTTPS only
 const httpsAgent = new https.Agent({
     rejectUnauthorized: true,
@@ -14,6 +15,8 @@ class MonorailAPI {
         this.appId = '2837175649443187';
         this.redis = redis;
         this.cacheService = cacheService;
+        // Initialize RPC Manager for fallback support
+        this.rpcManager = new RPCManager();
         // Common token addresses
         this.tokens = {
             MON: '0x0000000000000000000000000000000000000000',
@@ -448,8 +451,13 @@ class MonorailAPI {
             return cached.data;
         }
         try {
-            const provider = new ethers.JsonRpcProvider(process.env.MONAD_RPC_URL);
-            const feeData = await provider.getFeeData();
+            // Use RPC manager with fallback for gas price
+            const feeData = await this.rpcManager.executeWithFallback(
+                async (provider) => {
+                    return await provider.getFeeData();
+                },
+                'GET_FEE_DATA'
+            );
             const gasPrice = feeData.gasPrice;
             // Cache the gas price for 10 minutes
             this.cache.set(cacheKey, { 

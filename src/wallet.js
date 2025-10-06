@@ -2,13 +2,17 @@ const { ethers } = require('ethers');
 const bip39 = require('bip39');
 const { secureLogger } = require('./utils/secureLogger');
 const UnifiedSecuritySystem = require('./security/UnifiedSecuritySystem');
+const RPCManager = require('./utils/RPCManager');
 
 class WalletManager {
     constructor(redis, database) {
         // Use unified security system instead of duplicate encryption
         this.security = new UnifiedSecuritySystem(redis, database);
         
-        secureLogger.info('WalletManager initialized with unified security system');
+        // Initialize RPC manager with fallback support
+        this.rpcManager = new RPCManager();
+        
+        secureLogger.info('WalletManager initialized with unified security system and RPC fallback');
     }
 
     // Generate a new wallet
@@ -170,23 +174,9 @@ class WalletManager {
         try {
             const wallet = await this.getWallet(encryptedPrivateKey);
             
-            // Configure Monad testnet provider with proper network settings
-            const provider = new ethers.JsonRpcProvider(
-                process.env.MONAD_RPC_URL,
-                {
-                    chainId: parseInt(process.env.CHAIN_ID),
-                    name: 'monad-testnet'
-                }
-            );
-            
+            // Get provider with fallback support
+            const provider = await this.rpcManager.getProvider();
             const connectedWallet = new ethers.Wallet(wallet.privateKey, provider);
-            
-            // Silent connection test
-            try {
-                await provider.getNetwork();
-            } catch (walletError) {
-                secureLogger.warn('Wallet connection test failed', { error: walletError.message });
-            }
             
             return connectedWallet;
         } catch (error) {
@@ -216,12 +206,14 @@ class WalletManager {
                 return '0.000000';
             }
 
-            const provider = new ethers.JsonRpcProvider(process.env.MONAD_RPC_URL, {
-                chainId: parseInt(process.env.CHAIN_ID) || 41454,
-                name: 'monad-testnet'
-            });
+            // Use RPC manager with fallback
+            const balance = await this.rpcManager.executeWithFallback(
+                async (provider) => {
+                    return await provider.getBalance(walletAddress);
+                },
+                'GET_BALANCE'
+            );
             
-            const balance = await provider.getBalance(walletAddress);
             return ethers.formatEther(balance);
         } catch (error) {
             secureLogger.error('Error getting balance', error);
@@ -296,8 +288,13 @@ class WalletManager {
     // Get transaction receipt
     async getTransactionReceipt(txHash) {
         try {
-            const provider = new ethers.JsonRpcProvider(process.env.MONAD_RPC_URL);
-            return await provider.getTransactionReceipt(txHash);
+            // Use RPC manager with fallback for transaction receipt
+            return await this.rpcManager.executeWithFallback(
+                async (provider) => {
+                    return await provider.getTransactionReceipt(txHash);
+                },
+                'GET_TRANSACTION_RECEIPT'
+            );
         } catch (error) {
             secureLogger.error('Error getting transaction receipt', error);
             return null;
@@ -307,8 +304,13 @@ class WalletManager {
     // Wait for transaction confirmation
     async waitForTransaction(txHash, confirmations = 1) {
         try {
-            const provider = new ethers.JsonRpcProvider(process.env.MONAD_RPC_URL);
-            return await provider.waitForTransaction(txHash, confirmations);
+            // Use RPC manager with fallback for transaction waiting
+            return await this.rpcManager.executeWithFallback(
+                async (provider) => {
+                    return await provider.waitForTransaction(txHash, confirmations);
+                },
+                'WAIT_FOR_TRANSACTION'
+            );
         } catch (error) {
             secureLogger.error('Error waiting for transaction', error);
             throw new Error('Transaction confirmation failed');

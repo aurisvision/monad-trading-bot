@@ -24,7 +24,7 @@ Essential information about the Monad blockchain network.
 **Currently Active:** Monad Testnet
 
 **Network Details:**
-- **Chain ID:** 41454
+- **Chain ID:** 10143
 - **Network Name:** Monad Testnet
 - **Currency:** MON (Test tokens)
 - **Block Time:** ~1 second
