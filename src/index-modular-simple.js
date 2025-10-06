@@ -36,6 +36,7 @@ const PortfolioHandlers = require('./handlers/portfolioHandlers');
 const NavigationHandlers = require('./handlers/navigationHandlers');
 const InlineHandlers = require('./handlers/inlineHandlers');
 const GroupHandlers = require('./handlers/groupHandlers');
+const FeedbackHandlers = require('./handlers/feedbackHandlers');
 
 // Simple Access Code System
 const SimpleAccessCode = require('./services/SimpleAccessCode');
@@ -360,6 +361,15 @@ class Area51BotModularSimple {
         this.groupHandlers = new GroupHandlers(groupDependencies);
         console.log('✅ Group Handlers initialized successfully');
         
+        // Initialize Feedback Handlers
+        this.feedbackHandlers = new FeedbackHandlers(
+            this.bot,
+            this.database,
+            this.monitoring,
+            this.cacheService
+        );
+        console.log('✅ Feedback Handlers initialized successfully');
+        
         // Legacy trading cache optimizer - REPLACED by unified system
         // this.tradingCacheOptimizer = new TradingCacheOptimizer(
         //     this.database,
@@ -487,13 +497,16 @@ class Area51BotModularSimple {
         // this.tradingHandlers.setupHandlers();
         this.portfolioHandlers.setupHandlers();
         
+        // Setup Feedback handlers
+        this.feedbackHandlers.setupHandlers();
+        
         // Setup Inline Mode handlers
         this.inlineHandlers.setupHandlers();
         
         // Setup Group handlers for group chat functionality
         this.groupHandlers.setupHandlers(this.bot);
         
-        console.log('✅ All handlers setup complete (including unified trading system, inline mode, and group functionality)');
+        console.log('✅ All handlers setup complete (including unified trading system, inline mode, group functionality, and feedback system)');
     }
 
     setupAdditionalHandlers() {
