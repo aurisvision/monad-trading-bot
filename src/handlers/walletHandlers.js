@@ -222,22 +222,22 @@ Send your private key (0x123...) or mnemonic phrase (12-24 words) now:`;
                 const trustLevel = await this.security.getUserTrustLevel(userId);
                 const baseLimit = this.security.config.rateLimits.private_key_access.limit;
                 const adjustedLimit = this.security.getAdjustedLimit(baseLimit, trustLevel);
-                const friendlyMessage = `🔐 **Access Limit Reached**
+                const friendlyMessage = `🔐 *Access Limit Reached*
 
-⏰ **Current Status:**
+⏰ *Current Status:*
 • Trust Level: ${this.getTrustLevelEmoji(trustLevel)} ${trustLevel.toUpperCase()}
 • Limit: ${adjustedLimit} access per hour
 • Reset: ${Math.ceil(this.security.config.rateLimits.private_key_access.window / 60000)} minutes
 
-📈 **Trust Level Benefits:**
-• **New:** 5 access/hour
-• **Regular:** 10 access/hour
-• **Trusted:** 15 access/hour
-• **VIP:** 20 access/hour
+📈 *Trust Level Benefits:*
+• New: 5 access/hour
+• Regular: 10 access/hour
+• Trusted: 15 access/hour
+• VIP: 20 access/hour
 
-💡 **Increase Limits:** Continue trading to build trust and unlock higher access levels.
+💡 *Increase Limits:* Continue trading to build trust and unlock higher access levels.
 
-🛡️ **Security:** This system protects your wallet from potential attacks while ensuring reasonable access.`;
+🛡️ *Security:* This system protects your wallet from potential attacks while ensuring reasonable access.`;
                 return ctx.reply(friendlyMessage);
             }
             const keyboard = Markup.inlineKeyboard([
@@ -298,22 +298,22 @@ Send your private key (0x123...) or mnemonic phrase (12-24 words) now:`;
                 const trustLevel = await this.security.getUserTrustLevel(ctx.from.id);
                 const baseLimit = this.security.config.rateLimits.private_key_reveal.limit;
                 const adjustedLimit = this.security.getAdjustedLimit(baseLimit, trustLevel);
-                const friendlyMessage = `🔐 **Access Limit Reached**
+                const friendlyMessage = `🔐 *Access Limit Reached*
 
-⏰ **Current Status:**
+⏰ *Current Status:*
 • Trust Level: ${this.getTrustLevelEmoji(trustLevel)} ${trustLevel.toUpperCase()}
 • Limit: ${adjustedLimit} reveals per hour
 • Reset: ${Math.ceil(this.security.config.rateLimits.private_key_reveal.window / 60000)} minutes
 
-📈 **Trust Level Benefits:**
-• **New:** 2-3 reveals/hour
-• **Regular:** 5 reveals/hour
-• **Trusted:** 7-8 reveals/hour
-• **VIP:** 10 reveals/hour
+📈 *Trust Level Benefits:*
+• New: 2-3 reveals/hour
+• Regular: 5 reveals/hour
+• Trusted: 7-8 reveals/hour
+• VIP: 10 reveals/hour
 
-💡 **Increase Limits:** Continue trading to build trust and unlock higher access levels.
+💡 *Increase Limits:* Continue trading to build trust and unlock higher access levels.
 
-🛡️ **Security:** This system protects your wallet while ensuring reasonable access to your funds.`;
+🛡️ *Security:* This system protects your wallet while ensuring reasonable access to your funds.`;
                 return ctx.reply(friendlyMessage);
             }
             const user = await this.database.getUserByTelegramId(ctx.from.id);
