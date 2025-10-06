@@ -231,7 +231,7 @@ Send your private key (0x123...) or mnemonic phrase (12-24 words) now:`;
 💡 *Increase Limits:* Continue trading to build trust
 
 🛡️ This system protects your wallet`;
-                return ctx.reply(friendlyMessage);
+                return ctx.reply(friendlyMessage, { parse_mode: 'Markdown' });
             }
             const keyboard = Markup.inlineKeyboard([
                 [Markup.button.callback('🔓 Reveal Full Key', `reveal_key_${userId}`)],
@@ -300,7 +300,7 @@ Send your private key (0x123...) or mnemonic phrase (12-24 words) now:`;
 💡 *Increase Limits:* Continue trading to build trust
 
 🛡️ This system protects your wallet`;
-                return ctx.reply(friendlyMessage);
+                return ctx.reply(friendlyMessage, { parse_mode: 'Markdown' });
             }
             const user = await this.database.getUserByTelegramId(ctx.from.id);
             if (!user) {
