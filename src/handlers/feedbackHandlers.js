@@ -210,27 +210,89 @@ Thank you for helping us improve Area51 Bot!`;
     }
 
     /**
+     * Send feedback notification to admin
+     */
+    async notifyAdmin(feedbackData, feedbackId, createdAt) {
+        try {
+            const adminUserId = process.env.ADMIN_USER_ID;
+            if (!adminUserId) {
+                console.log('⚠️ ADMIN_USER_ID not configured - feedback notification skipped');
+                return;
+            }
+
+            const typeEmojis = {
+                'bug': '🐛',
+                'suggestion': '💡',
+                'general': '💭'
+            };
+
+            const emoji = typeEmojis[feedbackData.feedback_type] || '💬';
+            
+            const adminMessage = `🔔 *NEW FEEDBACK RECEIVED*
+
+${emoji} *Type:* ${feedbackData.feedback_type.toUpperCase()}
+
+👤 *User Details:*
+• Name: ${feedbackData.first_name}
+• Username: @${feedbackData.username || 'N/A'}
+• User ID: \`${feedbackData.user_id}\`
+
+💬 *Feedback Message:*
+${feedbackData.feedback_text}
+
+📊 *Details:*
+• Feedback ID: \`${feedbackId}\`
+• Timestamp: ${new Date(createdAt).toLocaleString()}
+• Status: NEW
+
+---
+_This feedback has been automatically stored in the database._`;
+
+            await this.bot.telegram.sendMessage(adminUserId, adminMessage, {
+                parse_mode: 'Markdown'
+            });
+
+            this.monitoring?.logInfo('Admin notification sent', {
+                feedbackId,
+                adminUserId,
+                userId: feedbackData.user_id
+            });
+
+        } catch (error) {
+            this.monitoring?.logError('Failed to send admin notification', error, {
+                feedbackId,
+                userId: feedbackData.user_id
+            });
+            // Don't throw error - feedback storage should not fail if admin notification fails
+        }
+    }
+
+    /**
      * Store feedback in memory temporarily until database is available
      */
     async storeFeedback(feedbackData) {
         try {
-            // Temporary storage in memory until database is available
-            const feedbackEntry = {
-                id: Date.now(),
-                user_id: feedbackData.user_id,
-                username: feedbackData.username,
-                first_name: feedbackData.first_name,
-                feedback_type: feedbackData.feedback_type,
-                feedback_text: feedbackData.feedback_text,
-                status: 'new',
-                created_at: new Date().toISOString()
-            };
+            // Store feedback in database
+            const query = `
+                INSERT INTO feedback (user_id, username, first_name, feedback_type, feedback_text, status)
+                VALUES ($1, $2, $3, $4, $5, $6)
+                RETURNING id, created_at
+            `;
             
-            // Store in memory (temporary solution)
-            if (!this.tempFeedbackStorage) {
-                this.tempFeedbackStorage = [];
-            }
-            this.tempFeedbackStorage.push(feedbackEntry);
+            const values = [
+                feedbackData.user_id,
+                feedbackData.username,
+                feedbackData.first_name,
+                feedbackData.feedback_type,
+                feedbackData.feedback_text,
+                'new'
+            ];
+            
+            const result = await this.database.query(query, values);
+            const feedbackEntry = result.rows[0];
+            
+            // Send notification to admin
+            await this.notifyAdmin(feedbackData, feedbackEntry.id, feedbackEntry.created_at);
             
             // Log feedback for admin review
             this.monitoring?.logInfo('📝 NEW FEEDBACK RECEIVED', {
@@ -261,42 +323,47 @@ Thank you for helping us improve Area51 Bot!`;
 
     /**
      * Get feedback statistics (for admin use)
-     * Currently works with temporary memory storage
+     * Retrieves data from database
      */
     async getFeedbackStats() {
         try {
-            if (!this.tempFeedbackStorage || this.tempFeedbackStorage.length === 0) {
-                return {
-                    total: 0,
-                    byType: {},
-                    byStatus: {},
-                    recent: []
-                };
-            }
+            // Get total count
+            const totalQuery = 'SELECT COUNT(*) as total FROM feedback';
+            const totalResult = await this.database.query(totalQuery);
+            const total = parseInt(totalResult.rows[0].total);
             
-            const stats = {
-                total: this.tempFeedbackStorage.length,
-                byType: {},
-                byStatus: {},
-                recent: this.tempFeedbackStorage.slice(-5) // Last 5 feedback entries
-            };
-            
-            // Count by type and status
-            this.tempFeedbackStorage.forEach(feedback => {
-                // Count by type
-                if (!stats.byType[feedback.feedback_type]) {
-                    stats.byType[feedback.feedback_type] = 0;
-                }
-                stats.byType[feedback.feedback_type]++;
-                
-                // Count by status
-                if (!stats.byStatus[feedback.status]) {
-                    stats.byStatus[feedback.status] = 0;
-                }
-                stats.byStatus[feedback.status]++;
+            // Get counts by type
+            const typeQuery = 'SELECT feedback_type, COUNT(*) as count FROM feedback GROUP BY feedback_type';
+            const typeResult = await this.database.query(typeQuery);
+            const byType = {};
+            typeResult.rows.forEach(row => {
+                byType[row.feedback_type] = parseInt(row.count);
             });
             
-            return stats;
+            // Get counts by status
+            const statusQuery = 'SELECT status, COUNT(*) as count FROM feedback GROUP BY status';
+            const statusResult = await this.database.query(statusQuery);
+            const byStatus = {};
+            statusResult.rows.forEach(row => {
+                byStatus[row.status] = parseInt(row.count);
+            });
+            
+            // Get recent feedback (last 5)
+            const recentQuery = `
+                SELECT id, user_id, username, first_name, feedback_type, feedback_text, status, created_at
+                FROM feedback 
+                ORDER BY created_at DESC 
+                LIMIT 5
+            `;
+            const recentResult = await this.database.query(recentQuery);
+            const recent = recentResult.rows;
+            
+            return {
+                total,
+                byType,
+                byStatus,
+                recent
+            };
         } catch (error) {
             this.monitoring?.logError('Failed to get feedback stats', error);
             return {
