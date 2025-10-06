@@ -917,7 +917,10 @@ class Area51BotModularSimple {
                 const userState = await this.database.getUserState(ctx.from.id);
                 this.monitoring?.logInfo('User state retrieved', { userId: ctx.from.id, state: userState?.state });
                 
-                if (userState?.state === 'awaiting_custom_buy_amounts') {
+                if (userState?.state === 'collecting_feedback') {
+                    // Handle feedback message collection
+                    await this.feedbackHandlers.processFeedbackMessage(ctx, userState);
+                } else if (userState?.state === 'awaiting_custom_buy_amounts') {
                     await this.handleCustomBuyAmountsInput(ctx);
                 } else if (userState?.state === 'awaiting_custom_sell_percentages') {
                     await this.handleCustomSellPercentagesInput(ctx);
