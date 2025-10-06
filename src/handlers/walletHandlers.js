@@ -222,15 +222,15 @@ Send your private key (0x123...) or mnemonic phrase (12-24 words) now:`;
                 const trustLevel = await this.security.getUserTrustLevel(userId);
                 const baseLimit = this.security.config.rateLimits.private_key_access.limit;
                 const adjustedLimit = this.security.getAdjustedLimit(baseLimit, trustLevel);
-                const friendlyMessage = `🔐 *تم الوصول للحد الأقصى*
+                const friendlyMessage = `🔐 *Access Limit Reached*
 
-⏰ المستوى: ${this.getTrustLevelEmoji(trustLevel)} ${trustLevel.toUpperCase()}
-📊 الحد: ${adjustedLimit} مرة/ساعة
-⏳ إعادة تعيين: ${Math.ceil(this.security.config.rateLimits.private_key_access.window / 60000)} دقيقة
+⏰ Level: ${this.getTrustLevelEmoji(trustLevel)} ${trustLevel.toUpperCase()}
+📊 Limit: ${adjustedLimit} access/hour
+⏳ Reset: ${Math.ceil(this.security.config.rateLimits.private_key_access.window / 60000)} minutes
 
-💡 *لزيادة الحد:* استمر في التداول لبناء الثقة
+💡 *Increase Limits:* Continue trading to build trust
 
-🛡️ هذا النظام يحمي محفظتك`;
+🛡️ This system protects your wallet`;
                 return ctx.reply(friendlyMessage);
             }
             const keyboard = Markup.inlineKeyboard([
@@ -291,15 +291,15 @@ Send your private key (0x123...) or mnemonic phrase (12-24 words) now:`;
                 const trustLevel = await this.security.getUserTrustLevel(ctx.from.id);
                 const baseLimit = this.security.config.rateLimits.private_key_reveal.limit;
                 const adjustedLimit = this.security.getAdjustedLimit(baseLimit, trustLevel);
-                const friendlyMessage = `🔐 *تم الوصول للحد الأقصى*
+                const friendlyMessage = `🔐 *Access Limit Reached*
 
-⏰ المستوى: ${this.getTrustLevelEmoji(trustLevel)} ${trustLevel.toUpperCase()}
-📊 الحد: ${adjustedLimit} كشف/ساعة
-⏳ إعادة تعيين: ${Math.ceil(this.security.config.rateLimits.private_key_reveal.window / 60000)} دقيقة
+⏰ Level: ${this.getTrustLevelEmoji(trustLevel)} ${trustLevel.toUpperCase()}
+📊 Limit: ${adjustedLimit} reveals/hour
+⏳ Reset: ${Math.ceil(this.security.config.rateLimits.private_key_reveal.window / 60000)} minutes
 
-💡 *لزيادة الحد:* استمر في التداول لبناء الثقة
+💡 *Increase Limits:* Continue trading to build trust
 
-🛡️ هذا النظام يحمي محفظتك`;
+🛡️ This system protects your wallet`;
                 return ctx.reply(friendlyMessage);
             }
             const user = await this.database.getUserByTelegramId(ctx.from.id);
