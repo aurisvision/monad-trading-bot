@@ -53,7 +53,7 @@ POSTGRES_PASSWORD=your_password
 REDIS_HOST=localhost
 REDIS_PORT=6379
 ENCRYPTION_KEY=your_32_character_key_here
-MONAD_RPC_URL=https://testnet-rpc.monad.xyz
+MONAD_RPC_URL=https://lb.drpc.live/monad-testnet/AoOgZcz1jUo2kLGq0kMoG3ovAOf-o9gR8IGdwg8TMB_n
 ```
 
 ## 📁 Project Structure

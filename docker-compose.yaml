@@ -37,7 +37,7 @@ services:
       
       # Monad Network Configuration
       CHAIN_ID: ${CHAIN_ID:-10143}
-      MONAD_RPC_URL: ${MONAD_RPC_URL:-https://testnet-rpc.monad.xyz}
+      MONAD_RPC_URL: ${MONAD_RPC_URL:-https://lb.drpc.live/monad-testnet/AoOgZcz1jUo2kLGq0kMoG3ovAOf-o9gR8IGdwg8TMB_n}
       
       # Monorail Configuration
       MONORAIL_APP_ID: ${MONORAIL_APP_ID}

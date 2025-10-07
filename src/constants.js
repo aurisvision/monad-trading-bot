@@ -14,7 +14,7 @@ module.exports = {
     NETWORK: {
         CHAIN_ID: 41454, // Monad Testnet
         NAME: 'Monad Testnet',
-        RPC_URL: 'https://testnet-rpc.monad.xyz',
+        RPC_URL: 'https://lb.drpc.live/monad-testnet/AoOgZcz1jUo2kLGq0kMoG3ovAOf-o9gR8IGdwg8TMB_n',
         EXPLORER_URL: 'https://testnet.monadexplorer.com',
         CURRENCY: 'MON'
     },

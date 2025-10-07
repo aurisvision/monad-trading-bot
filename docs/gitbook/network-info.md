@@ -33,7 +33,7 @@ Essential information about the Monad blockchain network.
 ### RPC Endpoints
 **Primary RPC:**
 ```
-https://testnet-rpc.monad.xyz
+https://lb.drpc.live/monad-testnet/AoOgZcz1jUo2kLGq0kMoG3ovAOf-o9gR8IGdwg8TMB_n
 ```
 
 **Alternative RPCs:**

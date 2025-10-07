@@ -211,7 +211,7 @@ const txData = await tradingAPI.generateTransaction({
 
 ### Monad Testnet
 - **Chain ID:** 41454
-- **RPC URL:** `https://testnet-rpc.monad.xyz`
+- **RPC URL:** `https://lb.drpc.live/monad-testnet/AoOgZcz1jUo2kLGq0kMoG3ovAOf-o9gR8IGdwg8TMB_n`
 - **Explorer:** `https://testnet.monadexplorer.com`
 
 ### Important Addresses

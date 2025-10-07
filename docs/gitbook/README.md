@@ -71,7 +71,7 @@ Area51 Bot operates on the **Monad blockchain testnet**, a high-performance EVM-
 ### **Network Details**
 - **Chain ID**: 41454
 - **Native Token**: MON (testnet)
-- **RPC URL**: `https://testnet-rpc.monad.xyz`
+- **RPC URL**: `https://lb.drpc.live/monad-testnet/AoOgZcz1jUo2kLGq0kMoG3ovAOf-o9gR8IGdwg8TMB_n`
 - **Explorer**: [Monad Testnet Explorer](https://testnet.monadexplorer.com)
 
 ### **DEX Integration**
