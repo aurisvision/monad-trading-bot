@@ -780,8 +780,8 @@ class Area51BotModularSimple {
         
         const sendSecurityWarning = async (ctx, commandName) => {
             await ctx.reply(
-                `🔒 الكوماند /${commandName} غير متاح في المجموعات لأسباب أمنية.\n\n` +
-                `📱 يرجى استخدام هذا الكوماند في المحادثة الخاصة مع البوت لحماية معلوماتك الشخصية.`,
+                `🔒 The /${commandName} command is not available in groups for security reasons.\n\n` +
+                `📱 Please use this command in a private chat with the bot to protect your personal information.`,
                 { reply_to_message_id: ctx.message.message_id }
             );
         };

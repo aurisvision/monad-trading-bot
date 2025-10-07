@@ -25,6 +25,27 @@ class MonorailAPI {
         // Speed optimization: Cache frequently accessed data
         this.cache = new Map();
         this.cacheTimeout = 10000; // 10 seconds cache
+        
+        // Request throttling to prevent rate limiting
+        this.requestQueue = [];
+        this.isProcessingQueue = false;
+        this.requestDelay = 100; // 100ms between requests (max 10 requests/second)
+        this.lastRequestTime = 0;
+    }
+
+    /**
+     * Throttle requests to prevent rate limiting
+     */
+    async throttleRequest() {
+        const now = Date.now();
+        const timeSinceLastRequest = now - this.lastRequestTime;
+        
+        if (timeSinceLastRequest < this.requestDelay) {
+            const waitTime = this.requestDelay - timeSinceLastRequest;
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
+        
+        this.lastRequestTime = Date.now();
     }
     // Fast token balance check
     async getTokenBalance(walletAddress, tokenAddress) {
@@ -687,8 +708,14 @@ class MonorailAPI {
             if (!transaction.to || !transaction.data) {
                 throw new Error('Transaction missing required fields');
             }
-            // Send transaction
-            const txResponse = await wallet.sendTransaction(transaction);
+            // Send transaction using RPC manager for reliability
+            const txResponse = await this.rpcManager.executeWithFallback(
+                async (provider) => {
+                    const walletWithProvider = wallet.connect(provider);
+                    return await walletWithProvider.sendTransaction(transaction);
+                },
+                'SEND_TRANSACTION'
+            );
             
             // Check if turbo mode - return immediately without waiting
             if (options.turboMode) {
