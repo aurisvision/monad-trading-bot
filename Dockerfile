@@ -49,5 +49,5 @@ USER area51bot
 # Use tini for proper signal handling
 ENTRYPOINT ["/sbin/tini", "--"]
 
-# Start the application directly (database already fixed manually)
-CMD ["node", "src/index-modular-simple.js"]
+# Start the application
+CMD ["npm", "start"]

@@ -24,7 +24,7 @@ class EnhancedWebSocketManager extends EventEmitter {
         this.heartbeatTimer = null;
         this.reconnectTimer = null;
         
-        this.logger = new Logger('WebSocketManager');
+        this.logger = Logger;
         
         // Initialize if enabled
         if (this.enabled && this.wsUrl) {

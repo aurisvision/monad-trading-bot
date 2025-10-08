@@ -12,7 +12,7 @@ class RealTimeMessageUpdater {
         this.bot = bot;
         this.formatter = new ProfessionalMessageFormatter();
         this.wsManager = new EnhancedWebSocketManager(options);
-        this.logger = new Logger('RealTimeMessageUpdater');
+        this.logger = Logger;
         
         // Track active messages for updates
         this.activeMessages = new Map(); // messageId -> { chatId, type, data, lastUpdate }
