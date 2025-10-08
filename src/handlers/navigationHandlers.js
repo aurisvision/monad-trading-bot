@@ -1031,19 +1031,32 @@ Please try again or contact support if the issue persists.
                 confidence = parseInt(tokenInfo.token.pconf);
             }
             
-            const tokenText = `*🟣 ${tokenInfo.token.symbol || 'Unknown'} | ${tokenInfo.token.name || 'Unknown Token'}*
+            // Use the new professional message formatter
+            const ProfessionalMessageFormatter = require('../utils/ProfessionalMessageFormatter');
+            const formatter = new ProfessionalMessageFormatter();
+            
+            // Get additional token data
+            let tokenData = {};
+            try {
+                const freshDataFetcher = new FreshDataFetcher(this.monitoring);
+                tokenData = await freshDataFetcher.getTokenData(tokenAddress);
+            } catch (error) {
+                console.log('Could not fetch additional token data:', error.message);
+            }
 
-\`${tokenAddress}\`
-
-*📊 Token Information:*
-• *Price:* \`${this.formatNumber(tokenPriceUSD)} USD\`
-• *Price in MON:* \`${this.formatNumber(tokenPriceInMON)} MON\`
-• *Confidence:* \`${confidence}%\`
-
-*💼 Your Wallet:*
-• *MON Balance:* \`${this.formatNumber(monBalance)} MON\`
-
-*💡 Select amount of MON to spend:*`;
+            const tokenText = formatter.formatInitialTradingMessage({
+                operation: 'buy',
+                tokenSymbol: tokenInfo.token.symbol || 'Unknown',
+                tokenName: tokenInfo.token.name || 'Unknown Token',
+                tokenAddress: tokenAddress,
+                balance: this.formatNumber(monBalance),
+                price: this.formatNumber(tokenPriceUSD),
+                liquidity: tokenData.liquidity || 'N/A',
+                marketCap: tokenData.marketCap || 'N/A',
+                change24h: tokenData.change24h || null,
+                walletNumber: 'W1',
+                isRenounced: tokenData.isRenounced || false
+            }) + `\n\n*💡 Select amount of MON to spend:*`;
             
             // Get user's custom buy amounts
             const userSettings = await this.database.getUserSettings(userId);
@@ -1330,18 +1343,22 @@ Please try again or contact support if the issue persists.
             const customPercentages = userSettings?.custom_sell_percentages || '25,50,75,100';
             const percentagesArray = customPercentages.split(',').map(p => parseInt(p.trim()));
 
-            // Professional sell interface message
-            const sellMessage = `*${tokenName} | ${tokenSymbol}*
-• Contract: \`${tokenAddress}\`
-
-*💼 Your Holdings*
-• Balance: ${tokenBalance.toFixed(2)} ${tokenSymbol}
-• Value (USD): $${tokenValueUSD.toFixed(2)}
-• Value (MON): ${tokenValueMON.toFixed(2)} MON
-
-_💡 Use Refresh button to update your balance._
-
-Select percentage to sell:`;
+            // Use the new message formatter for consistent formatting
+            const ProfessionalMessageFormatter = require('../utils/ProfessionalMessageFormatter');
+            const formatter = new ProfessionalMessageFormatter();
+            
+            const sellMessage = formatter.formatInitialTradingMessage({
+                operation: 'sell',
+                tokenSymbol,
+                tokenName,
+                tokenAddress,
+                balance: tokenBalance,
+                price: tokenInfo?.price || 0,
+                liquidity: tokenInfo?.liquidity || 0,
+                marketCap: tokenInfo?.marketCap || 0,
+                change24h: tokenInfo?.change24h || 0,
+                walletNumber: user.wallet_number || 1
+            });
 
             // Build sell percentage buttons using user's custom settings
             const buttons = [];

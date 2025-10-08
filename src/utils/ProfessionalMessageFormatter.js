@@ -39,7 +39,10 @@ class ProfessionalMessageFormatter {
             priceImpact,
             gasUsed,
             timestamp,
-            dexName = 'Monorail'
+            dexName = 'Monorail',
+            price,
+            liquidity,
+            marketCap
         } = data;
 
         const explorerUrl = `${this.explorerBaseUrl}/tx/${txHash}`;
@@ -51,23 +54,17 @@ class ProfessionalMessageFormatter {
             second: '2-digit'
         });
 
-        return `${this.brandEmojis.success} **BUY EXECUTED**
+        return `Buy $${tokenSymbol} — (${tokenSymbol}) 📈 [${tokenUrl}](${tokenUrl})
+${this.truncateAddress(tokenAddress)}
 
-${this.brandEmojis.diamond} **${tokenSymbol}** | ${tokenName}
-${this.brandEmojis.target} [\`${this.truncateAddress(tokenAddress)}\`](${tokenUrl})
+Balance: ${monAmount} MON — W1 ✏️
+Price: $${price || '0.00'} — LIQ: $${liquidity || '0'} — MC: $${marketCap || '0'}
 
-${this.brandEmojis.chart} **TRADE SUMMARY**
-• **Spent:** ${monAmount} MON
-• **Received:** ${this.formatNumber(tokenAmount)} ${tokenSymbol}
-• **DEX:** ${dexName}
-• **Impact:** ${priceImpact ? `${priceImpact}%` : 'Low'}
+🟢 Fetched Quote (${dexName})
+${monAmount} MON ($${(parseFloat(monAmount) * (price || 0)).toFixed(2)}) ⇄ ${this.formatNumber(tokenAmount)} ${tokenSymbol} ($${(parseFloat(tokenAmount) * (price || 0)).toFixed(2)})
+Price Impact: ${priceImpact || '0.00'}%
 
-${this.brandEmojis.shield} **TRANSACTION**
-• **Hash:** [\`${this.truncateHash(txHash)}\`](${explorerUrl})
-• **Gas:** ${gasUsed ? this.formatNumber(gasUsed) : 'Optimized'}
-• **Time:** ${timeStr}
-
-${this.brandEmojis.rocket} [**View on Explorer**](${explorerUrl}) | ${this.brandEmojis.chart} [**Token Details**](${tokenUrl})`;
+🟢 Buy Success! [View on Explorer](${explorerUrl})`;
     }
 
     /**
@@ -84,7 +81,13 @@ ${this.brandEmojis.rocket} [**View on Explorer**](${explorerUrl}) | ${this.brand
             priceImpact,
             gasUsed,
             timestamp,
-            dexName = 'Monorail'
+            dexName = 'Monorail',
+            price,
+            liquidity,
+            marketCap,
+            balance,
+            change24h,
+            walletNumber = 'W1'
         } = data;
 
         const explorerUrl = `${this.explorerBaseUrl}/tx/${txHash}`;
@@ -96,54 +99,73 @@ ${this.brandEmojis.rocket} [**View on Explorer**](${explorerUrl}) | ${this.brand
             second: '2-digit'
         });
 
-        return `${this.brandEmojis.success} **SELL EXECUTED**
+        return `Sell $${tokenSymbol} — (${tokenSymbol}) 📈 [${tokenUrl}](${tokenUrl})
+${this.truncateAddress(tokenAddress)}
 
-${this.brandEmojis.fire} **${tokenSymbol}** | ${tokenName}
-${this.brandEmojis.target} [\`${this.truncateAddress(tokenAddress)}\`](${tokenUrl})
+Balance: ${this.formatNumber(balance || tokenAmount)} ${tokenSymbol} — ${walletNumber} ✏️
+Price: $${price || '0.00'} — LIQ: $${liquidity || '0'} — MC: $${marketCap || '0'}
+${change24h ? `24h: ${change24h}%` : ''}
 
-${this.brandEmojis.chart} **TRADE SUMMARY**
-• **Sold:** ${this.formatNumber(tokenAmount)} ${tokenSymbol}
-• **Received:** ${monReceived} MON
-• **DEX:** ${dexName}
-• **Impact:** ${priceImpact ? `${priceImpact}%` : 'Low'}
+🟢 Fetched Quote (${dexName})
+${this.formatNumber(tokenAmount)} ${tokenSymbol} ($${(parseFloat(tokenAmount) * (price || 0)).toFixed(2)}) ⇄ ${monReceived} MON ($${(parseFloat(monReceived) * 1).toFixed(2)})
+Price Impact: ${priceImpact || '0.00'}%
 
-${this.brandEmojis.shield} **TRANSACTION**
-• **Hash:** [\`${this.truncateHash(txHash)}\`](${explorerUrl})
-• **Gas:** ${gasUsed ? this.formatNumber(gasUsed) : 'Optimized'}
-• **Time:** ${timeStr}
-
-${this.brandEmojis.money} [**View on Explorer**](${explorerUrl}) | ${this.brandEmojis.chart} [**Token Details**](${tokenUrl})`;
+🟢 Sell Success! [View on Explorer](${explorerUrl})`;
     }
 
     /**
-     * Format Quote Message (Real-time)
+     * Format Quote Message (like reference bot)
      */
     formatQuote(data) {
         const {
-            fromToken,
-            toToken,
             fromAmount,
+            fromSymbol,
             toAmount,
+            toSymbol,
+            dex,
             priceImpact,
-            dexName,
-            confidence = 100,
-            isRealTime = false
+            fromValue,
+            toValue
         } = data;
 
-        const confidenceEmoji = confidence >= 95 ? '🟢' : confidence >= 80 ? '🟡' : '🔴';
-        const realTimeIndicator = isRealTime ? `${this.brandEmojis.fire} **LIVE**` : '';
+        const switchUrl = `https://t.me/monad_area51_bot?start=switch${data.operation === 'buy' ? 'ToSell' : 'ToBuy'}`;
 
-        return `${confidenceEmoji} **QUOTE FETCHED** ${realTimeIndicator}
+        return `🟢 Fetched Quote (${dex})
+${fromAmount} ${fromSymbol} ($${fromValue}) ⇄ [🔄](${switchUrl}) ${toAmount} ${toSymbol} ($${toValue})
+Price Impact: ${priceImpact}%`;
+    }
 
-${this.brandEmojis.chart} **EXCHANGE RATE**
-${this.formatNumber(fromAmount)} ${fromToken} ${this.brandEmojis.target} ${this.formatNumber(toAmount)} ${toToken}
+    /**
+     * Format Initial Trading Message (before execution)
+     */
+    formatTradingMessage(data) {
+        const {
+            operation, // 'buy' or 'sell'
+            tokenSymbol,
+            tokenName,
+            tokenAddress,
+            balance,
+            price,
+            liquidity,
+            marketCap,
+            change24h,
+            walletNumber = 'W1',
+            isRenounced = false
+        } = data;
 
-${this.brandEmojis.shield} **DETAILS**
-• **DEX:** ${dexName}
-• **Impact:** ${priceImpact ? `${priceImpact}%` : 'Minimal'}
-• **Confidence:** ${confidence}% ${confidenceEmoji}
+        const operationText = operation === 'buy' ? 'Buy' : 'Sell';
+        const tokenUrl = `${this.explorerBaseUrl}/token/${tokenAddress}`;
+        const balanceText = operation === 'buy' ? 
+            `${balance} MON` : 
+            `${this.formatNumber(balance)} ${tokenSymbol}`;
 
-${this.brandEmojis.rocket} Ready to execute trade`;
+        return `${operationText} $${tokenSymbol} — (${tokenSymbol}) 📈 [${tokenUrl}](${tokenUrl})
+${this.truncateAddress(tokenAddress)}
+
+Balance: ${balanceText} — ${walletNumber} ✏️
+Price: $${price || '0.00'} — LIQ: $${liquidity || '0'} — MC: $${marketCap || '0'}
+${change24h ? `24h: ${change24h}%` : ''}
+${isRenounced ? 'Renounced ✅' : ''}`;
     }
 
     /**
@@ -151,25 +173,13 @@ ${this.brandEmojis.rocket} Ready to execute trade`;
      */
     formatProcessing(operation, details = {}) {
         const operations = {
-            'buy': `${this.brandEmojis.loading} **PROCESSING BUY**`,
-            'sell': `${this.brandEmojis.loading} **PROCESSING SELL**`,
-            'quote': `${this.brandEmojis.loading} **FETCHING QUOTE**`,
-            'approval': `${this.brandEmojis.loading} **APPROVING TOKEN**`
+            'buy': `🟡 Processing Buy...`,
+            'sell': `🟡 Processing Sell...`,
+            'quote': `🟡 Fetching Quote...`,
+            'approval': `🟡 Approving Token...`
         };
 
-        let message = operations[operation] || `${this.brandEmojis.loading} **PROCESSING**`;
-        
-        if (details.tokenSymbol) {
-            message += `\n\n${this.brandEmojis.target} **Token:** ${details.tokenSymbol}`;
-        }
-        
-        if (details.amount) {
-            message += `\n${this.brandEmojis.money} **Amount:** ${details.amount}`;
-        }
-
-        message += `\n\n${this.brandEmojis.clock} Please wait...`;
-        
-        return message;
+        return operations[operation] || `🟡 Processing...`;
     }
 
     /**
@@ -207,6 +217,58 @@ ${this.brandEmojis.target} **SOLUTION**
 ${solution}
 
 ${this.brandEmojis.clock} **Error ID:** \`${this.generateErrorId()}\``;
+    }
+
+    /**
+     * Format Final Success Message (like reference bot)
+     */
+    formatFinalSuccessMessage(data) {
+        const {
+            operation,
+            tokenSymbol,
+            txHash
+        } = data;
+
+        const explorerUrl = `${this.explorerBaseUrl}/tx/${txHash}`;
+        const operationText = operation === 'buy' ? 'Buy' : 'Sell';
+
+        return `🟢 ${operationText} Success! [View on Monad Explorer](${explorerUrl})`;
+    }
+
+    /**
+     * Format Initial Trading Message (like reference bot)
+     */
+    formatInitialTradingMessage(data) {
+        const {
+            operation,
+            tokenSymbol,
+            tokenName,
+            tokenAddress,
+            balance,
+            price,
+            liquidity,
+            marketCap,
+            change24h,
+            walletNumber,
+            isRenounced
+        } = data;
+
+        const operationEmoji = operation === 'buy' ? '📈' : '📉';
+        const tokenUrl = `${this.explorerBaseUrl}/token/${tokenAddress}`;
+        const shareUrl = `https://t.me/monad_area51_bot?start=r-${tokenAddress}`;
+        
+        let changeDisplay = '';
+        if (change24h && change24h !== 'N/A') {
+            const changeEmoji = change24h >= 0 ? '🟢' : '🔴';
+            changeDisplay = `\n${changeEmoji} 24h: ${change24h}%`;
+        }
+
+        return `${operation === 'buy' ? 'Buy' : 'Sell'} $${tokenSymbol} — (${tokenSymbol}) ${operationEmoji} [📊](${tokenUrl})
+\`${tokenAddress}\`
+Share token with your Reflink [🔗](${shareUrl})
+
+Balance: ${balance} ${operation === 'buy' ? 'MON' : tokenSymbol} — ${walletNumber} ✏️
+Price: $${price} — LIQ: $${this.formatNumber(liquidity)} — MC: $${this.formatNumber(marketCap)}${changeDisplay}${isRenounced ? '\nRenounced ✅' : ''}`;
     }
 
     /**

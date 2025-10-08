@@ -177,19 +177,37 @@ class RealTimeMessageUpdater {
             let keyboard;
 
             if (status === 'success') {
+                // Fetch additional token data for better formatting
+                let tokenData = {};
+                try {
+                    if (messageInfo.data.tokenAddress) {
+                        // Assuming we have access to a data fetcher
+                        // tokenData = await this.freshDataFetcher.getTokenData(messageInfo.data.tokenAddress);
+                    }
+                } catch (error) {
+                    console.log('Could not fetch additional token data:', error.message);
+                }
+
                 // Format success message
                 const successData = {
                     ...messageInfo.data,
                     txHash,
                     gasUsed: parseInt(receipt.gasUsed, 16),
-                    timestamp: Date.now()
+                    timestamp: Date.now(),
+                    price: tokenData.price || messageInfo.data.price || 'N/A',
+                    liquidity: tokenData.liquidity || messageInfo.data.liquidity || 'N/A',
+                    marketCap: tokenData.marketCap || messageInfo.data.marketCap || 'N/A',
+                    balance: tokenData.balance || messageInfo.data.balance || 'N/A',
+                    change24h: tokenData.change24h || messageInfo.data.change24h || 'N/A',
+                    walletNumber: messageInfo.data.walletNumber || 'W1'
                 };
 
-                if (pendingTx.operation === 'buy') {
-                    finalMessage = this.formatter.formatBuySuccess(successData);
-                } else if (pendingTx.operation === 'sell') {
-                    finalMessage = this.formatter.formatSellSuccess(successData);
-                }
+                // Use the new final success message format (like reference bot)
+                finalMessage = this.formatter.formatFinalSuccessMessage({
+                    operation: pendingTx.operation,
+                    tokenSymbol: successData.tokenSymbol,
+                    txHash: txHash
+                });
 
                 keyboard = this.formatter.createActionKeyboard({
                     txHash,
