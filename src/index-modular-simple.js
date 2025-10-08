@@ -944,7 +944,7 @@ class Area51BotModularSimple {
                     chatType: ctx.chat.type,
                     messageText: ctx.message.text?.substring(0, 100) // Log first 100 chars only
                 });
-                await ctx.reply('❌ حدث خطأ في معالجة الرسالة. يرجى المحاولة مرة أخرى.');
+                await ctx.reply('❌ An error occurred while processing the message. Please try again.');
             }
         });
 

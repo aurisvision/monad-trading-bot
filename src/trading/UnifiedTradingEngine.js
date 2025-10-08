@@ -242,24 +242,24 @@ class UnifiedTradingEngine {
         }
     }
     /**
-     * ✅ فحوصات الأمان للتداول العادي
+     * ✅ Security validations for normal trading
      */
     async validateNormalTrade(tradeData, tokenAddress, amount) {
         const security = this.config.getSecurityConfig();
-        // فحص صحة عنوان العملة
+        // Validate token address
         if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) {
             throw new Error(this.config.getErrorMessage('INVALID_TOKEN'));
         }
-        // فحص صحة الكمية
+        // Validate amount
         const numAmount = parseFloat(amount);
         if (isNaN(numAmount) || numAmount <= 0) {
             throw new Error(this.config.getErrorMessage('INVALID_AMOUNT'));
         }
-        // فحص الحد الأقصى للمعاملة
+        // Check maximum transaction limit
         if (numAmount > security.maxTransactionAmount) {
             throw new Error('Amount exceeds maximum limit: ' + security.maxTransactionAmount + ' MON');
         }
-        // فحص الرصيد
+        // Check balance
         const requiredAmount = numAmount + security.gasBuffer;
         const availableBalance = parseFloat(tradeData.balance);
         if (availableBalance < requiredAmount) {
@@ -269,25 +269,25 @@ class UnifiedTradingEngine {
                 'Available: ' + availableBalance.toFixed(4) + ' MON'
             );
         }
-        // فحص الحد الأدنى للرصيد
+        // Check minimum balance
         if (availableBalance < security.minBalance) {
             throw new Error('Balance below minimum required: ' + security.minBalance + ' MON');
         }
     }
     /**
-     * ✅ فحوصات الأمان للبيع
+     * ✅ Security validations for selling
      */
     async validateSellTrade(tradeData, tokenAddress, tokenAmount) {
-        // فحص صحة عنوان العملة
+        // Validate token address
         if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) {
             throw new Error(this.config.getErrorMessage('INVALID_TOKEN'));
         }
-        // فحص صحة الكمية
+        // Validate amount
         const numAmount = parseFloat(tokenAmount);
         if (isNaN(numAmount) || numAmount <= 0) {
             throw new Error(this.config.getErrorMessage('INVALID_AMOUNT'));
         }
-        // فحص وجود رصيد كافي من MON للـ gas
+        // Check sufficient MON balance for gas
         const security = this.config.getSecurityConfig();
         const monBalance = parseFloat(tradeData.balance);
         if (monBalance < security.gasBuffer) {
@@ -295,7 +295,7 @@ class UnifiedTradingEngine {
         }
     }
     /**
-     * 📊 تحديث إحصائيات الأداء
+     * 📊 Update performance statistics
      */
     updateStats(type, success, executionTime) {
         this.stats.totalTrades++;
@@ -307,7 +307,7 @@ class UnifiedTradingEngine {
         this.stats.tradesByType[type] = (this.stats.tradesByType[type] || 0) + 1;
         this.stats.avgExecutionTime = 
             (this.stats.avgExecutionTime + executionTime) / 2;
-        // تسجيل في نظام المراقبة
+        // Log to monitoring system
         if (this.monitoring) {
             this.monitoring.logInfo('UnifiedTradingEngine.trade', {
                 type,
@@ -319,14 +319,14 @@ class UnifiedTradingEngine {
         }
     }
     /**
-     * 📈 الحصول على معدل النجاح
+     * 📈 Get success rate
      */
     getSuccessRate() {
         if (this.stats.totalTrades === 0) return 0;
         return (this.stats.successfulTrades / this.stats.totalTrades * 100).toFixed(2);
     }
     /**
-     * 📊 الحصول على إحصائيات مفصلة
+     * 📊 Get detailed statistics
      */
     getDetailedStats() {
         return {
@@ -336,13 +336,13 @@ class UnifiedTradingEngine {
         };
     }
     /**
-     * 🔧 اختبار النظام
+     * 🔧 System health check
      */
     async healthCheck() {
         try {
-            // اختبار اتصال Redis
+            // Test Redis connection
             const redisOk = await this.dataManager.testRedisConnection();
-            // اختبار اتصال قاعدة البيانات
+            // Test database connection
             const dbOk = await this.database.testConnection();
             return {
                 status: redisOk && dbOk ? 'healthy' : 'unhealthy',

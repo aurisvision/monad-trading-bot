@@ -4,8 +4,12 @@
  * Provides centralized error handling with proper logging, user feedback, and monitoring
  */
 
+const logger = require('../utils/Logger');
+
 class UnifiedErrorHandler {
     constructor(monitoring = null) {
+        const initTimer = logger.startTimer('error_handler_init');
+        
         this.monitoring = monitoring;
         this.errorStats = {
             total: 0,
@@ -13,6 +17,17 @@ class UnifiedErrorHandler {
             byUser: {},
             recent: []
         };
+        
+        // Enhanced initialization logging
+        logger.info('UnifiedErrorHandler initialized', {
+            hasMonitoring: !!monitoring,
+            nodeVersion: process.version,
+            platform: process.platform,
+            memoryUsage: process.memoryUsage(),
+            category: 'error_handler'
+        });
+        
+        logger.endTimer(initTimer);
     }
 
     // ==================== TELEGRAM ERROR HANDLING ====================
@@ -38,11 +53,30 @@ class UnifiedErrorHandler {
     async handleTelegramError(ctx, error) {
         const userId = ctx?.from?.id || 'unknown';
         const errorId = this.generateErrorId();
+        const operationTimer = logger.startTimer(`telegram_error_handling_${errorId}`);
         
         // Record error statistics
         this.recordErrorStats(error, userId);
         
-        // Log error with context
+        // Enhanced error logging with comprehensive context
+        logger.error('Telegram bot error occurred', error, {
+            userId,
+            errorId,
+            command: ctx?.message?.text || ctx?.callbackQuery?.data,
+            updateType: ctx.updateType,
+            chatId: ctx?.chat?.id,
+            chatType: ctx?.chat?.type,
+            messageId: ctx?.message?.message_id,
+            callbackData: ctx?.callbackQuery?.data,
+            userInfo: {
+                username: ctx?.from?.username,
+                firstName: ctx?.from?.first_name,
+                languageCode: ctx?.from?.language_code
+            },
+            category: 'telegram_error'
+        });
+        
+        // Also log to monitoring system
         this.monitoring?.logError('Telegram bot error', error, {
             userId,
             errorId,
@@ -63,10 +97,30 @@ class UnifiedErrorHandler {
             await ctx.reply(`❌ ${userMessage}\n\n🔍 Error ID: ${errorId}`, {
                 reply_markup: { remove_keyboard: true }
             });
+            
+            // Log successful user notification
+            logger.info('Error message sent to user', {
+                userId,
+                errorId,
+                userMessage,
+                category: 'telegram_error'
+            });
+            
         } catch (replyError) {
-            // If we can't send a message, log it
+            // Enhanced error logging for reply failures
+            logger.error('Failed to send error message to user', replyError, {
+                userId,
+                errorId,
+                originalError: error.message,
+                chatId: ctx?.chat?.id,
+                category: 'telegram_error'
+            });
+            
+            // Also log to monitoring system
             this.monitoring?.logError('Failed to send error message to user', replyError, { userId, errorId });
         }
+        
+        logger.endTimer(operationTimer);
     }
 
     /**
@@ -278,8 +332,24 @@ class UnifiedErrorHandler {
      */
     handleDatabaseError(error, operation, context = {}) {
         const errorId = this.generateErrorId();
+        const operationTimer = logger.startTimer(`database_error_handling_${errorId}`);
         
         this.recordErrorStats(error, context.userId || 'system', 'database');
+        
+        // Enhanced database error logging
+        logger.error(`Database error in operation: ${operation}`, error, {
+            ...context,
+            errorId,
+            operation,
+            errorCode: error.code,
+            sqlState: error.sqlState,
+            constraint: error.constraint,
+            table: error.table,
+            column: error.column,
+            detail: error.detail,
+            hint: error.hint,
+            category: 'database_error'
+        });
         
         this.monitoring?.logError(`Database error: ${operation}`, error, {
             ...context,
@@ -315,13 +385,23 @@ class UnifiedErrorHandler {
             };
         }
 
-        return {
+        const result = {
             success: false,
             error: 'Database operation failed',
             errorId,
             retry: true,
             retryDelay: 2000
         };
+
+        logger.endTimer(operationTimer, 'Database error handling completed', {
+            errorId,
+            operation,
+            errorCode: error.code,
+            retry: result.retry,
+            category: 'database_error_handling'
+        });
+
+        return result;
     }
 
     /**
@@ -333,8 +413,24 @@ class UnifiedErrorHandler {
      */
     handleApiError(error, apiName, context = {}) {
         const errorId = this.generateErrorId();
+        const operationTimer = logger.startTimer(`api_error_handling_${errorId}`);
         
         this.recordErrorStats(error, context.userId || 'system', 'api');
+        
+        // Enhanced API error logging
+        logger.error(`API error from ${apiName}`, error, {
+            ...context,
+            errorId,
+            apiName,
+            statusCode: error.response?.status,
+            statusText: error.response?.statusText,
+            responseData: error.response?.data,
+            requestUrl: error.config?.url,
+            requestMethod: error.config?.method,
+            requestHeaders: error.config?.headers,
+            timeout: error.config?.timeout,
+            category: 'api_error'
+        });
         
         this.monitoring?.logError(`${apiName} API error`, error, {
             ...context,
@@ -372,12 +468,22 @@ class UnifiedErrorHandler {
             };
         }
 
-        return {
+        const result = {
             success: false,
             error: `${apiName} request failed`,
             errorId,
             retry: false
         };
+
+        logger.endTimer(operationTimer, 'API error handling completed', {
+            errorId,
+            apiName,
+            statusCode: error.response?.status,
+            retry: result.retry,
+            category: 'api_error_handling'
+        });
+
+        return result;
     }
 
     /**
@@ -388,8 +494,24 @@ class UnifiedErrorHandler {
      */
     handleWalletError(error, context = {}) {
         const errorId = this.generateErrorId();
+        const operationTimer = logger.startTimer(`wallet_error_handling_${errorId}`);
         
         this.recordErrorStats(error, context.userId || 'system', 'wallet');
+        
+        // Enhanced wallet error logging
+        logger.error('Wallet operation error', error, {
+            ...context,
+            errorId,
+            walletAddress: context.walletAddress,
+            operation: context.operation,
+            tokenAddress: context.tokenAddress,
+            amount: context.amount,
+            gasLimit: context.gasLimit,
+            gasPrice: context.gasPrice,
+            nonce: context.nonce,
+            chainId: context.chainId,
+            category: 'wallet_error'
+        });
         
         this.monitoring?.logError('Wallet operation error', error, {
             ...context,
@@ -426,12 +548,22 @@ class UnifiedErrorHandler {
             };
         }
 
-        return {
+        const result = {
             success: false,
             error: 'Wallet operation failed',
             errorId,
             retry: false
         };
+
+        logger.endTimer(operationTimer, 'Wallet error handling completed', {
+            errorId,
+            operation: context.operation,
+            walletAddress: context.walletAddress,
+            retry: result.retry,
+            category: 'wallet_error_handling'
+        });
+
+        return result;
     }
 
     /**
@@ -441,7 +573,22 @@ class UnifiedErrorHandler {
      * @param {string} userId - User ID
      */
     handleCacheError(error, operation, userId = 'unknown') {
+        const errorId = this.generateErrorId();
+        const operationTimer = logger.startTimer(`cache_error_handling_${errorId}`);
+        
         this.recordErrorStats(error, userId, 'cache');
+        
+        // Enhanced cache error logging
+        logger.warn(`Cache operation failed: ${operation}`, {
+            error: error.message,
+            stack: error.stack,
+            userId,
+            errorId,
+            operation,
+            cacheKey: error.key,
+            cacheType: error.type,
+            category: 'cache_error'
+        });
         
         this.monitoring?.logWarning(`Cache error: ${operation}`, {
             error: error.message,
@@ -449,6 +596,14 @@ class UnifiedErrorHandler {
             operation,
             severity: 'low'
         });
+        
+        logger.endTimer(operationTimer, 'Cache error handling completed', {
+            errorId,
+            operation,
+            userId,
+            category: 'cache_error_handling'
+        });
+        
         // Cache errors are non-critical, don't notify user
     }
 
@@ -606,6 +761,16 @@ class UnifiedErrorHandler {
      */
     logPerformanceWarning(operation, duration, threshold = 5000) {
         if (duration > threshold) {
+            // Enhanced performance warning logging
+            logger.warn(`Slow operation detected: ${operation}`, {
+                operation,
+                duration,
+                threshold,
+                overThresholdBy: duration - threshold,
+                severity: 'performance',
+                category: 'performance_warning'
+            });
+            
             this.monitoring?.logWarning(`Slow operation: ${operation}`, {
                 duration,
                 threshold,
@@ -621,6 +786,18 @@ class UnifiedErrorHandler {
      * @param {Object} details - Additional details
      */
     logUserAction(userId, action, details = {}) {
+        // Enhanced user action logging
+        logger.info(`User action: ${action}`, {
+            userId,
+            action,
+            timestamp: new Date().toISOString(),
+            userAgent: details.userAgent,
+            ipAddress: details.ipAddress,
+            sessionId: details.sessionId,
+            category: 'user_action',
+            ...details
+        });
+        
         this.monitoring?.logInfo(`User action: ${action}`, {
             userId,
             action,

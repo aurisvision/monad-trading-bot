@@ -1,11 +1,12 @@
 /**
- * Trading Configuration - إعدادات نظام التداول الموحد
- * يحتوي على جميع الإعدادات والقيم الثابتة للأنواع المختلفة من التداول
+ * /**
+ * Trading Configuration - Unified Trading System Settings
+ * Contains all settings and constants for different types of trading
  */
 
 class TradingConfig {
     constructor() {
-        // إعدادات أنواع التداول المختلفة
+        // Settings for different trading types
         this.tradeTypes = {
             normal: {
                 name: 'Normal Trading',
@@ -27,12 +28,12 @@ class TradingConfig {
             },
             turbo: {
                 name: 'Turbo Trading',
-                validations: [], // بدون فحوصات للسرعة القصوى
+                validations: [], // No validations for maximum speed
                 slippage: { 
-                    fixed: 20 // 20% ثابت للسرعة
+                    fixed: 20 // 20% fixed for speed
                 },
                 gas: { 
-                    fixed: 100000000000 // 100 Gwei ثابت
+                    fixed: 100000000000 // 100 Gwei fixed
                 },
                 timeouts: {
                     execution: 10000 // 10 seconds max
@@ -40,9 +41,9 @@ class TradingConfig {
             }
         };
 
-        // إعدادات الكاش
+        // Cache settings
         this.cacheConfig = {
-            // بيانات دائمة (بدون TTL)
+            // Permanent data (no TTL)
             permanent: {
                 user_data: {
                     prefix: 'area51:user:',
@@ -57,27 +58,27 @@ class TradingConfig {
                     ttl: null
                 }
             },
-            // بيانات مؤقتة (مع TTL)
+            // Temporary data (with TTL)
             temporary: {
                 mon_balance: {
                     prefix: 'area51:wallet_balance:',
-                    ttl: 30 // 30 ثانية
+                    ttl: 30 // 30 seconds
                 },
                 token_info: {
                     prefix: 'area51:token_info:',
-                    ttl: 300 // 5 دقائق
+                    ttl: 300 // 5 minutes
                 },
                 portfolio: {
                     prefix: 'area51:portfolio:',
-                    ttl: 60 // دقيقة واحدة
+                    ttl: 60 // 1 minute
                 },
                 gas_prices: {
                     prefix: 'area51:gas:',
-                    ttl: 60 // دقيقة واحدة
+                    ttl: 60 // 1 minute
                 },
                 quotes: {
                     prefix: 'area51:quote:',
-                    ttl: 10 // 10 ثوانِ فقط
+                    ttl: 10 // 10 seconds only
                 }
             }
         };
@@ -96,26 +97,26 @@ class TradingConfig {
             TRANSACTION_FAILED: 'Transaction execution failed'
         };
 
-        // إعدادات الأمان
+        // Security settings
         this.security = {
-            maxTransactionAmount: 1000, // 1000 MON حد أقصى
-            gasBuffer: 0.05, // 0.05 MON buffer للـ gas
-            minBalance: 0.01, // 0.01 MON حد أدنى للرصيد
-            maxSlippage: 50, // 50% حد أقصى للانزلاق
-            retryAttempts: 3, // عدد محاولات إعادة التنفيذ
-            timeoutBuffer: 5000 // 5 ثوانِ buffer للـ timeout
+            maxTransactionAmount: 1000, // 1000 MON maximum
+            gasBuffer: 0.05, // 0.05 MON buffer for gas
+            minBalance: 0.01, // 0.01 MON minimum balance
+            maxSlippage: 50, // 50% maximum slippage
+            retryAttempts: 3, // Number of retry attempts
+            timeoutBuffer: 5000 // 5 seconds buffer for timeout
         };
     }
 
     /**
-     * الحصول على إعدادات نوع التداول
+     * Get trading type configuration
      */
     getTradeConfig(type) {
         return this.tradeTypes[type] || this.tradeTypes.normal;
     }
 
     /**
-     * الحصول على إعدادات الكاش لنوع البيانات
+     * Get cache configuration for data type
      */
     getCacheConfig(dataType) {
         return this.cacheConfig.permanent[dataType] || 
@@ -131,21 +132,21 @@ class TradingConfig {
     }
 
     /**
-     * التحقق من صحة نوع التداول
+     * Validate trading type
      */
     isValidTradeType(type) {
         return Object.keys(this.tradeTypes).includes(type);
     }
 
     /**
-     * الحصول على إعدادات الأمان
+     * Get security configuration
      */
     getSecurityConfig() {
         return this.security;
     }
 
     /**
-     * تحديد ما إذا كان نوع التداول يحتاج فحوصات أمان
+     * Determine if trading type requires security validations
      */
     requiresValidation(type, validationType) {
         const config = this.getTradeConfig(type);
@@ -153,19 +154,19 @@ class TradingConfig {
     }
 
     /**
-     * الحصول على قيمة الـ slippage لنوع التداول مع استخدام إعدادات المستخدم
+     * Get slippage value for trading type with user settings
      */
     getSlippageValue(type, userSettings = null) {
         const config = this.getTradeConfig(type);
         
-        // للتيربو: استخدام 20% ثابت
+        // For turbo: use fixed 20%
         if (config.slippage.fixed !== undefined) {
             return config.slippage.fixed;
         }
         
-        // للعادي: استخدام إعدادات المستخدم
+        // For normal: use user settings
         if (userSettings) {
-            // استخدام slippage_tolerance من إعدادات المستخدم
+            // Use slippage_tolerance from user settings
             return userSettings.slippage_tolerance || config.slippage.default;
         }
         
@@ -173,28 +174,28 @@ class TradingConfig {
     }
 
     /**
-     * الحصول على قيمة الـ gas لنوع التداول مع استخدام إعدادات المستخدم
+     * Get gas value for trading type with user settings
      */
     getGasValue(type, userSettings = null) {
         const config = this.getTradeConfig(type);
         
-        // للتيربو: استخدام 100 Gwei ثابت
+        // For turbo: use fixed 100 Gwei
         if (config.gas.fixed !== undefined) {
             return config.gas.fixed;
         }
         
-        // للعادي: استخدام إعدادات المستخدم مع منطق الأولوية
+        // For normal: use user settings with priority logic
         if (userSettings) {
-            // فحص إذا كان التيربو مفعل ومحدث مؤخراً
+            // Check if turbo is enabled and recently updated
             const turboUpdated = new Date(userSettings.turbo_mode_updated_at || userSettings.created_at);
             const gasUpdated = new Date(userSettings.gas_settings_updated_at || userSettings.created_at);
             
-            // إذا كان التيربو مفعل ومحدث أحدث من إعدادات الغاز
+            // If turbo is enabled and updated more recently than gas settings
             if (userSettings.turbo_mode && turboUpdated >= gasUpdated) {
-                return 100000000000; // 100 Gwei للتيربو
+                return 100000000000; // 100 Gwei for turbo
             }
             
-            // وإلا استخدم إعدادات الغاز المخصصة
+            // Otherwise use custom gas settings
             return userSettings.gas_price || config.gas.default;
         }
         
@@ -202,7 +203,7 @@ class TradingConfig {
     }
 
     /**
-     * الحصول على timeout لنوع التداول
+     * Get timeout for trading type
      */
     getTimeout(type, operation = 'execution') {
         const config = this.getTradeConfig(type);

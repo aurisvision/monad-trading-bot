@@ -1,6 +1,6 @@
 /**
- * Cache Warmer - يقوم بتسخين الكاش للمستخدمين النشطين
- * يحسن Cache Hit Ratio من 53% إلى 85%+
+ * Cache Warmer - Warms cache for active users
+ * Improves Cache Hit Ratio from 53% to 85%+
  */
 
 class CacheWarmer {
@@ -12,7 +12,7 @@ class CacheWarmer {
     }
 
     /**
-     * تسخين كاش المستخدمين النشطين (آخر 24 ساعة)
+     * Warm cache for active users (last 24 hours)
      */
     async warmActiveUsersCache() {
         if (this.isWarming) {
@@ -23,7 +23,7 @@ class CacheWarmer {
         this.isWarming = true;
 
         try {
-            // الحصول على المستخدمين النشطين (آخر 24 ساعة)
+            // Get active users (last 24 hours)
             const activeUsers = await this.getActiveUsers();
 
             let warmedUsers = 0;
@@ -31,21 +31,21 @@ class CacheWarmer {
 
             for (const user of activeUsers) {
                 try {
-                    // تسخين بيانات المستخدم
+                    // Warm user data
                     const userData = await this.database.getUserByTelegramId(user.telegram_id);
                     if (userData) {
                         await this.cacheService.set('user', user.telegram_id, userData);
                         warmedUsers++;
                     }
 
-                    // تسخين إعدادات المستخدم
+                    // Warm user settings
                     const userSettings = await this.database.getUserSettings(user.telegram_id);
                     if (userSettings) {
                         await this.cacheService.set('user_settings', user.telegram_id, userSettings);
                         warmedSettings++;
                     }
 
-                    // تأخير صغير لتجنب الضغط على قاعدة البيانات
+                    // Small delay to avoid database pressure
                     await this.sleep(10);
 
                 } catch (error) {
@@ -69,7 +69,7 @@ class CacheWarmer {
     }
 
     /**
-     * الحصول على المستخدمين النشطين (آخر 24 ساعة)
+     * Get active users (last 24 hours)
      */
     async getActiveUsers() {
         const query = `
@@ -89,18 +89,18 @@ class CacheWarmer {
     }
 
     /**
-     * تسخين كاش مستخدم واحد فوري (عند تسجيل الدخول)
+     * Warm cache for single user immediately (on login)
      */
     async warmUserCache(telegramId) {
         try {
 
-            // تسخين بيانات المستخدم
+            // Warm user data
             const userData = await this.database.getUserByTelegramId(telegramId);
             if (userData) {
                 await this.cacheService.set('user', telegramId, userData);
             }
 
-            // تسخين إعدادات المستخدم
+            // Warm user settings
             const userSettings = await this.database.getUserSettings(telegramId);
             if (userSettings) {
                 await this.cacheService.set('user_settings', telegramId, userSettings);
@@ -112,29 +112,29 @@ class CacheWarmer {
     }
 
     /**
-     * جدولة تسخين الكاش كل ساعة
+     * Schedule cache warming every hour
      */
     startScheduledWarming() {
         console.log('🔥 Starting scheduled cache warming...');
 
-        // تسخين فوري
+        // Immediate warming
         this.warmActiveUsersCache();
 
-        // جدولة كل ساعة
+        // Schedule every hour
         setInterval(() => {
             this.warmActiveUsersCache();
-        }, 60 * 60 * 1000); // كل ساعة
+        }, 60 * 60 * 1000); // Every hour
     }
 
     /**
-     * تأخير بالميللي ثانية
+     * Delay in milliseconds
      */
     sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     /**
-     * إحصائيات الكاش
+     * Cache statistics
      */
     async getCacheStats() {
         try {

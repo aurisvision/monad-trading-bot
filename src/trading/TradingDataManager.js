@@ -5,12 +5,16 @@
  */
 const TradingConfig = require('./TradingConfig');
 const UnifiedCacheManager = require('../services/UnifiedCacheManager');
+const logger = require('../utils/Logger');
 class TradingDataManager {
     constructor(dependencies) {
+        const timer = logger.startTimer('trading_data_manager_init');
+        
         this.database = dependencies.database;
         this.monorailAPI = dependencies.monorailAPI;
         this.walletManager = dependencies.walletManager;
         this.monitoring = dependencies.monitoring;
+        
         // Initialize unified cache system
         this.cache = new UnifiedCacheManager(
             dependencies.redis,
@@ -18,6 +22,7 @@ class TradingDataManager {
             process.env.NODE_ENV || 'production'
         );
         this.config = new TradingConfig();
+        
         // Performance metrics
         this.metrics = {
             cacheHits: 0,
@@ -25,42 +30,123 @@ class TradingDataManager {
             dbQueries: 0,
             avgResponseTime: 0
         };
+        
+        logger.info('TradingDataManager initialized', {
+            hasDatabase: !!this.database,
+            hasMonorailAPI: !!this.monorailAPI,
+            hasWalletManager: !!this.walletManager,
+            hasMonitoring: !!this.monitoring,
+            environment: process.env.NODE_ENV || 'production',
+            nodeVersion: process.version,
+            platform: process.platform,
+            memoryUsage: process.memoryUsage(),
+            category: 'trading_system'
+        });
+        
+        logger.endTimer(timer, 'TradingDataManager initialization completed', {
+            category: 'trading_system'
+        });
     }
     /**
-     * 📦 تحضير جميع البيانات المطلوبة للتداول مرة واحدة فقط
+     * 📦 Prepare all required trading data once only
      */
     async prepareTradeData(userId, tradeType, preloadedUser = null, preloadedSettings = null) {
+        const timer = logger.startTimer('prepare_trade_data');
         const startTime = Date.now();
+        
+        logger.info('Starting trade data preparation', {
+            userId,
+            tradeType,
+            hasPreloadedUser: !!preloadedUser,
+            hasPreloadedSettings: !!preloadedSettings,
+            timestamp: new Date().toISOString(),
+            category: 'trading_transaction'
+        });
+        
         try {
-            // استخدام البيانات المحملة مسبقاً إذا كانت متوفرة (للسرعة)
+            // Use preloaded data if available (for speed)
             let user, settings;
             if (preloadedUser && preloadedSettings) {
                 user = preloadedUser;
                 settings = preloadedSettings;
+                
+                logger.debug('Using preloaded user and settings data', {
+                    userId,
+                    userWallet: user?.wallet_address,
+                    category: 'trading_performance'
+                });
             } else {
-                // جلب البيانات الأساسية بالتوازي من الكاش أولاً
+                // Fetch basic data in parallel from cache first
+                const dataFetchTimer = logger.startTimer('fetch_user_settings_data');
+                
                 [user, settings] = await Promise.all([
                     this.getCachedUser(userId),
                     this.getCachedSettings(userId)
                 ]);
+                
+                logger.endTimer(dataFetchTimer, 'User and settings data fetched', {
+                    userId,
+                    userFound: !!user,
+                    settingsFound: !!settings,
+                    category: 'trading_performance'
+                });
             }
             if (!user) {
+                logger.error('User not found during trade data preparation', {
+                    userId,
+                    tradeType,
+                    category: 'trading_error'
+                });
                 throw new Error('User not found');
             }
-            // إنشاء wallet instance
+            
+            // Create wallet instance
+            const walletTimer = logger.startTimer('create_wallet_instance');
             const wallet = await this.getCachedWallet(userId, user.encrypted_private_key);
+            
             if (!wallet) {
+                logger.error('Failed to create wallet instance', {
+                    userId,
+                    walletAddress: user.wallet_address,
+                    category: 'trading_error'
+                });
                 throw new Error('Failed to create wallet instance');
             }
-            // الحصول على رصيد MON من الكاش أولاً للسرعة
+            
+            logger.endTimer(walletTimer, 'Wallet instance created successfully', {
+                userId,
+                walletAddress: user.wallet_address,
+                category: 'trading_performance'
+            });
+            
+            // Get MON balance from cache first for speed
+            const balanceTimer = logger.startTimer('fetch_mon_balance');
             let balanceData;
+            let balanceFromCache = false;
+            
             try {
                 balanceData = await this.cache.getOrSet('mon_balance', user.wallet_address, async () => {
                     return await this.monorailAPI.getMONBalance(user.wallet_address);
                 }, 300); // 5 minutes cache
+                balanceFromCache = true;
             } catch (error) {
+                logger.warn('Failed to get balance from cache, fetching directly', {
+                    userId,
+                    walletAddress: user.wallet_address,
+                    error: error.message,
+                    category: 'trading_warning'
+                });
                 balanceData = await this.monorailAPI.getMONBalance(user.wallet_address);
+                balanceFromCache = false;
             }
+            
+            logger.endTimer(balanceTimer, 'MON balance fetched', {
+                userId,
+                walletAddress: user.wallet_address,
+                balance: balanceData.balance || '0',
+                fromCache: balanceFromCache,
+                category: 'trading_performance'
+            });
             const tradeData = {
                 user,
                 settings,
@@ -68,21 +154,60 @@ class TradingDataManager {
                 balance: balanceData.balance || '0',
                 walletAddress: user.wallet_address
             };
-            // إعدادات التداول المحسوبة مع تسجيل للتأكد
+            
+            // Calculated trade settings with logging for verification
             tradeData.effectiveSlippage = this.config.getSlippageValue(tradeType, settings);
             tradeData.effectiveGas = this.config.getGasValue(tradeType, settings);
-            // تسجيل الإعدادات المطبقة للتأكد
-            console.log('⚙️ Trade Settings Applied:', {
+            
+            // Log applied settings for verification
+            logger.info('Trade settings applied', {
+                userId,
+                tradeType,
                 effectiveGas: Math.round(tradeData.effectiveGas / 1000000000) + ' Gwei',
                 effectiveSlippage: tradeData.effectiveSlippage + '%',
                 userGasSetting: settings?.gas_price ? Math.round(settings.gas_price / 1000000000) + ' Gwei' : 'default',
                 userSlippageSetting: settings?.slippage_tolerance ? settings.slippage_tolerance + '%' : 'default',
-                turboMode: settings?.turbo_mode || false
+                turboMode: settings?.turbo_mode || false,
+                balance: balanceData.balance || '0',
+                walletAddress: user.wallet_address,
+                category: 'trading_configuration'
             });
+            
             const responseTime = Date.now() - startTime;
             this.updateMetrics('prepareTradeData', responseTime);
+            
+            logger.endTimer(timer, 'Trade data preparation completed successfully', {
+                userId,
+                tradeType,
+                responseTime,
+                walletAddress: user.wallet_address,
+                balance: balanceData.balance || '0',
+                category: 'trading_transaction'
+            });
+            
             return tradeData;
         } catch (error) {
+            const responseTime = Date.now() - startTime;
+            
+            logger.error('Failed to prepare trade data', {
+                userId,
+                tradeType,
+                error: error.message,
+                stack: error.stack,
+                responseTime,
+                hasPreloadedUser: !!preloadedUser,
+                hasPreloadedSettings: !!preloadedSettings,
+                category: 'trading_error'
+            });
+            
+            logger.endTimer(timer, 'Trade data preparation failed', {
+                userId,
+                tradeType,
+                error: error.message,
+                responseTime,
+                category: 'trading_error'
+            });
+            
             throw error;
         }
     }
@@ -90,27 +215,88 @@ class TradingDataManager {
      * Get user data with permanent caching
      */
     async getCachedUser(userId) {
+        const timer = logger.startTimer('get_cached_user');
+        
         try {
-            return await this.cache.getOrSet('user_data', userId, async () => {
+            const result = await this.cache.getOrSet('user_data', userId, async () => {
+                logger.debug('Cache miss for user data, fetching from database', {
+                    userId,
+                    category: 'cache_performance'
+                });
                 this.metrics.dbQueries++;
                 return await this.database.getUserByTelegramId(userId);
             });
+            
+            logger.endTimer(timer, 'User data retrieved successfully', {
+                userId,
+                fromCache: true,
+                userFound: !!result,
+                category: 'cache_performance'
+            });
+            
+            return result;
         } catch (error) {
+            logger.warn('Cache failed for user data, falling back to database', {
+                userId,
+                error: error.message,
+                category: 'cache_warning'
+            });
+            
             // Fallback to direct database query
-            return await this.database.getUserByTelegramId(userId);
+            const result = await this.database.getUserByTelegramId(userId);
+            
+            logger.endTimer(timer, 'User data retrieved from database fallback', {
+                userId,
+                fromCache: false,
+                userFound: !!result,
+                category: 'cache_performance'
+            });
+            
+            return result;
         }
     }
+    
     /**
      * Get user settings with permanent caching
      */
     async getCachedSettings(userId) {
+        const timer = logger.startTimer('get_cached_settings');
+        
         try {
-            return await this.cache.getOrSet('user_settings', userId, async () => {
+            const result = await this.cache.getOrSet('user_settings', userId, async () => {
+                logger.debug('Cache miss for user settings, fetching from database', {
+                    userId,
+                    category: 'cache_performance'
+                });
                 this.metrics.dbQueries++;
                 return await this.database.getUserSettings(userId);
             });
+            
+            logger.endTimer(timer, 'User settings retrieved successfully', {
+                userId,
+                fromCache: true,
+                settingsFound: !!result,
+                category: 'cache_performance'
+            });
+            
+            return result;
         } catch (error) {
-            return await this.database.getUserSettings(userId);
+            logger.warn('Cache failed for user settings, falling back to database', {
+                userId,
+                error: error.message,
+                category: 'cache_warning'
+            });
+            
+            const result = await this.database.getUserSettings(userId);
+            
+            logger.endTimer(timer, 'User settings retrieved from database fallback', {
+                userId,
+                fromCache: false,
+                settingsFound: !!result,
+                category: 'cache_performance'
+            });
+            
+            return result;
         }
     }
     /**
@@ -158,11 +344,11 @@ class TradingDataManager {
         }
     }
     /**
-     * 💱 الحصول على quote (بدون كاش - بيانات فورية)
+     * 💱 Get quote (without cache - real-time data)
      */
     async getFreshQuote(fromToken, toToken, amount, senderAddress) {
         try {
-            // الـ quotes لا تُحفظ في الكاش لأنها تتغير بسرعة
+            // Quotes are not cached because they change rapidly
             return await this.monorailAPI.getQuote(fromToken, toToken, amount, senderAddress);
         } catch (error) {
             throw error;
@@ -187,17 +373,27 @@ class TradingDataManager {
         }
     }
     /**
-     * 📝 تسجيل المعاملة الناجحة
+     * 📝 Log successful transaction
      */
     async logSuccessfulTrade(userId, result) {
+        const timer = logger.startTimer('log_successful_trade');
+        
         try {
-            console.log('📝 Logging successful trade for user:', userId);
+            logger.info('Starting successful trade logging', {
+                userId,
+                txHash: result.txHash,
+                type: result.type,
+                tokenAddress: result.tokenAddress,
+                category: 'trading_transaction'
+            });
+            
             // Get the correct amount based on action type
             let amount = result.amount || result.monAmount || result.tokenAmount;
             // Ensure amount is not null
             if (!amount) {
                 amount = '0';
             }
+            
             // Calculate total_value - improved logic
             let totalValue = '0';
             if (result.monAmount) {
@@ -209,7 +405,8 @@ class TradingDataManager {
             } else if (amount) {
                 totalValue = amount.toString(); // Final fallback
             }
-            await this.database.addTransaction(userId, {
+            
+            const transactionData = {
                 txHash: result.txHash,
                 type: result.type || 'unknown',
                 tokenAddress: result.tokenAddress,
@@ -217,8 +414,46 @@ class TradingDataManager {
                 totalValue: totalValue, // Fixed: use camelCase to match database function
                 timestamp: new Date(),
                 success: true
+            };
+            
+            logger.debug('Transaction data prepared for database', {
+                userId,
+                transactionData,
+                category: 'trading_transaction'
             });
+            
+            await this.database.addTransaction(userId, transactionData);
+            
+            logger.info('Successful trade logged to database', {
+                userId,
+                txHash: result.txHash,
+                type: result.type || 'unknown',
+                amount: amount.toString(),
+                totalValue: totalValue,
+                tokenAddress: result.tokenAddress,
+                category: 'trading_transaction'
+            });
+            
+            logger.endTimer(timer, 'Trade logging completed successfully', {
+                userId,
+                txHash: result.txHash,
+                category: 'trading_performance'
+            });
+            
         } catch (error) {
+            logger.error('Failed to log successful trade', {
+                userId,
+                txHash: result.txHash,
+                error: error.message,
+                stack: error.stack,
+                category: 'trading_error'
+            });
+            
+            logger.endTimer(timer, 'Trade logging failed', {
+                userId,
+                error: error.message,
+                category: 'trading_error'
+            });
         }
     }
     /**
@@ -327,4 +562,4 @@ class TradingDataManager {
         }
     }
 }
-module.exports = TradingDataManager;
+module.exports = TradingDataManager;

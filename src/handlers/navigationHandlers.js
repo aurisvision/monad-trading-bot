@@ -1570,8 +1570,8 @@ Confirm this transaction?`, {
                         this.cacheService.delete('portfolio', userId),
                         this.cacheService.delete('wallet_balance', user.wallet_address),
                         this.cacheService.delete('main_menu', userId),
-                        this.cacheService.delete('mon_balance', user.wallet_address), // أضافة مسح رصيد MON
-                        this.cacheService.delete('portfolio_value', user.wallet_address) // أضافة مسح قيمة البورتفوليو
+                        this.cacheService.delete('mon_balance', user.wallet_address), // Clear MON balance
+            this.cacheService.delete('portfolio_value', user.wallet_address) // Clear portfolio value
                     ]);
                     this.monitoring.logInfo('Manual refresh cache cleared', { userId, walletAddress: user.wallet_address });
                 } catch (cacheError) {

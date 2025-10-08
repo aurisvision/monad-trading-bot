@@ -7,12 +7,23 @@
 const winston = require('winston');
 const promClient = require('prom-client');
 const os = require('os');
+const logger = require('../utils/Logger');
 
 class UnifiedMonitoringSystem {
-    constructor(database, redis, logger = null) {
+    constructor(database, redis, injectedLogger = null) {
+        const initTimer = logger.startTimer('monitoring_system_init');
+        
+        logger.info('Initializing UnifiedMonitoringSystem', {
+            hasDatabase: !!database,
+            hasRedis: !!redis,
+            hasInjectedLogger: !!injectedLogger,
+            nodeVersion: process.version,
+            platform: process.platform
+        }, { category: 'monitoring' });
+        
         this.database = database;
         this.redis = redis;
-        this.logger = logger;
+        this.logger = injectedLogger;
 
         // Initialize components
         this.setupLogger();
@@ -25,6 +36,12 @@ class UnifiedMonitoringSystem {
 
         // System start time
         this.startTime = Date.now();
+        
+        logger.endTimer(initTimer, {
+            success: true,
+            startTime: this.startTime,
+            componentsInitialized: ['logger', 'prometheus', 'counters', 'periodicTasks']
+        });
 
     }
 
@@ -56,7 +73,16 @@ class UnifiedMonitoringSystem {
 
     // Logging methods
     logInfo(message, meta = {}) {
-        this.logger.info(message, meta);
+        // Use both winston logger and new Logger utility
+        if (this.logger) {
+            this.logger.info(message, meta);
+        }
+        
+        logger.info(`[Monitoring] ${message}`, {
+            ...meta,
+            source: 'UnifiedMonitoringSystem',
+            timestamp: Date.now()
+        }, { category: 'monitoring' });
     }
 
     logError(message, error = null, meta = {}) {
@@ -65,18 +91,47 @@ class UnifiedMonitoringSystem {
             stack: error.stack,
             ...meta 
         } : meta;
-
-        this.logger.error(message, errorMeta);
+        
+        // Use both winston logger and new Logger utility
+        if (this.logger) {
+            this.logger.error(message, errorMeta);
+        }
+        
+        logger.error(`[Monitoring] ${message}`, error, {
+            ...meta,
+            source: 'UnifiedMonitoringSystem',
+            timestamp: Date.now()
+        }, { category: 'monitoring' });
+        
         this.errorsTotal.inc({ error_type: 'general', severity: 'error' });
     }
 
     logWarning(message, meta = {}) {
-        this.logger.warn(message, meta);
+        // Use both winston logger and new Logger utility
+        if (this.logger) {
+            this.logger.warn(message, meta);
+        }
+        
+        logger.warn(`[Monitoring] ${message}`, {
+            ...meta,
+            source: 'UnifiedMonitoringSystem',
+            timestamp: Date.now()
+        }, { category: 'monitoring' });
+        
         this.errorsTotal.inc({ error_type: 'application', severity: 'warning' });
     }
 
     logDebug(message, meta = {}) {
-        this.logger.debug(message, meta);
+        // Use both winston logger and new Logger utility
+        if (this.logger) {
+            this.logger.debug(message, meta);
+        }
+        
+        logger.debug(`[Monitoring] ${message}`, {
+            ...meta,
+            source: 'UnifiedMonitoringSystem',
+            timestamp: Date.now()
+        }, { category: 'monitoring' });
     }
 
     // ==================== PROMETHEUS METRICS ====================
@@ -238,6 +293,57 @@ class UnifiedMonitoringSystem {
             help: 'CPU usage percentage',
             registers: [this.register]
         });
+
+        // WebSocket metrics
+        this.webSocketConnectionsActive = new promClient.Gauge({
+            name: 'area51_websocket_connections_active',
+            help: 'Number of active WebSocket connections',
+            registers: [this.register]
+        });
+
+        this.webSocketMessagesTotal = new promClient.Counter({
+            name: 'area51_websocket_messages_total',
+            help: 'Total WebSocket messages processed',
+            labelNames: ['type', 'direction', 'status'],
+            registers: [this.register]
+        });
+
+        this.webSocketReconnectionsTotal = new promClient.Counter({
+            name: 'area51_websocket_reconnections_total',
+            help: 'Total WebSocket reconnection attempts',
+            labelNames: ['url', 'status'],
+            registers: [this.register]
+        });
+
+        this.webSocketSubscriptionsActive = new promClient.Gauge({
+            name: 'area51_websocket_subscriptions_active',
+            help: 'Number of active WebSocket subscriptions',
+            labelNames: ['type'],
+            registers: [this.register]
+        });
+
+        this.webSocketLatency = new promClient.Histogram({
+            name: 'area51_websocket_latency_seconds',
+            help: 'WebSocket message latency',
+            labelNames: ['type'],
+            buckets: [0.001, 0.01, 0.1, 0.5, 1, 2, 5],
+            registers: [this.register]
+        });
+
+        this.webSocketConnectionDuration = new promClient.Histogram({
+            name: 'area51_websocket_connection_duration_seconds',
+            help: 'WebSocket connection duration',
+            labelNames: ['url'],
+            buckets: [1, 10, 60, 300, 1800, 3600, 21600],
+            registers: [this.register]
+        });
+
+        this.webSocketErrors = new promClient.Counter({
+            name: 'area51_websocket_errors_total',
+            help: 'Total WebSocket errors',
+            labelNames: ['error_type', 'url'],
+            registers: [this.register]
+        });
     }
 
     initializeMetricValues() {
@@ -380,22 +486,81 @@ class UnifiedMonitoringSystem {
         this.errorsTotal.inc({ error_type: errorType, severity });
     }
 
+    // WebSocket metrics
+    updateWebSocketConnections(count) {
+        this.webSocketConnectionsActive.set(count);
+    }
+
+    recordWebSocketMessage(type, direction, status = 'success') {
+        this.webSocketMessagesTotal.inc({ type, direction, status });
+    }
+
+    recordWebSocketReconnection(url, status) {
+        this.webSocketReconnectionsTotal.inc({ url, status });
+    }
+
+    updateWebSocketSubscriptions(type, count) {
+        this.webSocketSubscriptionsActive.set({ type }, count);
+    }
+
+    recordWebSocketLatency(type, latency) {
+        this.webSocketLatency.observe({ type }, latency);
+    }
+
+    recordWebSocketConnectionDuration(url, duration) {
+        this.webSocketConnectionDuration.observe({ url }, duration);
+    }
+
+    recordWebSocketError(errorType, url) {
+        this.webSocketErrors.inc({ error_type: errorType, url });
+        this.logError('WebSocket error recorded', null, { errorType, url });
+    }
+
     // ==================== OPERATION WRAPPERS ====================
 
     wrapDatabaseOperation(operation, operationName) {
         return async (...args) => {
-            const start = Date.now();
+            const operationId = logger.startTimer(`db_operation_${operationName}`);
             let status = 'success';
 
             try {
+                // Log operation start with enhanced context
+                logger.databaseOperation(operationName, 'start', {
+                    operationId,
+                    args: args.length,
+                    category: 'database'
+                });
+                
                 const result = await operation.apply(this, args);
+                
+                const duration = logger.endTimer(operationId);
+                
+                // Log successful completion
+                logger.databaseOperation(operationName, 'success', {
+                    operationId,
+                    duration,
+                    resultSize: result ? JSON.stringify(result).length : 0,
+                    category: 'database'
+                });
+                
                 return result;
             } catch (error) {
                 status = 'error';
+                const duration = logger.endTimer(operationId);
+                
+                // Enhanced error logging
+                logger.error(`Database operation failed: ${operationName}`, error, {
+                    operationId,
+                    duration,
+                    category: 'database',
+                    operation: operationName,
+                    errorType: error.constructor.name
+                });
+                
                 this.recordError('database_operation', 'error');
                 throw error;
             } finally {
-                const duration = (Date.now() - start) / 1000;
+                const duration = (Date.now() - this.startTime) / 1000;
                 this.recordDatabaseQuery(operationName, status, duration);
             }
         };
@@ -403,10 +568,43 @@ class UnifiedMonitoringSystem {
 
     wrapRedisOperation(operation, operationName) {
         return async (...args) => {
+            const operationId = logger.startTimer(`redis_operation_${operationName}`);
+            
             try {
+                // Log operation start
+                logger.info(`Starting Redis operation: ${operationName}`, {
+                    operationId,
+                    args: args.length,
+                    category: 'redis',
+                    operation: operationName
+                });
+                
                 const result = await operation.apply(this, args);
+                
+                const duration = logger.endTimer(operationId);
+                
+                // Log successful completion
+                logger.info(`Redis operation completed: ${operationName}`, {
+                    operationId,
+                    duration,
+                    resultSize: result ? JSON.stringify(result).length : 0,
+                    category: 'redis',
+                    operation: operationName
+                });
+                
                 return result;
             } catch (error) {
+                const duration = logger.endTimer(operationId);
+                
+                // Enhanced error logging
+                logger.error(`Redis operation failed: ${operationName}`, error, {
+                    operationId,
+                    duration,
+                    category: 'redis',
+                    operation: operationName,
+                    errorType: error.constructor.name
+                });
+                
                 this.recordError('redis_operation', 'error');
                 throw error;
             }
@@ -415,24 +613,58 @@ class UnifiedMonitoringSystem {
 
     wrapTradingOperation(operation, operationType) {
         return async (...args) => {
-            const start = Date.now();
+            const operationId = logger.startTimer(`trading_operation_${operationType}`);
             let status = 'success';
             let volume = 0;
 
             try {
+                // Log trading operation start with enhanced context
+                logger.info(`Starting trading operation: ${operationType}`, {
+                    operationId,
+                    args: args.length,
+                    category: 'trading',
+                    operation: operationType
+                });
+                
                 const result = await operation.apply(this, args);
 
                 if (result && result.amount) {
                     volume = parseFloat(result.amount) || 0;
                 }
+                
+                const duration = logger.endTimer(operationId);
+                
+                // Log successful trading operation
+                logger.info(`Trading operation completed: ${operationType}`, {
+                    operationId,
+                    duration,
+                    category: 'trading',
+                    operation: operationType,
+                    result: {
+                        success: true,
+                        volume: volume,
+                        transactionHash: result?.transactionHash || 'unknown'
+                    }
+                });
 
                 return result;
             } catch (error) {
                 status = 'error';
+                const duration = logger.endTimer(operationId);
+                
+                // Enhanced trading error logging
+                logger.error(`Trading operation failed: ${operationType}`, error, {
+                    operationId,
+                    duration,
+                    category: 'trading',
+                    operation: operationType,
+                    errorType: error.constructor.name
+                });
+                
                 this.recordError('trading_operation', 'error');
                 throw error;
             } finally {
-                const duration = (Date.now() - start) / 1000;
+                const duration = (Date.now() - this.startTime) / 1000;
                 this.recordTransaction(operationType, status, duration, volume);
             }
         };
@@ -440,18 +672,51 @@ class UnifiedMonitoringSystem {
 
     wrapApiCall(apiCall, apiName, endpoint) {
         return async (...args) => {
-            const start = Date.now();
+            const operationId = logger.startTimer(`api_call_${apiName}_${endpoint}`);
             let status = 'success';
 
             try {
+                // Log API call start
+                logger.apiCall(`${apiName}_${endpoint}`, 'start', {
+                    operationId,
+                    args: args.length,
+                    apiName,
+                    endpoint,
+                    category: 'api'
+                });
+                
                 const result = await apiCall.apply(this, args);
+                
+                const duration = logger.endTimer(operationId);
+                
+                // Log successful API call
+                logger.apiCall(`${apiName}_${endpoint}`, 'success', {
+                    operationId,
+                    duration,
+                    responseSize: result ? JSON.stringify(result).length : 0,
+                    statusCode: result?.status || 200,
+                    category: 'api'
+                });
+                
                 return result;
             } catch (error) {
                 status = 'error';
+                const duration = logger.endTimer(operationId);
+                
+                // Enhanced API error logging
+                logger.error(`API call failed: ${apiName}_${endpoint}`, error, {
+                    operationId,
+                    duration,
+                    category: 'api',
+                    operation: `${apiName}_${endpoint}`,
+                    errorType: error.constructor.name,
+                    statusCode: error.response?.status || error.status || 'unknown'
+                });
+                
                 this.recordError('api_call', 'error');
                 throw error;
             } finally {
-                const duration = (Date.now() - start) / 1000;
+                const duration = (Date.now() - this.startTime) / 1000;
                 this.recordAPIRequest(`${apiName}_${endpoint}`, status, duration);
             }
         };
@@ -464,7 +729,8 @@ class UnifiedMonitoringSystem {
             this.checkDatabase(),
             this.checkRedis(),
             this.checkMemory(),
-            this.checkSystem()
+            this.checkSystem(),
+            this.checkWebSocket()
         ]);
 
         const results = {
@@ -475,7 +741,8 @@ class UnifiedMonitoringSystem {
                 database: this.getCheckResult(checks[0]),
                 redis: this.getCheckResult(checks[1]),
                 memory: this.getCheckResult(checks[2]),
-                system: this.getCheckResult(checks[3])
+                system: this.getCheckResult(checks[3]),
+                websocket: this.getCheckResult(checks[4])
             }
         };
 
@@ -596,6 +863,74 @@ class UnifiedMonitoringSystem {
         };
     }
 
+    async checkWebSocket() {
+        try {
+            // Check if WebSocket is enabled
+            const webSocketEnabled = process.env.WEBSOCKET_ENABLED === 'true';
+            
+            if (!webSocketEnabled) {
+                return {
+                    status: 'healthy',
+                    details: {
+                        enabled: false,
+                        connections: 0,
+                        subscriptions: 0
+                    },
+                    message: 'WebSocket disabled'
+                };
+            }
+
+            let connectionCount = 0;
+            let subscriptionCount = 0;
+            let lastActivity = null;
+
+            // Get metrics from WebSocketManager if available
+            if (this.webSocketManager) {
+                const metrics = this.webSocketManager.getMetrics();
+                connectionCount = metrics.activeConnections || 0;
+                subscriptionCount = metrics.totalSubscriptions || 0;
+                lastActivity = metrics.lastActivity;
+            } else {
+                // Fallback to Prometheus metrics
+                const activeConnections = await this.webSocketConnectionsActive.get();
+                connectionCount = activeConnections ? activeConnections.values[0]?.value || 0 : 0;
+            }
+            
+            // Determine status based on connection health
+            let status = 'healthy';
+            let message = 'WebSocket connections healthy';
+
+            // Check for connection issues
+            if (connectionCount === 0 && webSocketEnabled) {
+                status = 'warning';
+                message = 'No active WebSocket connections';
+            } else if (lastActivity && Date.now() - lastActivity > 300000) { // 5 minutes
+                status = 'warning';
+                message = 'WebSocket connections inactive';
+            }
+
+            return {
+                status,
+                details: {
+                    enabled: webSocketEnabled,
+                    connections: connectionCount,
+                    subscriptions: subscriptionCount,
+                    lastActivity: lastActivity ? new Date(lastActivity).toISOString() : null,
+                    managerIntegrated: !!this.webSocketManager
+                },
+                message
+            };
+        } catch (error) {
+            return {
+                status: 'unhealthy',
+                details: {
+                    error: error.message
+                },
+                message: 'WebSocket health check failed'
+            };
+        }
+    }
+
     getCheckResult(settledResult) {
         if (settledResult.status === 'fulfilled') {
             return settledResult.value;
@@ -635,6 +970,11 @@ class UnifiedMonitoringSystem {
         this.userMetricsInterval = setInterval(() => {
             this.updateUserMetrics();
         }, 300000);
+
+        // Update WebSocket metrics every 30 seconds
+        this.webSocketMetricsInterval = setInterval(() => {
+            this.updateWebSocketMetrics();
+        }, 30000);
     }
 
     async updateConnectionCounts() {
@@ -835,6 +1175,47 @@ class UnifiedMonitoringSystem {
         this.telegramBot = bot;
     }
 
+    // WebSocket integration
+    setWebSocketManager(webSocketManager) {
+        this.webSocketManager = webSocketManager;
+        this.logInfo('WebSocket manager integrated with monitoring system');
+    }
+
+    async updateWebSocketMetrics() {
+        if (!this.webSocketManager) {
+            return;
+        }
+
+        try {
+            const metrics = this.webSocketManager.getMetrics();
+            
+            // Update Prometheus metrics
+            this.updateWebSocketConnections(metrics.activeConnections || 0);
+            
+            // Update subscription counts by type
+            if (metrics.subscriptions) {
+                // Count subscriptions by type
+                const subscriptionTypes = {};
+                for (const subscription of Object.values(metrics.subscriptions || {})) {
+                    const type = subscription.type || 'unknown';
+                    subscriptionTypes[type] = (subscriptionTypes[type] || 0) + 1;
+                }
+                
+                // Update metrics for each type
+                Object.entries(subscriptionTypes).forEach(([type, count]) => {
+                    this.updateWebSocketSubscriptions(type, count);
+                });
+            }
+
+            this.logDebug('WebSocket metrics updated', { 
+                connections: metrics.activeConnections,
+                subscriptions: metrics.totalSubscriptions 
+            });
+        } catch (error) {
+            this.logError('Failed to update WebSocket metrics', error);
+        }
+    }
+
     async sendAdminAlert(message, severity = 'warning') {
         const adminChatId = process.env.ADMIN_CHAT_ID;
         if (adminChatId && this.telegramBot) {
@@ -884,6 +1265,7 @@ class UnifiedMonitoringSystem {
         if (this.connectionUpdateInterval) clearInterval(this.connectionUpdateInterval);
         if (this.cacheResetInterval) clearInterval(this.cacheResetInterval);
         if (this.userMetricsInterval) clearInterval(this.userMetricsInterval);
+        if (this.webSocketMetricsInterval) clearInterval(this.webSocketMetricsInterval);
 
         // Set bot status to stopped
         this.setBotStatus(false);

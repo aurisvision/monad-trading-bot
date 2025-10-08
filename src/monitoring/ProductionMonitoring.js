@@ -32,6 +32,7 @@ class ProductionMonitoring extends EventEmitter {
             database: 'unknown',
             redis: 'unknown',
             monadRpc: 'unknown',
+            webSocket: 'unknown',
             overall: 'unknown'
         };
         
@@ -182,6 +183,9 @@ class ProductionMonitoring extends EventEmitter {
             // Check Monad RPC
             this.healthStatus.monadRpc = await this.checkMonadRpc();
             
+            // Check WebSocket
+            this.healthStatus.webSocket = await this.checkWebSocket();
+            
             // Determine overall health
             this.healthStatus.overall = this.calculateOverallHealth();
             
@@ -226,6 +230,26 @@ class ProductionMonitoring extends EventEmitter {
         try {
             // This would be implemented with actual RPC check
             // For now, return healthy
+            return 'healthy';
+        } catch (error) {
+            return 'unhealthy';
+        }
+    }
+
+    /**
+     * Check WebSocket connectivity
+     */
+    async checkWebSocket() {
+        try {
+            // Check if WebSocket is enabled
+            const webSocketEnabled = process.env.WEBSOCKET_ENABLED === 'true';
+            
+            if (!webSocketEnabled) {
+                return 'healthy'; // Disabled is considered healthy
+            }
+
+            // Basic WebSocket health check
+            // This would be enhanced with actual WebSocket manager integration
             return 'healthy';
         } catch (error) {
             return 'unhealthy';

@@ -2,12 +2,15 @@
  * Trading Interface - Unified Trading Interface
  * Replaces all legacy trading handlers
  * Provides unified interface for all trading types with Telegram Bot
+ * Enhanced with professional messaging and real-time updates
  */
 const { Markup } = require('telegraf');
 const UnifiedTradingEngine = require('./UnifiedTradingEngine');
 const FreshDataFetcher = require("../utils/freshDataFetcher");
 const DirectTokenFetcher = require('../utils/directTokenFetcher');
 const TradingConfig = require('./TradingConfig');
+const RealTimeMessageUpdater = require('../utils/RealTimeMessageUpdater');
+const ProfessionalMessageFormatter = require('../utils/ProfessionalMessageFormatter');
 class TradingInterface {
     constructor(bot, dependencies) {
         this.bot = bot;
@@ -15,6 +18,14 @@ class TradingInterface {
         this.config = new TradingConfig();
         this.database = dependencies.database;
         this.monitoring = dependencies.monitoring;
+        
+        // Initialize professional messaging system
+        this.messageUpdater = new RealTimeMessageUpdater(bot, {
+            wsUrl: process.env.MONAD_WS_URL || 'wss://testnet-rpc.monad.xyz',
+            enableRealTime: process.env.ENABLE_REALTIME_UPDATES !== 'false'
+        });
+        this.formatter = new ProfessionalMessageFormatter();
+        
         // Only setup handlers if bot is provided
         if (this.bot) {
             this.setupHandlers();
@@ -422,50 +433,81 @@ Please enter the token contract address you want to buy:`;
      * Send success message - Simplified version
      */
     async sendSuccessMessage(ctx, result, operationType) {
-        let message = '';
-        let explorerUrl = '';
-        if (result.txHash) {
-            explorerUrl = `https://testnet.monadexplorer.com/tx/${result.txHash}`;
+        try {
+            let message;
+            let keyboard;
+
+            const successData = {
+                txHash: result.txHash,
+                tokenSymbol: result.tokenSymbol || 'Unknown',
+                tokenAddress: result.tokenAddress,
+                amount: result.amount,
+                monAmount: result.monAmount,
+                tokenAmount: result.tokenAmount,
+                gasUsed: result.gasUsed,
+                timestamp: Date.now(),
+                priceImpact: result.priceImpact,
+                slippage: result.slippage
+            };
+
+            switch(operationType) {
+                case 'buy':
+                case 'auto_buy':
+                    message = this.formatter.formatBuySuccess(successData);
+                    keyboard = this.formatter.createActionKeyboard({
+                        txHash: result.txHash,
+                        tokenAddress: result.tokenAddress,
+                        operation: 'buy'
+                    });
+                    break;
+                case 'sell':
+                    message = this.formatter.formatSellSuccess(successData);
+                    keyboard = this.formatter.createActionKeyboard({
+                        txHash: result.txHash,
+                        tokenAddress: result.tokenAddress,
+                        operation: 'sell'
+                    });
+                    break;
+                default:
+                    message = this.formatter.formatBuySuccess(successData);
+                    keyboard = this.formatter.createActionKeyboard({
+                        txHash: result.txHash,
+                        operation: operationType
+                    });
+            }
+
+            await ctx.editMessageText(message, { 
+                parse_mode: 'Markdown',
+                reply_markup: keyboard,
+                disable_web_page_preview: true
+            });
+
+        } catch (error) {
+            console.error('Error sending success message:', error);
+            // Fallback to simple message
+            await ctx.editMessageText(`✅ ${operationType} completed successfully!`, { 
+                parse_mode: 'Markdown' 
+            });
         }
-        switch(operationType) {
-            case 'buy':
-                message = `**✅ Buy Success!**`;
-                break;
-            case 'sell':
-                message = `**✅ Sell Success!**`;
-                break;
-            case 'auto_buy':
-                message = `**✅ Auto Buy Success!**`;
-                break;
-        }
-        if (explorerUrl) {
-            message += `\n\n[🔍 View Transaction](${explorerUrl})`;
-        }
-        await ctx.editMessageText(message, { parse_mode: 'Markdown' });
     }
     /**
-     * Send error message - EXACT COPY from old system
+     * Send error message with professional formatting
      */
-    async sendErrorMessage(ctx, error) {
-        let errorMessage = '❌ ***Transaction Failed***\n\n';
-        // Improve error messages
-        if (error.includes('insufficient balance') || error.includes('الرصيد غير كافي')) {
-            errorMessage += '💰 ***Reason:*** Insufficient balance\n';
-            errorMessage += '💡 ***Solution:*** Add more MON to your wallet';
-        } else if (error.includes('Invalid token') || error.includes('عنوان العملة غير صحيح')) {
-            errorMessage += '🪙 ***Reason:*** Invalid token address\n';
-            errorMessage += '💡 ***Solution:*** Check the token address and try again';
-        } else if (error.includes('Auto buy disabled') || error.includes('الشراء التلقائي غير مفعل')) {
-            errorMessage += '🤖 ***Reason:*** Auto buy is disabled\n';
-            errorMessage += '💡 ***Solution:*** Enable auto buy in settings';
-        } else if (error.includes('slippage') || error.includes('انزلاق')) {
-            errorMessage += '📈 ***Reason:*** Price changed during transaction\n';
-            errorMessage += '💡 ***Solution:*** Try again or increase slippage tolerance';
-        } else {
-            errorMessage += `📝 ***Details:*** ${error}\n`;
-            errorMessage += '💡 ***Solution:*** Try again or contact support';
+    async sendErrorMessage(ctx, error, operation = 'transaction', details = {}) {
+        try {
+            const message = this.formatter.formatError(error, operation, details);
+            
+            await ctx.editMessageText(message, { 
+                parse_mode: 'Markdown',
+                disable_web_page_preview: true
+            });
+        } catch (sendError) {
+            console.error('Error sending error message:', sendError);
+            // Fallback to simple error message
+            await ctx.editMessageText(`❌ Transaction failed: ${error}`, { 
+                parse_mode: 'Markdown' 
+            });
         }
-        await ctx.editMessageText(errorMessage, { parse_mode: 'Markdown' });
     }
     /**
      * DEPRECATED: Show sell interface after successful buy (Manual + Turbo)
