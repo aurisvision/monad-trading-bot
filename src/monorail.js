@@ -9,10 +9,11 @@ const httpsAgent = new https.Agent({
 });
 class MonorailAPI {
     constructor(redis = null, cacheService = null) {
-        this.baseURL = 'https://testnet-api.monorail.xyz/v1';
-        this.dataUrl = 'https://testnet-api.monorail.xyz/v1';
-        this.quoteUrl = 'https://testnet-pathfinder.monorail.xyz/v4';
-        this.appId = '2837175649443187';
+        // Use environment variables with fallback to testnet URLs
+        this.dataUrl = process.env.MONORAIL_DATA_URL || 'https://testnet-api.monorail.xyz/v1';
+        this.quoteUrl = process.env.MONORAIL_QUOTE_URL || 'https://testnet-pathfinder.monorail.xyz/v4';
+        this.baseURL = this.dataUrl; // Keep baseURL for backward compatibility
+        this.appId = process.env.MONORAIL_APP_ID || '2837175649443187';
         this.redis = redis;
         this.cacheService = cacheService;
         // Initialize RPC Manager for fallback support
