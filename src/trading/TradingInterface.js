@@ -110,19 +110,14 @@ class TradingInterface {
                 tokenAddress: tokenAddress,
                 tokenInfo: tokenInfo.token
             });
-            // Use the new message formatter for consistent formatting
-            const buyText = this.formatter.formatInitialTradingMessage({
-                operation: 'buy',
-                tokenSymbol: tokenInfo.token.symbol,
-                tokenName: tokenInfo.token.name,
-                tokenAddress: tokenAddress,
-                balance: 0, // Will be filled with user's MON balance
-                price: tokenInfo.token.price || 0,
-                liquidity: tokenInfo.token.liquidity || 0,
-                marketCap: tokenInfo.token.marketCap || 0,
-                change24h: tokenInfo.token.change24h || 0,
-                walletNumber: 1 // Default wallet
-            });
+            const buyText = `💎 *Buy ${tokenInfo.token.symbol}*
+
+📊 *Token Information:*
+• *Name:* ${tokenInfo.token.name}
+• *Symbol:* ${tokenInfo.token.symbol}
+• *Contract:* \`${tokenAddress}\`
+
+_💡 Select your investment amount:_`;
             
             // Use custom buy amounts from user settings
             const keyboard = Markup.inlineKeyboard([
@@ -411,7 +406,6 @@ Confirm this transaction?`;
             await ctx.answerCbQuery();
         }
         const buyText = `💰 *Buy Tokens*
-
 Please enter the token contract address you want to buy:`;
         const keyboard = Markup.inlineKeyboard([
             [Markup.button.callback('🔙 Back to Main', 'back_to_main')]
@@ -443,17 +437,9 @@ Please enter the token contract address you want to buy:`;
             let message;
             let keyboard;
 
-            // Fetch additional token data for better formatting
-            let tokenData = {};
-            try {
-                tokenData = await this.freshDataFetcher.getTokenData(result.tokenAddress);
-            } catch (error) {
-                console.log('Could not fetch additional token data:', error.message);
-            }
-
             const successData = {
                 txHash: result.txHash,
-                tokenSymbol: result.tokenSymbol || tokenData.symbol || 'Unknown',
+                tokenSymbol: result.tokenSymbol || 'Unknown',
                 tokenAddress: result.tokenAddress,
                 amount: result.amount,
                 monAmount: result.monAmount,
@@ -461,27 +447,34 @@ Please enter the token contract address you want to buy:`;
                 gasUsed: result.gasUsed,
                 timestamp: Date.now(),
                 priceImpact: result.priceImpact,
-                slippage: result.slippage,
-                price: tokenData.price || result.price || 'N/A',
-                liquidity: tokenData.liquidity || result.liquidity || 'N/A',
-                marketCap: tokenData.marketCap || result.marketCap || 'N/A',
-                balance: result.balance || tokenData.balance || 'N/A',
-                change24h: tokenData.change24h || result.change24h || 'N/A',
-                walletNumber: ctx.session?.currentWallet || 'W1'
+                slippage: result.slippage
             };
 
-            // Use the new final success message format (like reference bot)
-            message = this.formatter.formatFinalSuccessMessage({
-                operation: operationType === 'auto_buy' ? 'buy' : operationType,
-                tokenSymbol: successData.tokenSymbol,
-                txHash: result.txHash
-            });
-
-            keyboard = this.formatter.createActionKeyboard({
-                txHash: result.txHash,
-                tokenAddress: result.tokenAddress,
-                operation: operationType === 'auto_buy' ? 'buy' : operationType
-            });
+            switch(operationType) {
+                case 'buy':
+                case 'auto_buy':
+                    message = this.formatter.formatBuySuccess(successData);
+                    keyboard = this.formatter.createActionKeyboard({
+                        txHash: result.txHash,
+                        tokenAddress: result.tokenAddress,
+                        operation: 'buy'
+                    });
+                    break;
+                case 'sell':
+                    message = this.formatter.formatSellSuccess(successData);
+                    keyboard = this.formatter.createActionKeyboard({
+                        txHash: result.txHash,
+                        tokenAddress: result.tokenAddress,
+                        operation: 'sell'
+                    });
+                    break;
+                default:
+                    message = this.formatter.formatBuySuccess(successData);
+                    keyboard = this.formatter.createActionKeyboard({
+                        txHash: result.txHash,
+                        operation: operationType
+                    });
+            }
 
             await ctx.editMessageText(message, { 
                 parse_mode: 'Markdown',
