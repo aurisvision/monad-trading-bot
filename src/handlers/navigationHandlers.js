@@ -934,7 +934,7 @@ Please try again or check your wallet balance.`);
                 const tokenName = tokenInfo?.token?.name || 'Unknown Token';
                 const explorerUrl = `https://testnet.monadexplorer.com/tx/${tradeResult.txHash}`;
                 const sellDeepLink = `https://t.me/MonAreaBot?start=sellToken-${tokenAddress}`;
-                const turboMode = userSettings.turbo_mode ? 'TURBO' : 'NORMAL';
+                const turboMode = userSettings.turbo_mode ? '**TURBO**' : 'NORMAL';
                 
                 // Update the processing message with success in the new format
                 await ctx.telegram.editMessageText(
