@@ -222,6 +222,20 @@ class UnifiedTradingEngine {
         try {
             // Security checks for sell operation
             await this.validateSellTrade(tradeData, tokenAddress, tokenAmount);
+            
+            // Get token information
+            let tokenSymbol = 'Unknown';
+            let tokenName = 'Unknown Token';
+            try {
+                const tokenInfo = await this.monorailAPI.getTokenInfo(tokenAddress);
+                if (tokenInfo && tokenInfo.token) {
+                    tokenSymbol = tokenInfo.token.symbol || 'Unknown';
+                    tokenName = tokenInfo.token.name || 'Unknown Token';
+                }
+            } catch (error) {
+                console.log('Warning: Could not fetch token info:', error.message);
+            }
+            
             // Adjust sell amount - sell 99.5% instead of 100% to avoid precision issues
             let adjustedAmount = tokenAmount;
             const numAmount = parseFloat(tokenAmount);
@@ -246,8 +260,11 @@ class UnifiedTradingEngine {
                 action: 'sell',
                 txHash: swapResult.txHash,
                 tokenAddress: tokenAddress,
+                tokenSymbol: tokenSymbol,
+                tokenName: tokenName,
                 tokenAmount: tokenAmount,
                 monReceived: swapResult.expectedOutput || swapResult.outputAmount || '0',
+                mode: 'normal',
                 gasUsed: swapResult.receipt?.gasUsed?.toString(),
                 effectiveGasPrice: swapResult.receipt?.effectiveGasPrice?.toString()
             };
@@ -260,6 +277,19 @@ class UnifiedTradingEngine {
      */
     async executeTurboSell(tradeData, tokenAddress, tokenAmount) {
         try {
+            // Get token information
+            let tokenSymbol = 'Unknown';
+            let tokenName = 'Unknown Token';
+            try {
+                const tokenInfo = await this.monorailAPI.getTokenInfo(tokenAddress);
+                if (tokenInfo && tokenInfo.token) {
+                    tokenSymbol = tokenInfo.token.symbol || 'Unknown';
+                    tokenName = tokenInfo.token.name || 'Unknown Token';
+                }
+            } catch (error) {
+                console.log('Warning: Could not fetch token info:', error.message);
+            }
+            
             // Direct sell without extensive validation
             const swapResult = await this.monorailAPI.sellTokenOptimized(
                 tradeData.wallet,
@@ -279,6 +309,8 @@ class UnifiedTradingEngine {
                 action: 'sell',
                 txHash: swapResult.txHash,
                 tokenAddress: tokenAddress,
+                tokenSymbol: tokenSymbol,
+                tokenName: tokenName,
                 tokenAmount: tokenAmount,
                 monReceived: swapResult.expectedOutput || swapResult.outputAmount || '0',
                 mode: 'turbo',

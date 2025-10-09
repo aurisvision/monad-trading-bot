@@ -289,9 +289,9 @@ ${this.brandEmojis.clock} Updated: ${new Date(timestamp).toLocaleTimeString()}`;
         } else if (number >= 1000) {
             return (number / 1000).toFixed(2) + 'K';
         } else if (number >= 1) {
-            return number.toFixed(4);
+            return parseFloat(number.toFixed(4)).toString();
         } else {
-            return number.toFixed(8);
+            return parseFloat(number.toFixed(8)).toString();
         }
     }
 

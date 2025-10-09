@@ -442,6 +442,7 @@ Please enter the token contract address you want to buy:`;
                 tokenAmount: result.tokenAmount,
                 actualTokenAmount: result.actualTokenAmount,
                 expectedOutput: result.expectedOutput,
+                monReceived: result.monReceived || result.expectedOutput || result.outputAmount || '0',
                 gasUsed: result.gasUsed,
                 effectiveGasPrice: result.effectiveGasPrice,
                 timestamp: result.timestamp || Date.now(),
