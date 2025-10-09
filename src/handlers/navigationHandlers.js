@@ -881,8 +881,7 @@ Please try again or check your wallet balance.`);
         let processingMessage = null;
         try {
             // Send immediate feedback to user and store message for later update
-            processingMessage = await ctx.reply(`🚀 *Auto Buy Activated*
-⏳ *Processing transaction...*`, { parse_mode: 'Markdown' });
+            processingMessage = await ctx.reply(`**Auto Buy Detected! ⏳**`, { parse_mode: 'Markdown' });
             // Use NEW UNIFIED TRADING SYSTEM for Auto Buy with preloaded data
             const TradingInterface = require('../trading/TradingInterface');
             const tradingDependencies = {
@@ -942,14 +941,12 @@ Please try again or check your wallet balance.`);
                     ctx.chat.id,
                     processingMessage.message_id,
                     undefined,
-                    `🟣 **Auto Buy Detected!**
+                    `[${tokenName} | ${tokenSymbol}](${sellDeepLink})
+**Contract**: \`${tokenAddress}\`
 
-[${tokenName} | ${tokenSymbol}](${sellDeepLink})
-Contract: \`${tokenAddress}\`
+⚡️Mode: **${turboMode}**
 
-⚡️Mode: ${turboMode}
-
-🟢 AutoBuy Success! | [View on MonVision](${explorerUrl})`,
+🟢 _AutoBuy Success!_ | [View on MonVision](${explorerUrl})`,
                     { 
                         parse_mode: 'Markdown',
                         disable_web_page_preview: true
