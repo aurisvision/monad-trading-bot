@@ -113,16 +113,20 @@ ${monAmount} MON ⇄ ${this.formatNumber(receivedAmount)} ${tokenSymbol}
 
         const explorerUrl = `${this.explorerBaseUrl}/tx/${txHash}`;
         const tokenUrl = `${this.explorerBaseUrl}/token/${tokenAddress}`;
+        const buyDeepLink = `https://t.me/MonAreaBot?start=buyToken-${tokenAddress}`;
+        
+        // Format mode display to match buy message
+        const modeDisplay = mode.toLowerCase() === 'turbo' ? '*TURBO*' : '*NORMAL*';
 
-        return `Sell **$${tokenSymbol} — (${tokenName})**
+        return `[Sell $${tokenSymbol} — (${tokenName})](${buyDeepLink})
 \`${tokenAddress}\`
 
-⚡️Mode: **${mode.toUpperCase()}**
+⚡️Mode: ${modeDisplay}
 
-🟢 Fetched Quote (*${dexName}*)
+🟢 Fetched Quote (_${dexName}_)
 ${this.formatNumber(tokenAmount)} ${tokenSymbol} ⇄ ${monReceived} MON
 
-🟢 *Sell Success!* [View on MonVision](${explorerUrl})`;
+🟢 _Sell Success!_ [View on MonVision](${explorerUrl})`;
     }
 
     /**
