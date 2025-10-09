@@ -108,15 +108,18 @@ ${monAmount} MON ⇄ ${this.formatNumber(receivedAmount)} ${tokenSymbol}
             gasUsed,
             timestamp,
             dexName = 'Monorail',
-            mode = 'NORMAL'
+            mode = 'normal'
         } = data;
 
         const explorerUrl = `${this.explorerBaseUrl}/tx/${txHash}`;
         const tokenUrl = `${this.explorerBaseUrl}/token/${tokenAddress}`;
         const buyDeepLink = `https://t.me/MonAreaBot?start=buyToken-${tokenAddress}`;
         
-        // Format mode display to match buy message
-        const modeDisplay = mode.toLowerCase() === 'turbo' ? '*TURBO*' : '*NORMAL*';
+        // Format mode display to match buy message exactly
+        const modeDisplay = mode === 'turbo' ? '_TURBO_' : '_NORMAL_';
+        
+        // Ensure monReceived has a valid value
+        const monReceivedAmount = monReceived || 0;
 
         return `[Sell $${tokenSymbol} — (${tokenName})](${buyDeepLink})
 \`${tokenAddress}\`
@@ -124,7 +127,7 @@ ${monAmount} MON ⇄ ${this.formatNumber(receivedAmount)} ${tokenSymbol}
 ⚡️Mode: ${modeDisplay}
 
 🟢 Fetched Quote (_${dexName}_)
-${this.formatNumber(tokenAmount)} ${tokenSymbol} ⇄ ${monReceived} MON
+${this.formatNumber(tokenAmount)} ${tokenSymbol} ⇄ ${this.formatNumber(monReceivedAmount)} MON
 
 🟢 _Sell Success!_ [View on MonVision](${explorerUrl})`;
     }
