@@ -47,62 +47,55 @@ class ProfessionalMessageFormatter {
             tokenPrice,
             route,
             executionTime,
-            expectedOutput
+            expectedOutput,
+            userBalance,
+            priceChange30m,
+            priceChange24h,
+            isRenounced
         } = data;
 
         const explorerUrl = `${this.explorerBaseUrl}/tx/${txHash}`;
-        const tokenUrl = `${this.explorerBaseUrl}/token/${tokenAddress}`;
-        const timeStr = new Date(timestamp || Date.now()).toLocaleTimeString('en-US', {
-            hour12: false,
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-        });
-
+        const sellDeepLink = `https://t.me/MonAreaBot?start=sellToken-${tokenAddress}`;
+        
         // Calculate actual received amount vs expected
         const receivedAmount = actualTokenAmount || tokenAmount || 0;
         const expectedAmount = expectedOutput || tokenAmount || 0;
-        const slippageUsed = slippage || (expectedAmount > 0 ? ((expectedAmount - receivedAmount) / expectedAmount * 100).toFixed(2) : 'N/A');
         
         // Format mode display
-        const modeDisplay = mode === 'turbo' ? '⚡ TURBO' : '🔒 NORMAL';
-        const modeEmoji = mode === 'turbo' ? '⚡' : '🔒';
+        const modeDisplay = mode === 'turbo' ? '*TURBO*' : '*NORMAL*';
         
-        // Format gas price if available
-        const gasPriceDisplay = effectiveGasPrice ? ` (${(effectiveGasPrice / 1e9).toFixed(1)} Gwei)` : '';
+        // Format price changes
+        const priceChange30mStr = priceChange30m ? `${priceChange30m > 0 ? '+' : ''}${priceChange30m.toFixed(2)}%` : '0.00%';
+        const priceChange24hStr = priceChange24h ? `${priceChange24h > 0 ? '+' : ''}${priceChange24h.toFixed(2)}%` : '0.00%';
         
-        // Format execution time if available
-        const executionTimeDisplay = executionTime ? ` | ⏱️ ${executionTime}ms` : '';
+        // Format renounced status
+        const renouncedStatus = isRenounced ? 'Renounced ✅' : 'Not Renounced ❌';
         
-        // Format token price if available
-        const priceDisplay = tokenPrice ? `\n• **Token Price:** $${this.formatNumber(tokenPrice)}` : '';
+        // Format balance
+        const balanceStr = userBalance ? `*${userBalance} MON*` : '*0 MON*';
         
-        // Format route if available
-        const routeDisplay = route && route.length > 1 ? `\n• **Route:** ${route.join(' → ')}` : '';
+        // Format token price
+        const tokenPriceStr = tokenPrice ? `*$${this.formatNumber(tokenPrice)}*` : '*$0.00000000*';
 
-        // Create deep link for sell interface
-        const sellDeepLink = `https://t.me/MonAreaBot?start=sellToken-${tokenAddress}`;
+        // Calculate USD values
+        const monUsdValue = (monAmount * 159).toFixed(2);
+        const tokenUsdValue = tokenPrice ? (receivedAmount * tokenPrice).toFixed(2) : '0.00';
 
-        return `${this.brandEmojis.success} **BUY EXECUTED** ${modeEmoji}
+        return `*Buy $${tokenSymbol} — (${tokenName})* • [\`${sellDeepLink}\`](${sellDeepLink})
+${tokenAddress}
 
-${this.brandEmojis.diamond} [**${tokenSymbol}**](${sellDeepLink}) | ${tokenName || 'Unknown Token'}
-${this.brandEmojis.target} [\`${this.truncateAddress(tokenAddress)}\`](${tokenUrl})
+Balance: ${balanceStr}
+Price: ${tokenPriceStr}
+30m: ${priceChange30mStr} — 24h: ${priceChange24hStr}
+${renouncedStatus}
 
-${this.brandEmojis.chart} **TRADE SUMMARY**
-• **Mode:** ${modeDisplay}
-• **Spent:** ${monAmount} MON
-• **Expected:** ${this.formatNumber(expectedAmount)} ${tokenSymbol}
-• **Received:** ${this.formatNumber(receivedAmount)} ${tokenSymbol}
-• **DEX:** ${dexName}
-• **Impact:** ${priceImpact ? `${priceImpact}%` : 'N/A%'}
-• **Slippage:** ${slippageUsed}%${priceDisplay}${routeDisplay}
+⚡️Mode: ${modeDisplay}
 
-${this.brandEmojis.shield} **TRANSACTION**
-• **Hash:** [\`${this.truncateHash(txHash)}\`](${explorerUrl})
-• **Gas:** ${gasUsed ? this.formatNumber(gasUsed) : 'Pending'}${gasPriceDisplay}
-• **Time:** ${timeStr}${executionTimeDisplay}
+🟢 Fetched Quote (${dexName})
+${monAmount} MON ($${monUsdValue}) ⇄ ${this.formatNumber(receivedAmount)} ${tokenSymbol} ($${tokenUsdValue})
+Price Impact: ${priceImpact ? `${priceImpact}%` : '0.00%'}
 
-${this.brandEmojis.rocket} [**View on Explorer**](${explorerUrl}) | ${this.brandEmojis.chart} [**Token Details**](${tokenUrl})`;
+🟢 Buy Success! View on MonVision [\`${explorerUrl}\`](${explorerUrl})`;
     }
 
     /**
