@@ -48,6 +48,9 @@ const SimpleAccessHandler = require('./handlers/simpleAccessHandler');
 const StateManager = require('./services/StateManager');
 // const TransactionAccelerator = require('./utils/transactionAccelerator');
 
+// Admin tools for rate limit management
+const AdminRateLimitManager = require('./utils/AdminRateLimitManager');
+
 class Area51BotModularSimple {
     constructor() {
         this.bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
@@ -514,6 +517,11 @@ class Area51BotModularSimple {
         this.bot.action('start_trading', async (ctx) => {
             await ctx.answerCbQuery();
             await this.handleStart(ctx);
+        });
+
+        // Admin commands for rate limit management
+        this.bot.command('admin', async (ctx) => {
+            await this.handleAdminCommand(ctx);
         });
 
         // Settings handlers
@@ -2464,6 +2472,48 @@ _Price tolerance for automated purchases:_
         } catch (error) {
             console.error('Error resetting custom sell percentages:', error);
             await ctx.reply('❌ Error resetting custom sell percentages.');
+        }
+    }
+
+    async handleAdminCommand(ctx) {
+        try {
+            const userId = ctx.from.id;
+            const args = ctx.message.text.split(' ').slice(1);
+            
+            // Check if user is admin (you can add your admin user IDs here)
+            const adminIds = [123456789]; // Replace with actual admin user IDs
+            if (!adminIds.includes(userId)) {
+                await ctx.reply('❌ Access denied. Admin privileges required.');
+                return;
+            }
+            
+            if (args.length === 0) {
+                await ctx.reply(`🔧 **Admin Commands**
+
+Available commands:
+• \`/admin fix_stuck_limits\` - Fix all stuck rate limits
+• \`/admin reset_user <user_id>\` - Reset rate limits for specific user
+• \`/admin report <user_id>\` - Generate rate limit report for user
+• \`/admin diagnose <user_id>\` - Diagnose rate limit issues for user
+
+Example: \`/admin reset_user 123456789\``, {
+                    parse_mode: 'Markdown'
+                });
+                return;
+            }
+            
+            const command = args[0];
+            
+            if (this.walletHandlers && this.walletHandlers.adminRateLimitManager) {
+                const result = await this.walletHandlers.adminRateLimitManager.handleAdminCommand(command, args.slice(1));
+                await ctx.reply(result, { parse_mode: 'Markdown' });
+            } else {
+                await ctx.reply('❌ Admin rate limit manager not available.');
+            }
+            
+        } catch (error) {
+            this.monitoring?.logError('Admin command error', error, { userId: ctx.from.id });
+            await ctx.reply('❌ Error processing admin command.');
         }
     }
 

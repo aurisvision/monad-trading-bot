@@ -355,7 +355,7 @@ class AdvancedRateLimiter {
         const validAttempts = attempts.filter(timestamp => now - timestamp < config.window);
         const remaining = Math.max(0, config.limit - validAttempts.length);
         const resetTime = validAttempts.length > 0 ? 
-            Math.min(...validAttempts) + config.window : now;
+            Math.max(...validAttempts) + config.window : now;
 
         return {
             exists: true,

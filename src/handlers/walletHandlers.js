@@ -2,6 +2,7 @@
 const { Markup } = require('telegraf');
 const WalletManager = require('../wallet');
 const UnifiedSecuritySystem = require('../security/UnifiedSecuritySystem');
+const AdminRateLimitManager = require('../utils/AdminRateLimitManager');
 const { validateInput } = require('../utils/index');
 const { formatBalance } = require('../utils/interfaceUtils');
 const InterfaceUtils = require('../utils/interfaceUtils');
@@ -16,6 +17,13 @@ class WalletHandlers {
         this.cacheService = cacheService;
         // Initialize unified security system
         this.security = new UnifiedSecuritySystem(redis, database);
+        
+        // Initialize admin rate limit manager
+        this.adminRateLimitManager = new AdminRateLimitManager(
+            redis, 
+            this.security.rateLimiter, 
+            monitoring
+        );
     }
     setupHandlers() {
         // Wallet management handlers

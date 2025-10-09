@@ -1,0 +1,89 @@
+{
+  "name": "Monad Pathfinder API Configuration",
+  "version": "1.1.0",
+  "description": "Configuration for Monad network pathfinding and routing API",
+  "baseUrl": "https://pathfinder.monad.xyz",
+  "endpoints": {
+    "routing": {
+      "findPath": "/v1/routing/path",
+      "bestRoute": "/v1/routing/best",
+      "multiHop": "/v1/routing/multihop",
+      "estimate": "/v1/routing/estimate"
+    },
+    "liquidity": {
+      "pools": "/v1/liquidity/pools",
+      "depth": "/v1/liquidity/depth",
+      "sources": "/v1/liquidity/sources",
+      "aggregated": "/v1/liquidity/aggregated"
+    },
+    "swap": {
+      "quote": "/v1/swap/quote",
+      "execute": "/v1/swap/execute",
+      "status": "/v1/swap/status/{txHash}",
+      "history": "/v1/swap/history"
+    },
+    "bridge": {
+      "routes": "/v1/bridge/routes",
+      "quote": "/v1/bridge/quote",
+      "transfer": "/v1/bridge/transfer",
+      "status": "/v1/bridge/status/{txHash}"
+    },
+    "analytics": {
+      "volume": "/v1/analytics/volume",
+      "fees": "/v1/analytics/fees",
+      "performance": "/v1/analytics/performance",
+      "trends": "/v1/analytics/trends"
+    }
+  },
+  "pathfinding": {
+    "algorithm": "dijkstra",
+    "maxHops": 5,
+    "slippageTolerance": 0.005,
+    "gasOptimization": true,
+    "priceImpactThreshold": 0.03
+  },
+  "authentication": {
+    "type": "bearer_token",
+    "header": "Authorization",
+    "required": true
+  },
+  "rateLimit": {
+    "requests": 500,
+    "window": "1h",
+    "burst": 50
+  },
+  "timeout": {
+    "connect": 3000,
+    "read": 15000
+  },
+  "retryPolicy": {
+    "maxRetries": 2,
+    "backoffMultiplier": 1.5,
+    "initialDelay": 500
+  },
+  "cache": {
+    "enabled": true,
+    "ttl": 60,
+    "maxSize": 500,
+    "strategy": "lru"
+  },
+  "websocket": {
+    "enabled": true,
+    "endpoint": "/ws/v1/stream",
+    "heartbeat": 30000,
+    "reconnect": true
+  },
+  "features": {
+    "crossChain": true,
+    "gasEstimation": true,
+    "priceImpactCalculation": true,
+    "routeOptimization": true,
+    "liquidityAggregation": true
+  },
+  "monitoring": {
+    "healthCheck": "/health",
+    "metrics": "/metrics",
+    "performance": "/performance",
+    "logs": true
+  }
+}
