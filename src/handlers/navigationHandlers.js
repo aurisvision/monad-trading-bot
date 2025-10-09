@@ -925,12 +925,16 @@ Please try again or check your wallet balance.`);
             if (tradeResult.success) {
                 // Update the processing message with success
                 const explorerUrl = `https://testnet.monadexplorer.com/tx/${tradeResult.txHash}`;
+                const turboMode = userSettings.turbo_mode ? '**TURBO**' : 'NORMAL';
                 await ctx.telegram.editMessageText(
                     ctx.chat.id,
                     processingMessage.message_id,
                     undefined,
-                    `✅ *Auto Buy Successful!*
-[View on Explorer](${explorerUrl})`,
+                    `🟣 **Auto Buy Detected!**
+
+⚡️Mode: ${turboMode}
+
+🟢 [View on MonVision](${explorerUrl}) _Buy Success!_`,
                     { parse_mode: 'Markdown' }
                 );
                 

@@ -409,7 +409,8 @@ Please enter the token contract address you want to buy:`;
                 mode: result.mode,
                 tokenPrice: result.tokenPrice,
                 route: result.route,
-                executionTime: result.executionTime
+                executionTime: result.executionTime,
+                isAutoBuy: operationType === 'auto_buy'
             };
 
             switch(operationType) {

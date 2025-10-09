@@ -51,7 +51,8 @@ class ProfessionalMessageFormatter {
             userBalance,
             priceChange30m,
             priceChange24h,
-            isRenounced
+            isRenounced,
+            isAutoBuy = false
         } = data;
 
         const explorerUrl = `${this.explorerBaseUrl}/tx/${txHash}`;
@@ -73,8 +74,8 @@ class ProfessionalMessageFormatter {
             }
         }
         
-        // Format mode display
-        const modeDisplay = mode === 'turbo' ? '*TURBO*' : '*NORMAL*';
+        // Format mode display - bold for TURBO, italic for Buy Success
+        const modeDisplay = mode === 'turbo' ? '**TURBO**' : 'NORMAL';
         
         // Format balance - use actual user balance or realistic default
         const balanceStr = userBalance ? `${userBalance.toFixed(3)} MON` : `${(monAmount + 2.5).toFixed(3)} MON`;
@@ -82,6 +83,16 @@ class ProfessionalMessageFormatter {
         // Format token price - use realistic values
         const tokenPriceStr = tokenPrice ? `$${this.formatNumber(tokenPrice)}` : '$0.00001234';
 
+        // Special formatting for Auto Buy
+        if (isAutoBuy) {
+            return `🟣 **Auto Buy Detected!**
+
+⚡️Mode: ${modeDisplay}
+
+🟢 [View on MonVision](${explorerUrl}) _Buy Success!_`;
+        }
+
+        // Regular buy message
         return `[Buy $${tokenSymbol} — (${tokenName})](${sellDeepLink})
 \`${tokenAddress}\`
 
