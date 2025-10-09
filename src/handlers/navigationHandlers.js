@@ -1877,6 +1877,63 @@ Confirm this transaction?`, {
     /**
      * Format numbers for display with limited decimal places
      */
+    /**
+     * Handle inline start parameters for deep linking
+     */
+    async handleInlineStartParameter(ctx, startPayload) {
+        const userId = ctx.from.id;
+        
+        try {
+            // Handle sellToken deep link
+            if (startPayload.startsWith('sellToken-')) {
+                const tokenAddress = startPayload.replace('sellToken-', '');
+                
+                // Validate token address format
+                if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) {
+                    await ctx.reply('❌ Invalid token address format.');
+                    return;
+                }
+                
+                // Check if user exists and has wallet
+                const user = await this.database.getUserByTelegramId(userId);
+                if (!user || !user.wallet_address || user.wallet_address === 'pending_wallet_creation') {
+                    await ctx.reply('❌ Please create a wallet first using /start');
+                    return;
+                }
+                
+                this.monitoring.logInfo('Deep link sell token accessed', { userId, tokenAddress });
+                
+                // Show sell interface for the token
+                await this.showComprehensiveSellInterface(ctx, tokenAddress);
+                return;
+            }
+            
+            // Handle token info deep link
+            if (startPayload.startsWith('token_')) {
+                const tokenAddress = startPayload.replace('token_', '');
+                
+                // Validate token address format
+                if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) {
+                    await ctx.reply('❌ Invalid token address format.');
+                    return;
+                }
+                
+                this.monitoring.logInfo('Deep link token info accessed', { userId, tokenAddress });
+                
+                // Process token address to show token info
+                await this.processTokenAddress(ctx, tokenAddress);
+                return;
+            }
+            
+            // If no recognized parameter, show normal start
+            await this.showWelcome(ctx);
+            
+        } catch (error) {
+            this.monitoring.logError('Deep link parameter handling failed', error, { userId, startPayload });
+            await ctx.reply('❌ An error occurred processing the link. Please try again.');
+        }
+    }
+
     formatNumber(num) {
         if (!num || isNaN(num)) return '0';
         

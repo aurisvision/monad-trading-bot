@@ -80,9 +80,12 @@ class ProfessionalMessageFormatter {
         // Format route if available
         const routeDisplay = route && route.length > 1 ? `\n• **Route:** ${route.join(' → ')}` : '';
 
+        // Create deep link for sell interface
+        const sellDeepLink = `https://t.me/MonAreaBot?start=sellToken-${tokenAddress}`;
+
         return `${this.brandEmojis.success} **BUY EXECUTED** ${modeEmoji}
 
-${this.brandEmojis.diamond} **${tokenSymbol}** | ${tokenName || 'Unknown Token'}
+${this.brandEmojis.diamond} [**${tokenSymbol}**](${sellDeepLink}) | ${tokenName || 'Unknown Token'}
 ${this.brandEmojis.target} [\`${this.truncateAddress(tokenAddress)}\`](${tokenUrl})
 
 ${this.brandEmojis.chart} **TRADE SUMMARY**
