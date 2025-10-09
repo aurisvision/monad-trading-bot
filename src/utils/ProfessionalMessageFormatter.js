@@ -83,14 +83,11 @@ class ProfessionalMessageFormatter {
         const tokenPriceStr = tokenPrice ? `$${this.formatNumber(tokenPrice)}` : '$0.00001234';
 
         return `[**Buy $${tokenSymbol} — (${tokenName})**](${sellDeepLink})
-${tokenAddress}
-
-Balance: ${balanceStr}
-Price: ${tokenPriceStr}
+\`${tokenAddress}\`
 
 ⚡️Mode: ${modeDisplay}
 
-🟢 Fetched Quote (${dexName})
+🟢 Fetched Quote (_${dexName}_)
 ${monAmount} MON ⇄ ${this.formatNumber(receivedAmount)} ${tokenSymbol}
 
 🟢 _Buy Success!_ [View on MonVision](${explorerUrl})`;
