@@ -107,35 +107,22 @@ ${monAmount} MON ⇄ ${this.formatNumber(receivedAmount)} ${tokenSymbol}
             priceImpact,
             gasUsed,
             timestamp,
-            dexName = 'Monorail'
+            dexName = 'Monorail',
+            mode = 'NORMAL'
         } = data;
 
         const explorerUrl = `${this.explorerBaseUrl}/tx/${txHash}`;
         const tokenUrl = `${this.explorerBaseUrl}/token/${tokenAddress}`;
-        const timeStr = new Date(timestamp || Date.now()).toLocaleTimeString('en-US', {
-            hour12: false,
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-        });
 
-        return `${this.brandEmojis.success} **SELL EXECUTED**
+        return `Sell **$${tokenSymbol} — (${tokenName})**
+\`${tokenAddress}\`
 
-${this.brandEmojis.fire} **${tokenSymbol}** | ${tokenName}
-${this.brandEmojis.target} [\`${this.truncateAddress(tokenAddress)}\`](${tokenUrl})
+⚡️Mode: **${mode.toUpperCase()}**
 
-${this.brandEmojis.chart} **TRADE SUMMARY**
-• **Sold:** ${this.formatNumber(tokenAmount)} ${tokenSymbol}
-• **Received:** ${monReceived} MON
-• **DEX:** ${dexName}
-• **Impact:** ${priceImpact ? `${priceImpact}%` : 'Low'}
+🟢 Fetched Quote (*${dexName}*)
+${this.formatNumber(tokenAmount)} ${tokenSymbol} ⇄ ${monReceived} MON
 
-${this.brandEmojis.shield} **TRANSACTION**
-• **Hash:** [\`${this.truncateHash(txHash)}\`](${explorerUrl})
-• **Gas:** ${gasUsed ? this.formatNumber(gasUsed) : 'Optimized'}
-• **Time:** ${timeStr}
-
-${this.brandEmojis.money} [**View on Explorer**](${explorerUrl}) | ${this.brandEmojis.chart} [**Token Details**](${tokenUrl})`;
+🟢 *Sell Success!* [View on MonVision](${explorerUrl})`;
     }
 
     /**
