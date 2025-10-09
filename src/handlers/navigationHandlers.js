@@ -923,25 +923,41 @@ Please try again or check your wallet balance.`);
             // Auto buy already executed above, just handle the result
             const tradeResult = result;
             if (tradeResult.success) {
-                // Update the processing message with success
+                // Get token info for the success message
+                let tokenInfo;
+                try {
+                    tokenInfo = await this.monorailAPI.getTokenInfo(tokenAddress);
+                } catch (error) {
+                    console.log('Could not fetch token info for auto buy message:', error.message);
+                }
+                
+                const tokenSymbol = tokenInfo?.token?.symbol || 'Token';
+                const tokenName = tokenInfo?.token?.name || 'Unknown Token';
                 const explorerUrl = `https://testnet.monadexplorer.com/tx/${tradeResult.txHash}`;
-                const turboMode = userSettings.turbo_mode ? '**TURBO**' : 'NORMAL';
+                const sellDeepLink = `https://t.me/MonAreaBot?start=sellToken-${tokenAddress}`;
+                const turboMode = userSettings.turbo_mode ? 'TURBO' : 'NORMAL';
+                
+                // Update the processing message with success in the new format
                 await ctx.telegram.editMessageText(
                     ctx.chat.id,
                     processingMessage.message_id,
                     undefined,
                     `🟣 **Auto Buy Detected!**
 
+[${tokenName} | ${tokenSymbol}](${sellDeepLink})
+Contract: \`${tokenAddress}\`
+
 ⚡️Mode: ${turboMode}
 
-🟢 [View on MonVision](${explorerUrl}) _Buy Success!_`,
-                    { parse_mode: 'Markdown' }
+🟢 AutoBuy Success! | [View on MonVision](${explorerUrl})`,
+                    { 
+                        parse_mode: 'Markdown',
+                        disable_web_page_preview: true
+                    }
                 );
                 
-                // Show comprehensive sell interface after successful auto-buy
-                await this.showComprehensiveSellInterface(ctx, tokenAddress, tradeResult);
-                
-                // Auto buy completed successfully - no need for additional refresh
+                // Auto buy completed successfully - no additional sell interface needed
+                // User can click on the token name to access sell options
                 // The cache invalidation above will ensure fresh data on next menu access
             } else {
                 // Update the processing message with failure

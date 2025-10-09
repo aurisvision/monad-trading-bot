@@ -87,9 +87,12 @@ class ProfessionalMessageFormatter {
         if (isAutoBuy) {
             return `🟣 **Auto Buy Detected!**
 
+[${tokenName} | ${tokenSymbol}](${sellDeepLink})
+Contract: \`${tokenAddress}\`
+
 ⚡️Mode: ${modeDisplay}
 
-🟢 [View on MonVision](${explorerUrl}) _Buy Success!_`;
+🟢 AutoBuy Success! | [View on MonVision](${explorerUrl})`;
         }
 
         // Regular buy message
