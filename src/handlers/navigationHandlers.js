@@ -1538,24 +1538,59 @@ Select percentage to sell:`;
             }
             const tokenAddress = userState.data.tokenAddress;
             const tokenSymbol = userState.data.tokenSymbol || 'Token';
-            // Show confirmation
-            await ctx.reply(`**Purchase Confirmation**
-
-*Amount:* ${amount} MON
-*Token:* ${tokenSymbol}
-*Address:* \`${tokenAddress}\`
-
-Confirm this transaction?`, {
-                parse_mode: 'Markdown',
-                reply_markup: {
-                    inline_keyboard: [
-                        [
-                            { text: 'Confirm', callback_data: `confirm_buy_${tokenAddress}_${amount}` },
-                            { text: 'Cancel', callback_data: 'cancel_trade' }
-                        ]
-                    ]
+            
+            // Get user for wallet validation
+            const user = await this.database.getUser(userId);
+            if (!user?.wallet_address) {
+                await ctx.reply('❌ Wallet not found. Please create a wallet first.');
+                return;
+            }
+            
+            // Check user balance before proceeding
+            try {
+                const balanceData = await this.monorailAPI.getMONBalance(user.wallet_address, false);
+                if (balanceData && balanceData.balance !== undefined) {
+                    const balance = parseFloat(balanceData.balance);
+                    if (!isNaN(balance) && balance < amount) {
+                        await ctx.reply(`❌ Insufficient balance. You have ${balance.toFixed(4)} MON but trying to spend ${amount} MON.`);
+                        return;
+                    }
                 }
-            });
+            } catch (error) {
+                this.monitoring?.logError('Failed to check balance before custom buy', error);
+                // Continue with transaction - balance will be checked by the blockchain
+            }
+            
+            // Show processing message
+            const processingMsg = await ctx.reply('🔄 Processing purchase...', { parse_mode: 'Markdown' });
+            
+            // Get user settings to determine trade type
+            const userSettings = await this.database.getUserSettings(userId);
+            const tradeType = userSettings?.turbo_mode ? 'turbo' : 'normal';
+            
+            // Execute trade using the same engine as TradingInterface
+            if (this.mainBot && this.mainBot.tradingInterface) {
+                const result = await this.mainBot.tradingInterface.engine.executeTrade({
+                    type: tradeType,
+                    action: 'buy',
+                    userId: userId,
+                    tokenAddress: tokenAddress,
+                    amount: amount,
+                    ctx: ctx
+                });
+                
+                // Clear user state
+                await this.database.clearUserState(userId);
+                
+                if (result.success) {
+                    await this.mainBot.tradingInterface.sendSuccessMessage(ctx, result, 'buy');
+                } else {
+                    await ctx.editMessageText('❌ Transaction failed. Please try again.');
+                }
+            } else {
+                await ctx.editMessageText('❌ Trading system unavailable. Please try again.');
+            }
+            
         } catch (error) {
             this.monitoring.logError('Process custom buy amount failed', error, { userId });
             await ctx.reply('❌ Error processing amount. Please try again.');
