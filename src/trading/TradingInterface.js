@@ -39,30 +39,23 @@ class TradingInterface {
         this.bot.action('buy', async (ctx) => {
             await this.handleBuyInterface(ctx);
         });
-        // Buy amount handlers - EXACT COPY from old system
+        // Buy amount handlers - INSTANT EXECUTION (No confirmation)
         this.bot.action(/^buy_amount_(\d+\.?\d*)$/, async (ctx) => {
             await this.handleBuyAmount(ctx);
         });
         this.bot.action('buy_amount_custom', async (ctx) => {
             await this.handleCustomBuy(ctx);
         });
-        // Buy confirmation handlers
-        this.bot.action(/^confirm_buy_(.+)_(\d+\.?\d*)$/, async (ctx) => {
-            await this.handleBuyConfirmation(ctx);
-        });
-        // Token selection handlers - EXACT COPY from old system
+        // Token selection handlers
         this.bot.action(/^buy_token_(.+)$/, async (ctx) => {
             await this.handleBuyTokenFromCategory(ctx);
         });
-        // Sell handlers - EXACT COPY from old system
+        // Sell handlers - INSTANT EXECUTION (No confirmation)
         this.bot.action(/^sell:([A-Za-z0-9]+)$/, async (ctx) => {
             await this.handleSellFromNewPortfolio(ctx);
         });
         this.bot.action(/^sell_percentage_([A-Za-z0-9]+)_(\d+)$/, async (ctx) => {
             await this.handleSellPercentageSelection(ctx);
-        });
-        this.bot.action(/^confirm_portfolio_sell_([A-Za-z0-9]+)_(\d+)$/, async (ctx) => {
-            await this.handleConfirmPortfolioSell(ctx);
         });
     }
     /**
@@ -208,7 +201,7 @@ _🎯 Select percentage to sell:_`;
         }
     }
     /**
-     * Handle sell percentage selection - EXACT COPY from old system
+     * Handle sell percentage selection - INSTANT EXECUTION (No confirmation)
      */
     async handleSellPercentageSelection(ctx) {
         try {
@@ -216,91 +209,74 @@ _🎯 Select percentage to sell:_`;
             const userId = ctx.from.id;
             const tokenSymbol = ctx.match[1];
             const percentage = parseInt(ctx.match[2]);
+            
             // Get user state to find the selected token
             const userState = await this.database.getUserState(userId);
             if (!userState || userState.state !== 'selling_token' || !userState.data) {
                 await this.database.clearUserState(userId);
                 return ctx.reply('❌ Token selection expired. Please select a token again.');
             }
-            const balance = parseFloat(userState.data.tokenBalance || userState.data.balance || 0);
-            // Use 99.99% for 100% to avoid precision issues with fees
-            const effectivePercentage = percentage === 100 ? 99.99 : percentage;
-            const sellAmount = (balance * effectivePercentage / 100).toFixed(6);
             
-            const confirmText = `**Sale Confirmation**
-
-*Token:* ${tokenSymbol}
-*Percentage:* ${percentage}%
-*Amount:* ${sellAmount} ${tokenSymbol}
-
-Confirm this transaction?`;
-            const keyboard = Markup.inlineKeyboard([
-                [Markup.button.callback('Confirm', `confirm_portfolio_sell_${tokenSymbol}_${percentage}`)],
-                [Markup.button.callback('Back', `sell:${tokenSymbol}`)]
-            ]);
-            await ctx.editMessageText(confirmText, {
-                parse_mode: 'Markdown',
-                reply_markup: keyboard.reply_markup
-            });
-        } catch (error) {
-            this.monitoring?.logError('Sell percentage selection failed', error, { userId: ctx.from.id });
-            await ctx.reply('❌ Error processing sell percentage. Please try again.');
-        }
-    }
-    /**
-     * Handle confirm portfolio sell - EXACT COPY from old system
-     */
-    async handleConfirmPortfolioSell(ctx) {
-        try {
-            await ctx.answerCbQuery();
-            const userId = ctx.from.id;
-            const tokenSymbol = ctx.match[1];
-            const percentage = parseInt(ctx.match[2]);
-            await ctx.editMessageText('🔄 Processing sale...', { parse_mode: 'Markdown' });
-            // Get user state to find the selected token
-            const userState = await this.database.getUserState(userId);
-            if (!userState || userState.state !== 'selling_token' || !userState.data) {
-                await this.database.clearUserState(userId);
-                return ctx.editMessageText('❌ Token selection expired. Please try again.');
+            // Safety checks before execution
+            const user = await this.database.getUser(userId);
+            if (!user?.wallet_address) {
+                return ctx.reply('❌ Wallet not found. Please create a wallet first.');
             }
+            
+            // Validate percentage
+            if (isNaN(percentage) || percentage <= 0 || percentage > 100) {
+                return ctx.reply('❌ Invalid percentage. Please try again.');
+            }
+            
             const balance = parseFloat(userState.data.tokenBalance || userState.data.balance || 0);
+            if (balance <= 0) {
+                return ctx.reply('❌ No tokens to sell.');
+            }
+            
             // Use 99.99% for 100% to avoid precision issues with fees
             const effectivePercentage = percentage === 100 ? 99.99 : percentage;
             const tokenAmount = (balance * effectivePercentage / 100).toString();
+            
+            // Show processing message
+            await ctx.editMessageText('🔄 Processing sale...', { parse_mode: 'Markdown' });
+            
             // Get user settings to determine trade type
             const userSettings = await this.database.getUserSettings(userId);
             const tradeType = userSettings?.turbo_mode ? 'turbo' : 'normal';
+            
             // Execute sell using unified engine
             const result = await this.engine.executeTrade({
                 type: tradeType,
                 action: 'sell',
                 userId: userId,
                 tokenAddress: userState.data.tokenAddress,
-                amount: parseFloat(tokenAmount),
+                amount: tokenAmount,
+                percentage: effectivePercentage,
                 ctx: ctx
             });
+            
+            // Clear user state
+            await this.database.clearUserState(userId);
+            
             if (result.success) {
                 await this.sendSuccessMessage(ctx, result, 'sell');
             } else {
-                // Escape special characters to prevent Telegram parsing errors
-                const safeError = (result.error || 'Unknown error').replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&');
-                await ctx.editMessageText(`❌ *Sale Failed*\n${safeError}\nPlease try again.`, {
-                    parse_mode: 'Markdown'
-                });
+                await this.sendErrorMessage(ctx, result.error);
             }
-            // Clear user state
-            await this.database.clearUserState(userId);
+            
         } catch (error) {
-            this.monitoring?.logError('Confirm portfolio sell failed', error, { userId: ctx.from.id });
+            this.monitoring?.logError('Sell percentage execution failed', error, { userId: ctx.from.id });
             await ctx.editMessageText('❌ Transaction failed. Please try again.');
         }
     }
+
     /**
-     * Handle buy amount selection - EXACT COPY from old system
+     * Handle buy amount selection - INSTANT EXECUTION (No confirmation)
      */
     async handleBuyAmount(ctx) {
         await ctx.answerCbQuery();
         const amount = ctx.match[1];
+        
         try {
             // Get user state to find the selected token
             const userState = await this.database.getUserState(ctx.from.id);
@@ -308,92 +284,74 @@ Confirm this transaction?`;
                 await this.database.clearUserState(ctx.from.id);
                 return ctx.reply('❌ Token selection expired. Please select a token again.');
             }
+            
             const { tokenAddress } = userState.data;
-            // Get token info
+            const userId = ctx.from.id;
+            
+            // Safety checks before execution
+            const user = await this.database.getUser(userId);
+            if (!user?.wallet_address) {
+                return ctx.reply('❌ Wallet not found. Please create a wallet first.');
+            }
+            
+            // Get token info for validation
             const tokenInfo = await this.engine.dataManager.getCachedTokenInfo(tokenAddress);
             if (!tokenInfo || !tokenInfo.success) {
                 return ctx.reply('❌ Token not found. Please try again.');
             }
-            // Get user balance
-            const user = await this.database.getUser(ctx.from.id);
-            let balanceText = '_Loading..._';
-            if (user?.wallet_address) {
-                try {
-                    // Use monorailAPI to get fresh balance
-                    const balanceData = await this.engine.monorailAPI.getMONBalance(user.wallet_address, false);
-                    if (balanceData && balanceData.balance !== undefined) {
-                        const balance = parseFloat(balanceData.balance);
-                        if (!isNaN(balance)) {
-                            balanceText = `**${balance.toFixed(4)} MON**`;
-                        } else {
-                            balanceText = '_Not available_';
-                        }
-                    } else {
-                        balanceText = '_Not available_';
-                    }
-                } catch (error) {
-                    this.monitoring?.logError('Failed to get balance for buy confirmation', error);
-                    balanceText = '_Not available_';
-                }
+            
+            // Validate amount
+            const buyAmount = parseFloat(amount);
+            if (isNaN(buyAmount) || buyAmount <= 0) {
+                return ctx.reply('❌ Invalid amount. Please try again.');
             }
-            const confirmText = `**Purchase Confirmation**
-
-*Token Details:*
-• Name: ${tokenInfo.token.name}
-• Symbol: ${tokenInfo.token.symbol}
-• Amount: ${amount} MON
-
-*Your Balance:* ${balanceText}
-
-Confirm this transaction?`;
-            const keyboard = Markup.inlineKeyboard([
-                [Markup.button.callback('Confirm', `confirm_buy_${tokenAddress}_${amount}`)],
-                [Markup.button.callback('Back', 'buy')]
-            ]);
-            await ctx.editMessageText(confirmText, {
-                parse_mode: 'Markdown',
-                reply_markup: keyboard.reply_markup
-            });
-            // Update user state with purchase details
-            await this.database.setUserState(ctx.from.id, 'confirming_buy', {
-                tokenAddress,
-                amount: parseFloat(amount),
-                tokenInfo: tokenInfo.token
-            });
-        } catch (error) {
-            await ctx.reply('❌ An error occurred. Please try again.');
-        }
-    }
-    /**
-     * Handle buy confirmation - EXACT COPY from old system
-     */
-    async handleBuyConfirmation(ctx) {
-        await ctx.answerCbQuery();
-        const [, tokenAddress, amount] = ctx.match;
-        await ctx.editMessageText('🔄 Processing purchase...', { parse_mode: 'Markdown' });
-        try {
-            const userId = ctx.from.id;
+            
+            // Check user balance
+            try {
+                const balanceData = await this.engine.monorailAPI.getMONBalance(user.wallet_address, false);
+                if (balanceData && balanceData.balance !== undefined) {
+                    const balance = parseFloat(balanceData.balance);
+                    if (!isNaN(balance) && balance < buyAmount) {
+                        return ctx.reply(`❌ Insufficient balance. You have ${balance.toFixed(4)} MON but trying to spend ${buyAmount} MON.`);
+                    }
+                }
+            } catch (error) {
+                this.monitoring?.logError('Failed to check balance before buy', error);
+                // Continue with transaction - balance will be checked by the blockchain
+            }
+            
+            // Show processing message
+            await ctx.editMessageText('🔄 Processing purchase...', { parse_mode: 'Markdown' });
+            
             // Get user settings to determine trade type
             const userSettings = await this.database.getUserSettings(userId);
             const tradeType = userSettings?.turbo_mode ? 'turbo' : 'normal';
+            
             // Execute trade using unified engine
             const result = await this.engine.executeTrade({
                 type: tradeType,
                 action: 'buy',
                 userId: userId,
                 tokenAddress: tokenAddress,
-                amount: parseFloat(amount),
+                amount: buyAmount,
                 ctx: ctx
             });
+            
+            // Clear user state
+            await this.database.clearUserState(userId);
+            
             if (result.success) {
                 await this.sendSuccessMessage(ctx, result, 'buy');
             } else {
                 await this.sendErrorMessage(ctx, result.error);
             }
+            
         } catch (error) {
+            this.monitoring?.logError('Buy amount execution failed', error, { userId: ctx.from.id, amount });
             await ctx.editMessageText('❌ Transaction failed. Please try again.');
         }
     }
+
     /**
 {{ ... }}
      */
