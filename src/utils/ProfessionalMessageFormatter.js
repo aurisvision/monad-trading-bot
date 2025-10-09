@@ -86,7 +86,7 @@ class ProfessionalMessageFormatter {
         // Special formatting for Auto Buy
         if (isAutoBuy) {
             return `[${tokenName} | ${tokenSymbol}](${sellDeepLink})
-**Contract**: \`${tokenAddress}\`
+\`${tokenAddress}\`
 
 ⚡️Mode: **${modeDisplay}**
 

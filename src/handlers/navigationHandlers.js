@@ -942,7 +942,7 @@ Please try again or check your wallet balance.`);
                     processingMessage.message_id,
                     undefined,
                     `[${tokenName} | ${tokenSymbol}](${sellDeepLink})
-**Contract**: \`${tokenAddress}\`
+\`${tokenAddress}\`
 
 ⚡️Mode: **${turboMode}**
 
