@@ -102,6 +102,8 @@ class UnifiedTradingEngine {
      */
     async executeNormalBuy(tradeData, tokenAddress, amount) {
         try {
+            const startTime = Date.now();
+            
             // Security checks and token info retrieval in parallel for speed
             const [tokenInfo] = await Promise.all([
                 this.dataManager.getCachedTokenInfo(tokenAddress),
@@ -110,6 +112,7 @@ class UnifiedTradingEngine {
             if (!tokenInfo || !tokenInfo.success) {
                 throw new Error(this.config.getErrorMessage('INVALID_TOKEN'));
             }
+            
             // No separate quote needed - will be obtained in buyToken
             // Execute transaction
             const swapResult = await this.monorailAPI.buyToken(
@@ -119,21 +122,39 @@ class UnifiedTradingEngine {
                 tradeData.effectiveSlippage,
                 { gasPrice: tradeData.effectiveGas }
             );
+            
+            const executionTime = Date.now() - startTime;
+            
             if (!swapResult.success) {
                 // Enhanced error handling
                 throw new Error(`Transaction failed: ${swapResult.error}`);
             }
+            
+            // Calculate token price if possible
+            const tokenPrice = swapResult.expectedOutput && swapResult.expectedOutput > 0 
+                ? (amount / swapResult.expectedOutput).toFixed(6) 
+                : null;
+            
             return {
                 success: true,
                 action: 'buy',
                 txHash: swapResult.txHash,
                 tokenSymbol: tokenInfo.token.symbol,
+                tokenName: tokenInfo.token.name,
                 tokenAddress: tokenAddress,
                 monAmount: amount,
-                expectedTokenAmount: swapResult.expectedOutput || 'N/A',
+                tokenAmount: swapResult.expectedOutput || 0,
+                actualTokenAmount: swapResult.actualOutput || swapResult.expectedOutput || 0,
+                expectedOutput: swapResult.expectedOutput || 0,
                 priceImpact: swapResult.priceImpact || 'N/A',
                 gasUsed: swapResult.receipt?.gasUsed?.toString(),
-                effectiveGasPrice: swapResult.receipt?.effectiveGasPrice?.toString()
+                effectiveGasPrice: swapResult.receipt?.effectiveGasPrice?.toString(),
+                mode: 'normal',
+                slippage: tradeData.effectiveSlippage,
+                tokenPrice: tokenPrice,
+                route: swapResult.route || ['MON', tokenInfo.token.symbol],
+                executionTime: executionTime,
+                timestamp: Date.now()
             };
         } catch (error) {
             throw error;
@@ -144,6 +165,11 @@ class UnifiedTradingEngine {
      */
     async executeTurboBuy(tradeData, tokenAddress, amount) {
         try {
+            const startTime = Date.now();
+            
+            // Get basic token info for display (cached, fast)
+            const tokenInfo = await this.dataManager.getCachedTokenInfo(tokenAddress);
+            
             // Direct execution without extensive validation for maximum speed
             const swapResult = await this.monorailAPI.executeSwapTurbo(
                 tradeData.wallet,
@@ -152,17 +178,38 @@ class UnifiedTradingEngine {
                 20, // Fixed 20% slippage for turbo mode
                 tradeData.wallet.address
             );
+            
+            const executionTime = Date.now() - startTime;
+            
             if (!swapResult.success) {
                 throw new Error(`Turbo execution failed: ${swapResult.error}`);
             }
+            
+            // Calculate token price if possible
+            const tokenPrice = swapResult.expectedOutput && swapResult.expectedOutput > 0 
+                ? (amount / swapResult.expectedOutput).toFixed(6) 
+                : null;
+            
             return {
                 success: true,
                 action: 'buy',
                 txHash: swapResult.txHash,
+                tokenSymbol: tokenInfo?.token?.symbol || 'UNKNOWN',
+                tokenName: tokenInfo?.token?.name || 'Unknown Token',
                 tokenAddress: tokenAddress,
                 monAmount: amount,
+                tokenAmount: swapResult.expectedOutput || 0,
+                actualTokenAmount: swapResult.actualOutput || swapResult.expectedOutput || 0,
+                expectedOutput: swapResult.expectedOutput || 0,
+                priceImpact: swapResult.priceImpact || 'N/A',
+                gasUsed: null, // Turbo mode doesn't wait for receipt
+                effectiveGasPrice: '100', // Fixed 100 Gwei for turbo
                 mode: 'turbo',
-                slippage: 20
+                slippage: 20,
+                tokenPrice: tokenPrice,
+                route: swapResult.route || ['MON', tokenInfo?.token?.symbol || 'UNKNOWN'],
+                executionTime: executionTime,
+                timestamp: Date.now()
             };
         } catch (error) {
             throw error;

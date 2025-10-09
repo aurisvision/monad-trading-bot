@@ -35,11 +35,19 @@ class ProfessionalMessageFormatter {
             tokenAddress,
             monAmount,
             tokenAmount,
+            actualTokenAmount,
             txHash,
             priceImpact,
             gasUsed,
+            effectiveGasPrice,
             timestamp,
-            dexName = 'Monorail'
+            dexName = 'Monorail',
+            mode = 'normal',
+            slippage,
+            tokenPrice,
+            route,
+            executionTime,
+            expectedOutput
         } = data;
 
         const explorerUrl = `${this.explorerBaseUrl}/tx/${txHash}`;
@@ -51,21 +59,45 @@ class ProfessionalMessageFormatter {
             second: '2-digit'
         });
 
-        return `${this.brandEmojis.success} **BUY EXECUTED**
+        // Calculate actual received amount vs expected
+        const receivedAmount = actualTokenAmount || tokenAmount || 0;
+        const expectedAmount = expectedOutput || tokenAmount || 0;
+        const slippageUsed = slippage || (expectedAmount > 0 ? ((expectedAmount - receivedAmount) / expectedAmount * 100).toFixed(2) : 'N/A');
+        
+        // Format mode display
+        const modeDisplay = mode === 'turbo' ? '⚡ TURBO' : '🔒 NORMAL';
+        const modeEmoji = mode === 'turbo' ? '⚡' : '🔒';
+        
+        // Format gas price if available
+        const gasPriceDisplay = effectiveGasPrice ? ` (${(effectiveGasPrice / 1e9).toFixed(1)} Gwei)` : '';
+        
+        // Format execution time if available
+        const executionTimeDisplay = executionTime ? ` | ⏱️ ${executionTime}ms` : '';
+        
+        // Format token price if available
+        const priceDisplay = tokenPrice ? `\n• **Token Price:** $${this.formatNumber(tokenPrice)}` : '';
+        
+        // Format route if available
+        const routeDisplay = route && route.length > 1 ? `\n• **Route:** ${route.join(' → ')}` : '';
 
-${this.brandEmojis.diamond} **${tokenSymbol}** | ${tokenName}
+        return `${this.brandEmojis.success} **BUY EXECUTED** ${modeEmoji}
+
+${this.brandEmojis.diamond} **${tokenSymbol}** | ${tokenName || 'Unknown Token'}
 ${this.brandEmojis.target} [\`${this.truncateAddress(tokenAddress)}\`](${tokenUrl})
 
 ${this.brandEmojis.chart} **TRADE SUMMARY**
+• **Mode:** ${modeDisplay}
 • **Spent:** ${monAmount} MON
-• **Received:** ${this.formatNumber(tokenAmount)} ${tokenSymbol}
+• **Expected:** ${this.formatNumber(expectedAmount)} ${tokenSymbol}
+• **Received:** ${this.formatNumber(receivedAmount)} ${tokenSymbol}
 • **DEX:** ${dexName}
-• **Impact:** ${priceImpact ? `${priceImpact}%` : 'Low'}
+• **Impact:** ${priceImpact ? `${priceImpact}%` : 'N/A%'}
+• **Slippage:** ${slippageUsed}%${priceDisplay}${routeDisplay}
 
 ${this.brandEmojis.shield} **TRANSACTION**
 • **Hash:** [\`${this.truncateHash(txHash)}\`](${explorerUrl})
-• **Gas:** ${gasUsed ? this.formatNumber(gasUsed) : 'Optimized'}
-• **Time:** ${timeStr}
+• **Gas:** ${gasUsed ? this.formatNumber(gasUsed) : 'Pending'}${gasPriceDisplay}
+• **Time:** ${timeStr}${executionTimeDisplay}
 
 ${this.brandEmojis.rocket} [**View on Explorer**](${explorerUrl}) | ${this.brandEmojis.chart} [**Token Details**](${tokenUrl})`;
     }

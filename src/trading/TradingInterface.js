@@ -440,14 +440,22 @@ Please enter the token contract address you want to buy:`;
             const successData = {
                 txHash: result.txHash,
                 tokenSymbol: result.tokenSymbol || 'Unknown',
+                tokenName: result.tokenName || 'Unknown Token',
                 tokenAddress: result.tokenAddress,
                 amount: result.amount,
                 monAmount: result.monAmount,
                 tokenAmount: result.tokenAmount,
+                actualTokenAmount: result.actualTokenAmount,
+                expectedOutput: result.expectedOutput,
                 gasUsed: result.gasUsed,
-                timestamp: Date.now(),
+                effectiveGasPrice: result.effectiveGasPrice,
+                timestamp: result.timestamp || Date.now(),
                 priceImpact: result.priceImpact,
-                slippage: result.slippage
+                slippage: result.slippage,
+                mode: result.mode,
+                tokenPrice: result.tokenPrice,
+                route: result.route,
+                executionTime: result.executionTime
             };
 
             switch(operationType) {
