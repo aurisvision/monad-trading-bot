@@ -387,10 +387,6 @@ Confirm this transaction?`;
             });
             if (result.success) {
                 await this.sendSuccessMessage(ctx, result, 'buy');
-                // Use unified sell interface (same as auto-buy)
-                const NavigationHandlers = require('../handlers/navigationHandlers');
-                const navHandlers = new NavigationHandlers(this.bot, this.database, this.engine.monorailAPI, this.engine.cacheService, this.monitoring);
-                await navHandlers.showComprehensiveSellInterface(ctx, tokenAddress, result);
             } else {
                 await this.sendErrorMessage(ctx, result.error);
             }
@@ -435,7 +431,6 @@ Please enter the token contract address you want to buy:`;
     async sendSuccessMessage(ctx, result, operationType) {
         try {
             let message;
-            let keyboard;
 
             const successData = {
                 txHash: result.txHash,
@@ -462,31 +457,16 @@ Please enter the token contract address you want to buy:`;
                 case 'buy':
                 case 'auto_buy':
                     message = this.formatter.formatBuySuccess(successData);
-                    keyboard = this.formatter.createActionKeyboard({
-                        txHash: result.txHash,
-                        tokenAddress: result.tokenAddress,
-                        operation: 'buy'
-                    });
                     break;
                 case 'sell':
                     message = this.formatter.formatSellSuccess(successData);
-                    keyboard = this.formatter.createActionKeyboard({
-                        txHash: result.txHash,
-                        tokenAddress: result.tokenAddress,
-                        operation: 'sell'
-                    });
                     break;
                 default:
                     message = this.formatter.formatBuySuccess(successData);
-                    keyboard = this.formatter.createActionKeyboard({
-                        txHash: result.txHash,
-                        operation: operationType
-                    });
             }
 
             await ctx.editMessageText(message, { 
                 parse_mode: 'Markdown',
-                reply_markup: keyboard,
                 disable_web_page_preview: true
             });
 
