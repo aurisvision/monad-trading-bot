@@ -82,7 +82,7 @@ class ProfessionalMessageFormatter {
         // Format token price - use realistic values
         const tokenPriceStr = tokenPrice ? `$${this.formatNumber(tokenPrice)}` : '$0.00001234';
 
-        return `[**Buy $${tokenSymbol} — (${tokenName})**](${sellDeepLink})
+        return `[Buy $${tokenSymbol} — (${tokenName})](${sellDeepLink})
 \`${tokenAddress}\`
 
 ⚡️Mode: ${modeDisplay}
