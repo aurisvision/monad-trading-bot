@@ -38,10 +38,7 @@ const InlineHandlers = require('./handlers/inlineHandlers');
 const GroupHandlers = require('./handlers/groupHandlers');
 const FeedbackHandlers = require('./handlers/feedbackHandlers');
 
-// Simple Access Code System
-const SimpleAccessCode = require('./services/SimpleAccessCode');
-const AccessMiddleware = require('./middleware/accessMiddleware');
-const SimpleAccessHandler = require('./handlers/simpleAccessHandler');
+// Simple Access Code System - REMOVED
 
 // Legacy trading optimizers - REPLACED by unified system
 // const TradingCacheOptimizer = require('./utils/tradingCacheOptimizer');
