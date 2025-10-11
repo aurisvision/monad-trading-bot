@@ -383,10 +383,10 @@ class Area51BotModularSimple {
     }
 
     async setupMiddleware() {
-        // Access control middleware (must be first)
-        this.bot.use(async (ctx, next) => {
-            await this.accessMiddleware.checkAccess(ctx, next);
-        });
+        // Access control middleware - REMOVED (Simple Access Code System removed)
+        // this.bot.use(async (ctx, next) => {
+        //     await this.accessMiddleware.checkAccess(ctx, next);
+        // });
         
         // Global error handling
         this.bot.catch((err, ctx) => {
