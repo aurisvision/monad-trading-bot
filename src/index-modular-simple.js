@@ -373,12 +373,13 @@ class Area51BotModularSimple {
         // Legacy trading cache optimizer - REPLACED by unified system
         // this.tradingCacheOptimizer = new TradingCacheOptimizer(
         //     this.database,
-        // Initialize Simple Access Code System
-        this.accessSystem = new SimpleAccessCode(this.database, this.cacheService);
-        this.accessMiddleware = new AccessMiddleware(this.accessSystem);
-        this.accessHandler = new SimpleAccessHandler(this.bot, this.database, this.accessSystem);
         
-        console.log('[Main] Simple Access Code System initialized');
+        // Simple Access Code System - REMOVED
+        // this.accessSystem = new SimpleAccessCode(this.database, this.cacheService);
+        // this.accessMiddleware = new AccessMiddleware(this.accessSystem);
+        // this.accessHandler = new SimpleAccessHandler(this.bot, this.database, this.accessSystem);
+        
+        console.log('[Main] Simple Access Code System - REMOVED');
     }
 
     async setupMiddleware() {
