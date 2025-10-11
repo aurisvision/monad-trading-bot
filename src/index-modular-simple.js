@@ -3,6 +3,32 @@
 require('dotenv').config();
 console.log('🔧 Loaded environment from: .env');
 
+// Global error handlers to prevent application crash
+process.on('uncaughtException', (error) => {
+    console.error('🚨 Uncaught Exception:', {
+        error: error.message,
+        stack: error.stack,
+        timestamp: new Date().toISOString()
+    });
+    
+    // Don't exit immediately, try to gracefully handle
+    // Only exit if it's a critical error
+    if (error.code === 'EADDRINUSE' || error.code === 'EACCES') {
+        console.error('💥 Critical error detected, exiting...');
+        process.exit(1);
+    }
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('🚨 Unhandled Rejection at:', promise, 'reason:', reason);
+    
+    // Log the error but don't crash the application
+    // Most unhandled rejections are not critical
+    if (reason && reason.code === 'ECONNREFUSED') {
+        console.warn('⚠️ Connection refused - service may be temporarily unavailable');
+    }
+});
+
 const { Telegraf, Markup } = require('telegraf');
 const Database = require('./database-postgresql');
 const WalletManager = require('./wallet');

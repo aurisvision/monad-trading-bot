@@ -68,8 +68,27 @@ class EnhancedWebSocketManager extends EventEmitter {
             });
 
             this.ws.on('error', (error) => {
-                this.logger.error('WebSocket error', error);
-                this.emit('error', error);
+                this.logger.error('WebSocket error', {
+                    error: error.message,
+                    code: error.code || 'UNKNOWN',
+                    url: this.wsUrl,
+                    reconnectAttempts: this.reconnectAttempts
+                });
+                
+                // Don't emit error immediately to prevent crash
+                // Let the close event handle reconnection
+                this.isConnected = false;
+                this.stopHeartbeat();
+                
+                // Only emit error if we have listeners to prevent unhandled error
+                if (this.listenerCount('error') > 0) {
+                    this.emit('error', error);
+                }
+                
+                // Schedule reconnection if not already scheduled
+                if (!this.reconnectTimer) {
+                    this.scheduleReconnect();
+                }
             });
 
             return true;

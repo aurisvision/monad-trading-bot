@@ -43,6 +43,24 @@ class RealTimeMessageUpdater {
         this.wsManager.on('disconnected', () => {
             this.logger.warn('WebSocket disconnected - falling back to polling');
         });
+
+        // Error handling to prevent application crash
+        this.wsManager.on('error', (error) => {
+            this.logger.error('WebSocket error occurred', {
+                error: error.message,
+                stack: error.stack,
+                code: error.code || 'UNKNOWN'
+            });
+            
+            // Don't crash the application, just log and continue
+            // The WebSocket manager will handle reconnection automatically
+        });
+
+        // Handle max reconnection attempts reached
+        this.wsManager.on('maxReconnectAttemptsReached', () => {
+            this.logger.warn('WebSocket max reconnection attempts reached - disabling real-time updates');
+            // Application continues to work without real-time updates
+        });
     }
 
     /**
