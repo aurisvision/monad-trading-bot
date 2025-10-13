@@ -100,7 +100,6 @@ class ProfessionalMessageFormatter {
 ⚡️Mode: ${modeDisplay}
 
 🟢 Fetched Quote (_${dexName}_)
-${monAmount} MON ⇄ ${this.formatNumber(receivedAmount)} ${tokenSymbol}
 
 🟢 _Buy Success!_ [View on MonVision](${explorerUrl})`;
     }
@@ -139,7 +138,6 @@ ${monAmount} MON ⇄ ${this.formatNumber(receivedAmount)} ${tokenSymbol}
 ⚡️Mode: ${modeDisplay}
 
 🟢 Fetched Quote (_${dexName}_)
-${this.formatNumber(tokenAmount)} ${tokenSymbol} ⇄ ${this.formatNumber(monReceivedAmount)} MON
 
 🟢 _Sell Success!_ [View on MonVision](${explorerUrl})`;
     }
