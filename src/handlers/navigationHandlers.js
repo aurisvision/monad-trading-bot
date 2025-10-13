@@ -1583,12 +1583,27 @@ Select percentage to sell:`;
                 await this.database.clearUserState(userId);
                 
                 if (result.success) {
-                    await this.mainBot.tradingInterface.sendSuccessMessage(ctx, result, 'buy');
+                    // Pass the processing message to sendSuccessMessage for proper editing
+                    await this.mainBot.tradingInterface.sendSuccessMessage(ctx, result, 'buy', processingMsg);
                 } else {
-                    await ctx.editMessageText('❌ Transaction failed. Please try again.');
+                    // Edit the processing message to show error
+                    await ctx.telegram.editMessageText(
+                        ctx.chat.id,
+                        processingMsg.message_id,
+                        undefined,
+                        '❌ Transaction failed. Please try again.',
+                        { parse_mode: 'Markdown' }
+                    );
                 }
             } else {
-                await ctx.editMessageText('❌ Trading system unavailable. Please try again.');
+                // Edit the processing message to show system unavailable
+                await ctx.telegram.editMessageText(
+                    ctx.chat.id,
+                    processingMsg.message_id,
+                    undefined,
+                    '❌ Trading system unavailable. Please try again.',
+                    { parse_mode: 'Markdown' }
+                );
             }
             
         } catch (error) {

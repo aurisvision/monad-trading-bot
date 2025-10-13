@@ -237,8 +237,8 @@ _🎯 Select percentage to sell:_`;
             const effectivePercentage = percentage === 100 ? 99.99 : percentage;
             const tokenAmount = (balance * effectivePercentage / 100).toString();
             
-            // Show processing message
-            await ctx.editMessageText('🔄 Processing sale...', { parse_mode: 'Markdown' });
+            // Show processing message and store the message context
+            const processingMsg = await ctx.editMessageText('🔄 Processing sale...', { parse_mode: 'Markdown' });
             
             // Get user settings to determine trade type
             const userSettings = await this.database.getUserSettings(userId);
@@ -259,7 +259,12 @@ _🎯 Select percentage to sell:_`;
             await this.database.clearUserState(userId);
             
             if (result.success) {
-                await this.sendSuccessMessage(ctx, result, 'sell');
+                // Create a mock processing message object for sendSuccessMessage
+                const mockProcessingMsg = {
+                    message_id: ctx.message?.message_id || ctx.callbackQuery?.message?.message_id,
+                    chat: ctx.chat
+                };
+                await this.sendSuccessMessage(ctx, result, 'sell', mockProcessingMsg);
             } else {
                 await this.sendErrorMessage(ctx, result.error);
             }
@@ -320,8 +325,8 @@ _🎯 Select percentage to sell:_`;
                 // Continue with transaction - balance will be checked by the blockchain
             }
             
-            // Show processing message
-            await ctx.editMessageText('🔄 Processing purchase...', { parse_mode: 'Markdown' });
+            // Show processing message and store the message context
+            const processingMsg = await ctx.editMessageText('🔄 Processing purchase...', { parse_mode: 'Markdown' });
             
             // Get user settings to determine trade type
             const userSettings = await this.database.getUserSettings(userId);
@@ -341,7 +346,12 @@ _🎯 Select percentage to sell:_`;
             await this.database.clearUserState(userId);
             
             if (result.success) {
-                await this.sendSuccessMessage(ctx, result, 'buy');
+                // Create a mock processing message object for sendSuccessMessage
+                const mockProcessingMsg = {
+                    message_id: ctx.message?.message_id || ctx.callbackQuery?.message?.message_id,
+                    chat: ctx.chat
+                };
+                await this.sendSuccessMessage(ctx, result, 'buy', mockProcessingMsg);
             } else {
                 await this.sendErrorMessage(ctx, result.error);
             }
@@ -384,9 +394,9 @@ Please enter the token contract address you want to buy:`;
         await this.database.setUserState(ctx.from.id, 'awaiting_token_address', {});
     }
     /**
-     * Send success message - Simplified version
+     * Send success message - Enhanced version with processing message support
      */
-    async sendSuccessMessage(ctx, result, operationType) {
+    async sendSuccessMessage(ctx, result, operationType, processingMessage = null) {
         try {
             let message;
 
@@ -425,17 +435,51 @@ Please enter the token contract address you want to buy:`;
                     message = this.formatter.formatBuySuccess(successData);
             }
 
-            await ctx.editMessageText(message, { 
-                parse_mode: 'Markdown',
-                disable_web_page_preview: true
-            });
+            // If processingMessage is provided, edit that specific message
+            if (processingMessage && processingMessage.message_id) {
+                await ctx.telegram.editMessageText(
+                    ctx.chat.id,
+                    processingMessage.message_id,
+                    undefined,
+                    message,
+                    { 
+                        parse_mode: 'Markdown',
+                        disable_web_page_preview: true
+                    }
+                );
+            } else {
+                // Fallback to original behavior
+                await ctx.editMessageText(message, { 
+                    parse_mode: 'Markdown',
+                    disable_web_page_preview: true
+                });
+            }
 
         } catch (error) {
             console.error('Error sending success message:', error);
-            // Fallback to simple message
-            await ctx.editMessageText(`✅ ${operationType} completed successfully!`, { 
-                parse_mode: 'Markdown' 
-            });
+            
+            // Enhanced fallback with processing message support
+            const fallbackMessage = `✅ ${operationType} completed successfully!`;
+            
+            try {
+                if (processingMessage && processingMessage.message_id) {
+                    await ctx.telegram.editMessageText(
+                        ctx.chat.id,
+                        processingMessage.message_id,
+                        undefined,
+                        fallbackMessage,
+                        { parse_mode: 'Markdown' }
+                    );
+                } else {
+                    await ctx.editMessageText(fallbackMessage, { 
+                        parse_mode: 'Markdown' 
+                    });
+                }
+            } catch (fallbackError) {
+                console.error('Error in fallback message:', fallbackError);
+                // Last resort: send new message
+                await ctx.reply(fallbackMessage, { parse_mode: 'Markdown' });
+            }
         }
     }
     /**
