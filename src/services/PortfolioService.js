@@ -229,9 +229,10 @@ class PortfolioService {
             const priceChange24h = token.price_change_24h;
             const verified = token.verified;
             
-            // Token header with verification badge
+            // Token header with verification badge and clickable link for entire line
             const verifiedBadge = verified ? '✅' : '';
-            message += `🟣 *${token.symbol}* ${verifiedBadge} _(${token.name})_\n`;
+            const sellLink = `https://t.me/MonAreaBot?start=sellToken-${token.address}`;
+            message += `🟣 [*${token.symbol} ${verifiedBadge} (${token.name})*](${sellLink})\n`;
             
             message += `• *Balance:* ${balance} ${token.symbol}\n`;
             message += `• *Value in MON:* ${monValue}\n`;
@@ -308,34 +309,12 @@ class PortfolioService {
         const { Markup } = require('telegraf');
         const buttons = [];
 
-        // Add sell buttons for tokens (2 in first row, 1 in second row for 3 tokens per page)
-        if (tokens && tokens.length > 0) {
-            // First row: 2 tokens
-            if (tokens.length >= 2) {
-                buttons.push([
-                    Markup.button.callback(`Sell ${tokens[0].symbol}`, `sell:${tokens[0].symbol}`),
-                    Markup.button.callback(`Sell ${tokens[1].symbol}`, `sell:${tokens[1].symbol}`)
-                ]);
-            } else if (tokens.length === 1) {
-                buttons.push([
-                    Markup.button.callback(`Sell ${tokens[0].symbol}`, `sell:${tokens[0].symbol}`)
-                ]);
-            }
-            
-            // Second row: 1 token (if exists)
-            if (tokens.length === 3) {
-                buttons.push([
-                    Markup.button.callback(`Sell ${tokens[2].symbol}`, `sell:${tokens[2].symbol}`)
-                ]);
-            }
-        }
-
-        // Add navigation buttons
+        // Add navigation buttons only (no individual token sell buttons)
         const navButtons = [];
         
         if (totalPages > 1) {
             if (currentPage > 1) {
-                navButtons.push(Markup.button.callback('⬅️ Prev', `portfolio:page:${currentPage - 1}`));
+                navButtons.push(Markup.button.callback('⬅️ Previous', `portfolio:page:${currentPage - 1}`));
             }
             if (currentPage < totalPages) {
                 navButtons.push(Markup.button.callback('Next ➡️', `portfolio:page:${currentPage + 1}`));
@@ -349,8 +328,8 @@ class PortfolioService {
         // Add refresh button
         buttons.push([Markup.button.callback('🔄 Refresh', 'portfolio:refresh')]);
 
-        // Add back button
-        buttons.push([Markup.button.callback('🏠 Back to Main', 'main')]);
+        // Add main menu button
+        buttons.push([Markup.button.callback('🏠 Main Menu', 'main')]);
 
         return Markup.inlineKeyboard(buttons);
     }
