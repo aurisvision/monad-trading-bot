@@ -75,7 +75,7 @@ class PortfolioHandlers {
             );
 
             const portfolioOptions = {
-                parse_mode: 'Markdown',
+                parse_mode: 'HTML',
                 reply_markup: portfolioDisplay.keyboard
             };
 
@@ -118,7 +118,7 @@ class PortfolioHandlers {
             );
 
             await ctx.editMessageText(portfolioDisplay.text, {
-                parse_mode: 'Markdown',
+                parse_mode: 'HTML',
                 reply_markup: portfolioDisplay.keyboard
             });
 
@@ -159,16 +159,16 @@ class PortfolioHandlers {
             // Only try to replace timestamp if text contains the pattern
             if (refreshedText.includes('🕒 Last updated:')) {
                 refreshedText = refreshedText.replace(
-                    /(_🕒 Last updated: )([^_]+)(_)/,
+                    /(<i>🕒 Last updated: )([^<]+)(<\/i>)/,
                     `$1${new Date().toLocaleTimeString('en-US', { hour12: true, hour: 'numeric', minute: '2-digit', second: '2-digit' })}$3`
                 );
             } else {
                 // Add timestamp if not present
-                refreshedText += `\n\n_🕒 Last updated: ${new Date().toLocaleTimeString('en-US', { hour12: true, hour: 'numeric', minute: '2-digit', second: '2-digit' })}_`;
+                refreshedText += `\n\n<i>🕒 Last updated: ${new Date().toLocaleTimeString('en-US', { hour12: true, hour: 'numeric', minute: '2-digit', second: '2-digit' })}</i>`;
             }
             
             await ctx.editMessageText(refreshedText, {
-                parse_mode: 'Markdown',
+                parse_mode: 'HTML',
                 reply_markup: portfolioDisplay.keyboard
             });
 
@@ -177,7 +177,7 @@ class PortfolioHandlers {
             try {
                 // Try to edit the message first
                 await ctx.editMessageText('❌ Error refreshing portfolio. Please try again.', {
-                    parse_mode: 'Markdown'
+                    parse_mode: 'HTML'
                 });
             } catch (editError) {
                 // If edit fails, send new message
@@ -234,7 +234,7 @@ class PortfolioHandlers {
 
             // Update the message with fresh data
             await ctx.editMessageText(text, {
-                parse_mode: 'Markdown',
+                parse_mode: 'HTML',
                 reply_markup: keyboard.reply_markup
             });
 
@@ -277,7 +277,7 @@ class PortfolioHandlers {
 
             // Update the message with fresh data
             await ctx.editMessageText(text, {
-                parse_mode: 'Markdown',
+                parse_mode: 'HTML',
                 reply_markup: keyboard.reply_markup
             });
 
@@ -302,7 +302,7 @@ class PortfolioHandlers {
             const portfolioDisplay = await this.portfolioService.getPortfolioDisplay(userId, user.wallet_address, 1, false);
             
             await ctx.editMessageText(portfolioDisplay.text, {
-                parse_mode: 'Markdown',
+                parse_mode: 'HTML',
                 reply_markup: portfolioDisplay.keyboard
             });
         } catch (error) {
@@ -333,8 +333,8 @@ class PortfolioHandlers {
             });
 
             if (significantTokens.length === 0) {
-                await ctx.editMessageText('📊 *Full Portfolio*\n\n_No significant token holdings found._\n\n💡 _Tokens worth less than 0.01 MON are hidden._', {
-                    parse_mode: 'Markdown',
+                await ctx.editMessageText('📊 <b>Full Portfolio</b>\n\n<i>No significant token holdings found.</i>\n\n💡 <i>Tokens worth less than 0.01 MON are hidden.</i>', {
+                    parse_mode: 'HTML',
                     reply_markup: Markup.inlineKeyboard([
                         [Markup.button.callback('🔙 Back to Summary', 'main')]
                     ]).reply_markup
@@ -342,7 +342,7 @@ class PortfolioHandlers {
                 return;
             }
 
-            let portfolioText = `📊 *Full Portfolio*\n\n`;
+            let portfolioText = `📊 <b>Full Portfolio</b>\n\n`;
             let totalValue = 0;
 
             significantTokens.forEach((token, index) => {
@@ -352,7 +352,7 @@ class PortfolioHandlers {
                 
                 totalValue += monValue;
                 
-                portfolioText += `${index + 1}. *${token.symbol}* (${token.name})\n`;
+                portfolioText += `${index + 1}. <b>${token.symbol}</b> (${token.name})\n`;
                 portfolioText += `   • Balance: ${balance} ${token.symbol}\n`;
                 portfolioText += `   • Value: ${monValue.toFixed(4)} MON`;
                 if (usdValue > 0) {
@@ -361,8 +361,8 @@ class PortfolioHandlers {
                 portfolioText += `\n\n`;
             });
 
-            portfolioText += `💰 *Total Portfolio Value:* ${totalValue.toFixed(4)} MON\n`;
-            portfolioText += `📈 *Token Count:* ${significantTokens.length}`;
+            portfolioText += `💰 <b>Total Portfolio Value:</b> ${totalValue.toFixed(4)} MON\n`;
+            portfolioText += `📈 <b>Token Count:</b> ${significantTokens.length}`;
 
             const keyboard = Markup.inlineKeyboard([
                 [Markup.button.callback('🔄 Refresh Portfolio', 'refresh')],
@@ -370,7 +370,7 @@ class PortfolioHandlers {
             ]);
 
             await ctx.editMessageText(portfolioText, {
-                parse_mode: 'Markdown',
+                parse_mode: 'HTML',
                 reply_markup: keyboard.reply_markup
             });
 

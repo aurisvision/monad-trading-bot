@@ -222,7 +222,7 @@ class PortfolioService {
             totalMONValue += parseFloat(token.mon_value || 0);
         });
 
-        let message = `*📊 Portfolio*\n\n`;
+        let message = `<b>📊 Portfolio</b>\n\n`;
 
         pageTokens.forEach(token => {
             const balance = parseFloat(token.balance || '0').toFixed(6);
@@ -231,19 +231,19 @@ class PortfolioService {
             const priceChange24h = token.price_change_24h;
             const verified = token.verified;
             
-            // Token header with verification badge and clickable link for entire line
+            // Token header with verification badge and clickable link
             const verifiedBadge = verified ? '✅' : '';
             const sellLink = `https://t.me/MonAreaBot?start=sellToken-${token.address}`;
             
-            // Don't escape for bold formatting to work properly
-            message += `🟣 [*${token.symbol} ${verifiedBadge} (${token.name})*](${sellLink})\n`;
+            // Use HTML formatting for bold text within links
+            message += `🟣 <a href="${sellLink}"><b>${token.symbol} ${verifiedBadge} (${token.name})</b></a>\n`;
             
-            message += `• *Balance:* ${balance} ${token.symbol}\n`;
-            message += `• *Value in MON:* ${monValue}\n`;
+            message += `• <b>Balance:</b> ${balance} ${token.symbol}\n`;
+            message += `• <b>Value in MON:</b> ${monValue}\n`;
             
             // Price with 24h change in same line
             if (usdPrice !== null && usdPrice > 0) {
-                let priceText = `• *Price:* ${this.formatPrice(usdPrice)}`;
+                let priceText = `• <b>Price:</b> ${this.formatPrice(usdPrice)}`;
                 
                 // Add 24h change to same line if available
                 if (priceChange24h !== null && priceChange24h !== undefined) {
@@ -257,13 +257,13 @@ class PortfolioService {
                 
                 message += `${priceText}\n\n`;
             } else {
-                message += `• *Price:* $0.00000\n\n`;
+                message += `• <b>Price:</b> $0.00000\n\n`;
             }
         });
 
         // Add pagination info if multiple pages
         if (totalPages > 1) {
-            message += `*📄 Page ${page} of ${totalPages}*\n\n`;
+            message += `<b>📄 Page ${page} of ${totalPages}</b>\n\n`;
         }
 
         // Add last updated timestamp
@@ -274,7 +274,7 @@ class PortfolioService {
             minute: '2-digit',
             second: '2-digit'
         });
-        message += `_🕒 Last updated: ${timeString}_`;
+        message += `<i>🕒 Last updated: ${timeString}</i>`;
 
         return {
             text: message,
