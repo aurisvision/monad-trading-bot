@@ -55,11 +55,13 @@ class PortfolioService {
             
             // Filter and transform tokens for portfolio display
             // Use same filtering logic as working token-viewer.js: usdValue > 0 && verified
+            // Also exclude MON token from portfolio display (it shows in main menu)
             const filteredTokens = tokens
                 .filter(token => {
                     const usdValue = parseFloat(token.usd_value || 0);
                     const verified = token.verified || false;
-                    return usdValue > 0 && verified;
+                    const isNotMON = token.symbol !== 'MON'; // Exclude MON token
+                    return usdValue > 0 && verified && isNotMON;
                 })
                 .map(token => ({
                     symbol: token.symbol,
@@ -232,26 +234,28 @@ class PortfolioService {
             // Token header with verification badge and clickable link for entire line
             const verifiedBadge = verified ? '✅' : '';
             const sellLink = `https://t.me/MonAreaBot?start=sellToken-${token.address}`;
+            
+            // Don't escape for bold formatting to work properly
             message += `🟣 [*${token.symbol} ${verifiedBadge} (${token.name})*](${sellLink})\n`;
             
             message += `• *Balance:* ${balance} ${token.symbol}\n`;
             message += `• *Value in MON:* ${monValue}\n`;
             
-            // Price
+            // Price with 24h change in same line
             if (usdPrice !== null && usdPrice > 0) {
-                message += `• *Price:* ${this.formatPrice(usdPrice)}\n`;
+                let priceText = `• *Price:* ${this.formatPrice(usdPrice)}`;
                 
-                // 24h change in separate line with colored square
+                // Add 24h change to same line if available
                 if (priceChange24h !== null && priceChange24h !== undefined) {
                     const changePercent = parseFloat(priceChange24h);
                     if (!isNaN(changePercent)) {
                         const changeSquare = changePercent >= 0 ? '🟢' : '🔴';
                         const changeSign = changePercent >= 0 ? '+' : '';
-                        message += `• *24h Change:* ${changeSquare} ${changeSign}${changePercent.toFixed(2)}%\n`;
+                        priceText += ` ${changeSquare} ${changeSign}${changePercent.toFixed(2)}%`;
                     }
                 }
                 
-                message += `\n`;
+                message += `${priceText}\n\n`;
             } else {
                 message += `• *Price:* $0.00000\n\n`;
             }
