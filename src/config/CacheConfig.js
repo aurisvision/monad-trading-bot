@@ -56,6 +56,11 @@ class CacheConfig {
                     ttl: 300,  // 5 minutes
                     description: 'Complete wallet balance data from API'
                 },
+                portfolio_balance: { 
+                    prefix: 'area51:portfolio_balance:', 
+                    ttl: 600,  // 10 minutes
+                    description: 'Portfolio balance data from BlockVision API'
+                },
                 portfolio_value: { 
                     prefix: 'area51:portfolio_value:', 
                     ttl: 300,  // 5 minutes

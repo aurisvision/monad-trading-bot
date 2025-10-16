@@ -7,6 +7,18 @@ const httpsAgent = new https.Agent({
     rejectUnauthorized: true,
     secureProtocol: 'TLSv1_2_method'
 });
+
+/**
+ * MonorailAPI - Primary API for balance queries, price data, and trading operations
+ * 
+ * Usage Distribution:
+ * - Balance queries: getMONBalance() - Used throughout the bot for user balance checks
+ * - Price queries: getTokenPriceInMON() - Used for token pricing and calculations
+ * - Trading operations: All swap/buy/sell operations
+ * - Token data: Token info, metadata, trending tokens
+ * 
+ * Note: Portfolio data (getWalletBalance) is NOT used - BlockVision handles portfolio exclusively
+ */
 class MonorailAPI {
     constructor(redis = null, cacheService = null) {
         // Use environment variables with fallback to testnet URLs

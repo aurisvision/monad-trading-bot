@@ -1,20 +1,23 @@
 const UnifiedCacheManager = require('./UnifiedCacheManager');
 
 class PortfolioService {
-    constructor(monorailAPI, redis, monitoring) {
-        this.monorailAPI = monorailAPI;
+    constructor(monorailAPI, redis, monitoring, blockVisionAPI = null) {
+        this.monorailAPI = monorailAPI; // Keep for fallback
+        this.blockVisionAPI = blockVisionAPI || new (require('../services/BlockVisionAPI'))(null, monitoring); // Use provided or create new
+        this.redis = redis;
         this.monitoring = monitoring;
-        this.TOKENS_PER_PAGE = 3;
-        this.MIN_VALUE_THRESHOLD = 0.001; // Minimum MON value to show token (0.001 MON)
+        this.cache = new UnifiedCacheManager(redis, monitoring);
         
-        // Initialize unified cache system
-        this.cache = new UnifiedCacheManager(
-            redis,
-            monitoring,
-            process.env.NODE_ENV || 'production'
-        );
+        // Pass cache service to BlockVision if not already set
+        if (!this.blockVisionAPI.cacheService) {
+            this.blockVisionAPI.cacheService = this.cache;
+        }
         
-        console.log('✅ PortfolioService initialized with UnifiedCacheManager');
+        // Configuration
+        this.TOKENS_PER_PAGE = 5;
+        this.MIN_VALUE_THRESHOLD = 0.01; // Minimum MON value to include token (1 cent)
+        this.PORTFOLIO_CACHE_TTL = 600; // 10 minutes
+        this.REDIS_PORTFOLIO_TTL = 1800; // 30 minutes for Redis storage
     }
 
     /**
@@ -30,35 +33,55 @@ class PortfolioService {
     }
 
     /**
-     * Fetch portfolio from Monorail API and filter data
+     * Fetch portfolio from BlockVision API only - no fallback to Monorail
      */
     async fetchPortfolioFromAPI(walletAddress) {
         try {
-            // Direct call to monorailAPI.getWalletBalance (no duplication)
-            const tokens = await this.monorailAPI.getWalletBalance(walletAddress, false);
+            // Use BlockVision API exclusively for portfolio data
+            this.monitoring?.logInfo('Fetching portfolio from BlockVision API (exclusive)', { walletAddress });
+            
+            let tokens = await this.blockVisionAPI.getWalletBalance(walletAddress, false);
+            
+            // If BlockVision fails or returns empty, return empty array (no Monorail fallback)
+            if (!tokens || !Array.isArray(tokens) || tokens.length === 0) {
+                this.monitoring?.logInfo('BlockVision returned empty or invalid data - no fallback used', { walletAddress, tokens });
+                return [];
+            }
+            
+            this.monitoring?.logInfo('Portfolio data fetched successfully from BlockVision', { 
+                walletAddress, 
+                tokenCount: tokens.length 
+            });
             
             // Filter and transform tokens for portfolio display
+            // Use same filtering logic as working token-viewer.js: usdValue > 0 && verified
             const filteredTokens = tokens
                 .filter(token => {
-                    // Exclude MON (native coin with address 0x000...000)
-                    const isNotMON = token.address !== '0x0000000000000000000000000000000000000000';
-                    // Only include tokens with meaningful balance
-                    const hasBalance = parseFloat(token.balance || '0') > 0;
-                    // Check if token value meets minimum threshold
-                    const monValue = parseFloat(token.mon_value || '0');
-                    const meetsThreshold = monValue >= this.MIN_VALUE_THRESHOLD;
-                    
-                    return isNotMON && hasBalance && meetsThreshold;
+                    const usdValue = parseFloat(token.usd_value || 0);
+                    const verified = token.verified || false;
+                    return usdValue > 0 && verified;
                 })
                 .map(token => ({
                     symbol: token.symbol,
                     name: token.name,
                     balance: token.balance,
                     mon_value: token.mon_value || '0',
-                    usd_price: token.usd_per_token || token.priceUSD || null,
+                    usd_value: token.usd_value || 0,
+                    usd_price: token.price || token.usd_per_token || token.priceUSD || null,
                     address: token.address,
+                    verified: token.verified || false,
+                    price_change_24h: token.price_change_24h || null,
+                    market_cap: token.market_cap || null,
+                    volume_24h: token.volume_24h || null,
+                    logo: token.logo || null,
                     last_updated: Date.now()
                 }));
+
+            this.monitoring?.logInfo('Portfolio fetched successfully', { 
+                walletAddress, 
+                tokenCount: filteredTokens.length,
+                source: 'BlockVision' // Portfolio data exclusively from BlockVision
+            });
 
             return filteredTokens;
         } catch (error) {
@@ -141,6 +164,12 @@ class PortfolioService {
      */
     async getUserPortfolio(telegramId, walletAddress, forceRefresh = false) {
         try {
+            // Clear cache if force refresh is requested
+            if (forceRefresh) {
+                await this.cache.delete('portfolio', telegramId);
+                console.log('🗑️ Force refresh: Portfolio cache cleared for user', telegramId);
+            }
+            
             // Try cache first unless force refresh
             if (!forceRefresh) {
                 const cachedPortfolio = await this.cache.get('portfolio', telegramId);
@@ -182,19 +211,46 @@ class PortfolioService {
             };
         }
 
+        // Calculate total portfolio value
+        let totalUSDValue = 0;
+        let totalMONValue = 0;
+        
+        tokens.forEach(token => {
+            totalUSDValue += parseFloat(token.usd_value || 0);
+            totalMONValue += parseFloat(token.mon_value || 0);
+        });
+
         let message = `*📊 Portfolio*\n\n`;
 
         pageTokens.forEach(token => {
             const balance = parseFloat(token.balance || '0').toFixed(6);
             const monValue = parseFloat(token.mon_value || '0').toFixed(4);
             const usdPrice = token.usd_price || null;
+            const priceChange24h = token.price_change_24h;
+            const verified = token.verified;
             
-            message += `🟣 *${token.symbol}* _(${token.name})_\n`;
+            // Token header with verification badge
+            const verifiedBadge = verified ? '✅' : '';
+            message += `🟣 *${token.symbol}* ${verifiedBadge} _(${token.name})_\n`;
+            
             message += `• *Balance:* ${balance} ${token.symbol}\n`;
             message += `• *Value in MON:* ${monValue}\n`;
             
+            // Price
             if (usdPrice !== null && usdPrice > 0) {
-                message += `• *Price:* ${this.formatPrice(usdPrice)}\n\n`;
+                message += `• *Price:* ${this.formatPrice(usdPrice)}\n`;
+                
+                // 24h change in separate line with colored square
+                if (priceChange24h !== null && priceChange24h !== undefined) {
+                    const changePercent = parseFloat(priceChange24h);
+                    if (!isNaN(changePercent)) {
+                        const changeSquare = changePercent >= 0 ? '🟢' : '🔴';
+                        const changeSign = changePercent >= 0 ? '+' : '';
+                        message += `• *24h Change:* ${changeSquare} ${changeSign}${changePercent.toFixed(2)}%\n`;
+                    }
+                }
+                
+                message += `\n`;
             } else {
                 message += `• *Price:* $0.00000\n\n`;
             }

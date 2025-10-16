@@ -139,6 +139,12 @@ class PortfolioHandlers {
                 return;
             }
 
+            // Clear portfolio cache first to ensure fresh data
+            if (this.cacheService) {
+                await this.cacheService.delete('portfolio', userId);
+                console.log('🗑️ Portfolio cache cleared for user', userId);
+            }
+            
             // Force refresh from API
             const portfolioDisplay = await this.portfolioService.getPortfolioDisplay(
                 userId, 
@@ -148,10 +154,18 @@ class PortfolioHandlers {
             );
 
             // Add timestamp to force message update even for empty portfolios
-            const refreshedText = portfolioDisplay.text.replace(
-                /(_🕒 Last updated: )([^_]+)(_)/,
-                `$1${new Date().toLocaleTimeString('en-US', { hour12: true, hour: 'numeric', minute: '2-digit', second: '2-digit' })}$3`
-            );
+            let refreshedText = portfolioDisplay.text || '❌ Failed to load portfolio. Please try again.';
+            
+            // Only try to replace timestamp if text contains the pattern
+            if (refreshedText.includes('🕒 Last updated:')) {
+                refreshedText = refreshedText.replace(
+                    /(_🕒 Last updated: )([^_]+)(_)/,
+                    `$1${new Date().toLocaleTimeString('en-US', { hour12: true, hour: 'numeric', minute: '2-digit', second: '2-digit' })}$3`
+                );
+            } else {
+                // Add timestamp if not present
+                refreshedText += `\n\n_🕒 Last updated: ${new Date().toLocaleTimeString('en-US', { hour12: true, hour: 'numeric', minute: '2-digit', second: '2-digit' })}_`;
+            }
             
             await ctx.editMessageText(refreshedText, {
                 parse_mode: 'Markdown',
