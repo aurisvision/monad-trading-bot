@@ -70,7 +70,7 @@ class WalletManager {
             
             return result;
         } catch (error) {
-            secureLogger.error('Error importing from private key', error);
+            console.error('Error importing from private key', error);
             throw new Error('Failed to import from private key: ' + error.message);
         }
     }
@@ -102,7 +102,7 @@ class WalletManager {
             
             return result;
         } catch (error) {
-            secureLogger.error('Error importing from mnemonic', error);
+            console.error('Error importing from mnemonic', error);
             throw new Error('Failed to import from mnemonic: ' + error.message);
         }
     }
@@ -143,7 +143,7 @@ class WalletManager {
             
             return result;
         } catch (error) {
-            secureLogger.error('Error importing wallet', error);
+            console.error('Error importing wallet', error);
             throw new Error('Failed to import wallet: ' + error.message);
         }
     }
@@ -160,7 +160,7 @@ class WalletManager {
             
             return new ethers.Wallet(privateKey);
         } catch (error) {
-            secureLogger.error('Error getting wallet', error);
+            console.error('Error getting wallet', error);
             if (error.message.includes('DECRYPTION_FAILED') || error.message.includes('bad decrypt')) {
                 throw new Error('Wallet decryption failed. Please regenerate your wallet.');
             }
@@ -179,7 +179,7 @@ class WalletManager {
             
             return connectedWallet;
         } catch (error) {
-            secureLogger.error('Error getting wallet with provider', error);
+            console.error('Error getting wallet with provider', error);
             throw new Error('Failed to connect wallet to provider');
         }
     }
@@ -196,12 +196,12 @@ class WalletManager {
         try {
             // Validate address format first
             if (!walletAddress || typeof walletAddress !== 'string') {
-                secureLogger.warn('Invalid wallet address provided', { addressType: typeof walletAddress });
+                console.warn('Invalid wallet address provided', { addressType: typeof walletAddress });
                 return '0.000000';
             }
 
             if (!ethers.isAddress(walletAddress)) {
-                secureLogger.warn('Invalid wallet address format', { address: 'REDACTED' });
+                console.warn('Invalid wallet address format', { address: 'REDACTED' });
                 return '0.000000';
             }
 
@@ -215,7 +215,7 @@ class WalletManager {
             
             return ethers.formatEther(balance);
         } catch (error) {
-            secureLogger.error('Error getting balance', error);
+            console.error('Error getting balance', error);
             return '0.000000'; // Return 0 instead of throwing error
         }
     }
@@ -265,7 +265,7 @@ class WalletManager {
                 gasPrice: gasPrice.toString()
             };
         } catch (error) {
-            secureLogger.error('Error sending MON', error);
+            console.error('Error sending MON', error);
             return {
                 success: false,
                 error: error.message
@@ -279,7 +279,7 @@ class WalletManager {
             const wallet = await this.getWallet(encryptedPrivateKey);
             return await wallet.signTransaction(transaction);
         } catch (error) {
-            secureLogger.error('Error signing transaction', error);
+            console.error('Error signing transaction', error);
             throw new Error('Failed to sign transaction');
         }
     }
@@ -295,7 +295,7 @@ class WalletManager {
                 'GET_TRANSACTION_RECEIPT'
             );
         } catch (error) {
-            secureLogger.error('Error getting transaction receipt', error);
+            console.error('Error getting transaction receipt', error);
             return null;
         }
     }
@@ -311,7 +311,7 @@ class WalletManager {
                 'WAIT_FOR_TRANSACTION'
             );
         } catch (error) {
-            secureLogger.error('Error waiting for transaction', error);
+            console.error('Error waiting for transaction', error);
             throw new Error('Transaction confirmation failed');
         }
     }

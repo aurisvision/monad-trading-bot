@@ -36,14 +36,13 @@ class TransactionMiddleware {
                 // Log performance metrics
                 const duration = Date.now() - startTime;
                 if (isTradingOperation) {
-                    // Record performance in Transaction Accelerator
-                    if (this.transactionAccelerator?.performanceReporter) {
-                        let operationType = 'other';
-                        if (callbackData.includes('buy')) operationType = 'buy';
-                        else if (callbackData.includes('sell')) operationType = 'sell';
-                        else if (callbackData.includes('auto_buy')) operationType = 'autoBuy';
-                        this.transactionAccelerator.performanceReporter.recordTransaction(operationType, duration, true);
-                    }
+                    // Record performance metrics (simplified without performanceReporter)
+                    let operationType = 'other';
+                    if (callbackData.includes('buy')) operationType = 'buy';
+                    else if (callbackData.includes('sell')) operationType = 'sell';
+                    else if (callbackData.includes('auto_buy')) operationType = 'autoBuy';
+                    
+                    console.log(`Trading operation performance: ${operationType} took ${duration}ms`);
                     this.monitoring?.logInfo('Trading operation performance', {
                         userId: ctx.from?.id,
                         operation: callbackData,
@@ -96,4 +95,4 @@ class TransactionMiddleware {
         };
     }
 }
-module.exports = TransactionMiddleware;
+module.exports = TransactionMiddleware;
