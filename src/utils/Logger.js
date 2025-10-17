@@ -1,4 +1,3 @@
-const SecureLogger = require('./secureLogger');
 const LoggingConfig = require('../config/LoggingConfig');
 
 /**
@@ -7,7 +6,6 @@ const LoggingConfig = require('../config/LoggingConfig');
  */
 class Logger {
     constructor(options = {}) {
-        this.secureLogger = new SecureLogger();
         this.loggingConfig = new LoggingConfig();
         
         this.config = {
@@ -357,9 +355,7 @@ class Logger {
         }
 
         // Redact sensitive data
-        const sanitizedContext = this._redactSensitiveData(
-            this.secureLogger.sanitize(context)
-        );
+        const sanitizedContext = this._redactSensitiveData(context);
 
         const logEntry = {
             level,

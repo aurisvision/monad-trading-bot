@@ -25,8 +25,6 @@ _The main area for real nads!_
 
 🟣 *Current MON Price:* $${monPriceUSD.toFixed(2)}
 
-📖 *Check the Docs button to learn what you can do with this bot.*
-
 💡 Click on the Refresh button to update your current balance.`;
 
         const keyboard = Markup.inlineKeyboard([
@@ -34,7 +32,7 @@ _The main area for real nads!_
             [Markup.button.callback('👛 Wallet', 'wallet'), Markup.button.callback('📊 Portfolio', 'portfolio')],
             [Markup.button.callback('📈 Categories', 'token_categories'), Markup.button.callback('⚙️ Settings', 'settings')],
             [Markup.button.callback('📤 Transfer', 'transfer'), Markup.button.callback('💬 Feedback', 'feedback')],
-            [Markup.button.url('📚 Docs', 'https://area51-1.gitbook.io/area51/'), Markup.button.callback('🔄 Refresh', 'refresh')]
+            [Markup.button.callback('🔄 Refresh', 'refresh')]
         ]);
 
         return { text: welcomeText, keyboard };

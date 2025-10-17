@@ -1,5 +1,4 @@
 const { ethers } = require('ethers');
-const { secureLogger } = require('./secureLogger');
 const WebSocketManager = require('./WebSocketManager');
 
 class RPCManager {
@@ -32,7 +31,7 @@ class RPCManager {
         // Initialize RPC endpoints status
         this.initializeRpcStatus();
         
-        secureLogger.info('RPCManager initialized', {
+        console.log('RPCManager initialized', {
             endpoints: this.rpcEndpoints.length,
             primaryRpc: this.rpcEndpoints[0],
             webSocketEnabled: this.webSocketEnabled
@@ -68,13 +67,13 @@ class RPCManager {
             });
             
             this.webSocketManager.on('reconnectionFailed', (endpoint) => {
-                secureLogger.error('WebSocket reconnection failed', { endpoint });
+                console.error('WebSocket reconnection failed', { endpoint });
             });
             
-            secureLogger.info('WebSocketManager initialized successfully');
+            console.log('WebSocketManager initialized successfully');
             
         } catch (error) {
-            secureLogger.error('Failed to initialize WebSocketManager', { error: error.message });
+            console.error('Failed to initialize WebSocketManager', { error: error.message });
             this.webSocketEnabled = false;
         }
     }

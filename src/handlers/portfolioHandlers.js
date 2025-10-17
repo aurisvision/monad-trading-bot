@@ -156,21 +156,37 @@ class PortfolioHandlers {
             // Add timestamp to force message update even for empty portfolios
             let refreshedText = portfolioDisplay.text || '❌ Failed to load portfolio. Please try again.';
             
-            // Only try to replace timestamp if text contains the pattern
+            // Always update timestamp to ensure message is different
+            const currentTime = new Date().toLocaleTimeString('en-US', { hour12: true, hour: 'numeric', minute: '2-digit', second: '2-digit' });
+            
             if (refreshedText.includes('🕒 Last updated:')) {
                 refreshedText = refreshedText.replace(
                     /(<i>🕒 Last updated: )([^<]+)(<\/i>)/,
-                    `$1${new Date().toLocaleTimeString('en-US', { hour12: true, hour: 'numeric', minute: '2-digit', second: '2-digit' })}$3`
+                    `$1${currentTime}$3`
                 );
             } else {
                 // Add timestamp if not present
-                refreshedText += `\n\n<i>🕒 Last updated: ${new Date().toLocaleTimeString('en-US', { hour12: true, hour: 'numeric', minute: '2-digit', second: '2-digit' })}</i>`;
+                refreshedText += `\n\n<i>🕒 Last updated: ${currentTime}</i>`;
             }
             
-            await ctx.editMessageText(refreshedText, {
-                parse_mode: 'HTML',
-                reply_markup: portfolioDisplay.keyboard
-            });
+            // Try to edit the message, with fallback for "message not modified" error
+            try {
+                await ctx.editMessageText(refreshedText, {
+                    parse_mode: 'HTML',
+                    reply_markup: portfolioDisplay.keyboard
+                });
+            } catch (editError) {
+                // If message is not modified, add a refresh indicator to force update
+                if (editError.message && editError.message.includes('message is not modified')) {
+                    const forceUpdateText = refreshedText + ` 🔄`;
+                    await ctx.editMessageText(forceUpdateText, {
+                        parse_mode: 'HTML',
+                        reply_markup: portfolioDisplay.keyboard
+                    });
+                } else {
+                    throw editError; // Re-throw if it's a different error
+                }
+            }
 
         } catch (error) {
             this.monitoring.logError('Portfolio refresh failed', error, { userId: ctx.from.id });

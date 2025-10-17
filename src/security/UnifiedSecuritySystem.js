@@ -2,7 +2,6 @@
 // Area51 Bot - Single Source of Truth for All Security Operations
 
 const crypto = require('crypto');
-const { secureLogger } = require('../utils/secureLogger');
 
 class UnifiedSecuritySystem {
     constructor(redis, database) {
@@ -441,7 +440,7 @@ class UnifiedSecuritySystem {
             await this.performSecurityScan();
         }, 60000);
 
-        secureLogger.info('Unified security monitoring started');
+        console.log('Unified security monitoring started');
     }
 
     /**

@@ -35,7 +35,6 @@ const WalletManager = require('./wallet');
 // Legacy trading system - REPLACED by unified system
 // const TradingEngine = require('./trading');
 const MonorailAPI = require('./monorail');
-const BlockVisionAPI = require('./services/BlockVisionAPI');
 const UnifiedCacheManager = require('./services/UnifiedCacheManager');
 const CacheWarmer = require('./utils/cacheWarmer');
 const BackupService = require('./services/BackupService');
@@ -272,11 +271,9 @@ class Area51BotModularSimple {
         }
         
         // Initialize services
-        // API Distribution Strategy:
-        // - MonorailAPI: Used for balance queries (getMONBalance), price queries (getTokenPriceInMON), and trading operations
-        // - BlockVisionAPI: Used EXCLUSIVELY for portfolio data (getWalletBalance) - no other operations
+        // API Strategy:
+        // - MonorailAPI: Used for balance queries (getMONBalance), price queries (getTokenPriceInMON), portfolio data, and trading operations
         this.monorailAPI = new MonorailAPI(this.redis, this.cacheService);
-        this.blockVisionAPI = new BlockVisionAPI(this.cacheService, this.monitoring);
         this.walletManager = new WalletManager(this.redis, this.database);
         
         // Cache monitoring is now integrated in the unified cache system
@@ -294,7 +291,7 @@ class Area51BotModularSimple {
         console.log('✅ Unified Trading System initialized successfully');
         
         // this.portfolioManager = new PortfolioManager(this.monorailAPI, this.database, this.redis); // Removed - using portfolioService instead
-        this.portfolioService = new (require('./services/PortfolioService'))(this.monorailAPI, this.redis, this.monitoring, this.blockVisionAPI);
+        this.portfolioService = new (require('./services/PortfolioService'))(this.monorailAPI, this.redis, this.monitoring);
             
         if (this.redis && this.cacheService) {
             // Initialize background refresh service

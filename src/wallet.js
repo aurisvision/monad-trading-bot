@@ -1,6 +1,5 @@
 const { ethers } = require('ethers');
 const bip39 = require('bip39');
-const { secureLogger } = require('./utils/secureLogger');
 const UnifiedSecuritySystem = require('./security/UnifiedSecuritySystem');
 const RPCManager = require('./utils/RPCManager');
 
@@ -12,7 +11,7 @@ class WalletManager {
         // Initialize RPC manager with fallback support
         this.rpcManager = new RPCManager();
         
-        secureLogger.info('WalletManager initialized with unified security system and RPC fallback');
+        console.log('WalletManager initialized with unified security system and RPC fallback');
     }
 
     // Generate a new wallet
@@ -42,7 +41,7 @@ class WalletManager {
             
             return result;
         } catch (error) {
-            secureLogger.error('Error generating wallet', error);
+            console.error('Error generating wallet', error);
             throw new Error('Failed to generate wallet');
         }
     }

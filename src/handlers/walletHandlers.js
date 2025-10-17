@@ -6,7 +6,6 @@ const AdminRateLimitManager = require('../utils/AdminRateLimitManager');
 const { validateInput } = require('../utils/index');
 const { formatBalance } = require('../utils/interfaceUtils');
 const InterfaceUtils = require('../utils/interfaceUtils');
-const { secureLogger } = require('../utils/secureLogger');
 class WalletHandlers {
     constructor(bot, database, walletManager, monitoring, redis = null, cacheService = null) {
         this.bot = bot;

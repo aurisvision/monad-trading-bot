@@ -1,17 +1,11 @@
 const UnifiedCacheManager = require('./UnifiedCacheManager');
 
 class PortfolioService {
-    constructor(monorailAPI, redis, monitoring, blockVisionAPI = null) {
-        this.monorailAPI = monorailAPI; // Keep for fallback
-        this.blockVisionAPI = blockVisionAPI || new (require('../services/BlockVisionAPI'))(null, monitoring); // Use provided or create new
+    constructor(monorailAPI, redis, monitoring) {
+        this.monorailAPI = monorailAPI;
         this.redis = redis;
         this.monitoring = monitoring;
         this.cache = new UnifiedCacheManager(redis, monitoring);
-        
-        // Pass cache service to BlockVision if not already set
-        if (!this.blockVisionAPI.cacheService) {
-            this.blockVisionAPI.cacheService = this.cache;
-        }
         
         // Configuration
         this.TOKENS_PER_PAGE = 5;
@@ -33,63 +27,104 @@ class PortfolioService {
     }
 
     /**
-     * Fetch portfolio from BlockVision API only - no fallback to Monorail
+     * Fetch portfolio from Monorail API
      */
-    async fetchPortfolioFromAPI(walletAddress) {
+    async fetchPortfolioFromAPI(walletAddress, forceRefresh = false) {
         try {
-            // Use BlockVision API exclusively for portfolio data
-            this.monitoring?.logInfo('Fetching portfolio from BlockVision API (exclusive)', { walletAddress });
+            this.monitoring?.logInfo('Fetching portfolio from Monorail API', { walletAddress, forceRefresh });
             
-            let tokens = await this.blockVisionAPI.getWalletBalance(walletAddress, false);
+            const tokens = await this.monorailAPI.getWalletBalance(walletAddress, forceRefresh);
             
-            // If BlockVision fails or returns empty, return empty array (no Monorail fallback)
-            if (!tokens || !Array.isArray(tokens) || tokens.length === 0) {
-                this.monitoring?.logInfo('BlockVision returned empty or invalid data - no fallback used', { walletAddress, tokens });
-                return [];
+            if (tokens && Array.isArray(tokens) && tokens.length > 0) {
+                this.monitoring?.logInfo('Portfolio data fetched successfully from Monorail', { 
+                    walletAddress, 
+                    tokenCount: tokens.length 
+                });
+                
+                return this.processTokensForPortfolio(tokens);
             }
             
-            this.monitoring?.logInfo('Portfolio data fetched successfully from BlockVision', { 
-                walletAddress, 
-                tokenCount: tokens.length 
-            });
-            
-            // Filter and transform tokens for portfolio display
-            // Use same filtering logic as working token-viewer.js: usdValue > 0 && verified
-            // Also exclude MON token from portfolio display (it shows in main menu)
-            const filteredTokens = tokens
-                .filter(token => {
-                    const usdValue = parseFloat(token.usd_value || 0);
-                    const verified = token.verified || false;
-                    const isNotMON = token.symbol !== 'MON'; // Exclude MON token
-                    return usdValue > 0 && verified && isNotMON;
-                })
-                .map(token => ({
-                    symbol: token.symbol,
-                    name: token.name,
-                    balance: token.balance,
-                    mon_value: token.mon_value || '0',
-                    usd_value: token.usd_value || 0,
-                    usd_price: token.price || token.usd_per_token || token.priceUSD || null,
-                    address: token.address,
-                    verified: token.verified || false,
-                    price_change_24h: token.price_change_24h || null,
-                    market_cap: token.market_cap || null,
-                    volume_24h: token.volume_24h || null,
-                    logo: token.logo || null,
-                    last_updated: Date.now()
-                }));
-
-            this.monitoring?.logInfo('Portfolio fetched successfully', { 
-                walletAddress, 
-                tokenCount: filteredTokens.length,
-                source: 'BlockVision' // Portfolio data exclusively from BlockVision
-            });
-
-            return filteredTokens;
+            this.monitoring?.logInfo('Monorail returned empty data', { walletAddress });
+            return [];
         } catch (error) {
             this.monitoring?.logError('Portfolio API fetch failed', error);
             return [];
         }
+    }
+
+    /**
+     * Process tokens for portfolio display (Monorail data only)
+     */
+    processTokensForPortfolio(tokens) {
+        // Filter and transform tokens for portfolio display
+        // Include tokens with valid balance and USD value
+        const filteredTokens = tokens
+            .filter(token => {
+                // Check if token has a valid balance
+                const balance = parseFloat(token.balance || token.balanceFormatted || 0);
+                
+                // Check if token has a valid USD value
+                const usdValue = parseFloat(token.valueUsd || token.usd_value || 0);
+                
+                // Check if token has a valid USD price
+                const usdPrice = parseFloat(token.priceUSD || token.usd_per_token || token.price || 0);
+                
+                // Check MON value for filtering
+                const monValue = parseFloat(token.mon_value || 0);
+                
+                // Exclude MON token from portfolio display (it shows in main menu)
+                const isNotMON = token.symbol !== 'MON';
+                
+                // Include tokens that have either a USD value > 0 OR (balance > 0 AND price > 0)
+                const hasValue = usdValue > 0 || (balance > 0 && usdPrice > 0);
+                
+                // Filter out tokens with MON value less than 0.05
+                const hasMinimumMonValue = monValue >= 0.05;
+                
+                this.monitoring?.logDebug('Token filtering', {
+                    symbol: token.symbol,
+                    balance,
+                    usdValue,
+                    usdPrice,
+                    monValue,
+                    hasValue,
+                    isNotMON,
+                    hasMinimumMonValue,
+                    included: hasValue && isNotMON && hasMinimumMonValue
+                });
+                
+                return hasValue && isNotMON && hasMinimumMonValue;
+            })
+            .map(token => ({
+                symbol: token.symbol,
+                name: token.name,
+                balance: token.balance || token.balanceFormatted || '0',
+                mon_value: token.mon_value || '0',
+                usd_value: token.valueUsd || token.usd_value || 0,
+                usd_price: token.priceUSD || token.usd_per_token || token.price || null,
+                address: token.address,
+                verified: token.verified || false,
+                market_cap: token.market_cap || null,
+                volume_24h: token.volume_24h || null,
+                logo: token.logo || null,
+                last_updated: Date.now()
+            }))
+            // Sort by MON value in descending order (highest to lowest)
+            .sort((a, b) => {
+                const monValueA = parseFloat(a.mon_value || 0);
+                const monValueB = parseFloat(b.mon_value || 0);
+                return monValueB - monValueA; // Descending order
+            });
+
+        this.monitoring?.logInfo('Portfolio processed successfully', { 
+            tokenCount: filteredTokens.length,
+            totalTokensReceived: tokens.length,
+            source: 'Monorail',
+            sortedByMonValue: true,
+            minimumMonValue: 0.05
+        });
+
+        return filteredTokens;
     }
 
     /**
@@ -182,8 +217,8 @@ class PortfolioService {
             }
 
             // Fetch from API
-            this.monitoring?.logInfo('Fetching portfolio from API', { telegramId, walletAddress });
-            const tokens = await this.fetchPortfolioFromAPI(walletAddress);
+            this.monitoring?.logInfo('Fetching portfolio from API', { telegramId, walletAddress, forceRefresh });
+            const tokens = await this.fetchPortfolioFromAPI(walletAddress, forceRefresh);
 
             // Store in unified cache
             await this.cache.set('portfolio', telegramId, tokens);
@@ -228,7 +263,6 @@ class PortfolioService {
             const balance = parseFloat(token.balance || '0').toFixed(6);
             const monValue = parseFloat(token.mon_value || '0').toFixed(4);
             const usdPrice = token.usd_price || null;
-            const priceChange24h = token.price_change_24h;
             const verified = token.verified;
             
             // Token header with verification badge and clickable link
@@ -241,21 +275,9 @@ class PortfolioService {
             message += `• <b>Balance:</b> ${balance} ${token.symbol}\n`;
             message += `• <b>Value in MON:</b> ${monValue}\n`;
             
-            // Price with 24h change in same line
+            // Price display
             if (usdPrice !== null && usdPrice > 0) {
-                let priceText = `• <b>Price:</b> ${this.formatPrice(usdPrice)}`;
-                
-                // Add 24h change to same line if available
-                if (priceChange24h !== null && priceChange24h !== undefined) {
-                    const changePercent = parseFloat(priceChange24h);
-                    if (!isNaN(changePercent)) {
-                        const changeSquare = changePercent >= 0 ? '🟢' : '🔴';
-                        const changeSign = changePercent >= 0 ? '+' : '';
-                        priceText += ` ${changeSquare} ${changeSign}${changePercent.toFixed(2)}%`;
-                    }
-                }
-                
-                message += `${priceText}\n\n`;
+                message += `• <b>Price:</b> ${this.formatPrice(usdPrice)}\n\n`;
             } else {
                 message += `• <b>Price:</b> $0.00000\n\n`;
             }
@@ -350,7 +372,7 @@ class PortfolioService {
                 this.monitoring?.logInfo('Empty portfolio returned', { telegramId, walletAddress });
                 const { Markup } = require('telegraf');
                 return {
-                    text: `📊 **Portfolio**\n\n_No tokens found in your portfolio._\n\n_🕒 Last updated: ${new Date().toLocaleTimeString('en-US', { hour12: true, hour: 'numeric', minute: '2-digit' })}_`,
+                    text: `📊 **Portfolio**\n\n_No tokens found in your portfolio._\n\n<i>🕒 Last updated: ${new Date().toLocaleTimeString('en-US', { hour12: true, hour: 'numeric', minute: '2-digit', second: '2-digit' })}</i>`,
                     keyboard: Markup.inlineKeyboard([
                         [Markup.button.callback('🔄 Refresh', 'portfolio:refresh')],
                         [Markup.button.callback('🏠 Back to Main', 'main')]
