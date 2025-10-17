@@ -2,6 +2,7 @@
 // Area51 Bot - Single Source of Truth for All Security Operations
 
 const crypto = require('crypto');
+const { secureLogger } = require('../utils/secureLogger');
 
 class UnifiedSecuritySystem {
     constructor(redis, database) {

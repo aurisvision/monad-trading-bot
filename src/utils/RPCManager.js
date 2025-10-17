@@ -1,5 +1,6 @@
 const { ethers } = require('ethers');
 const WebSocketManager = require('./WebSocketManager');
+const { secureLogger } = require('./secureLogger');
 
 class RPCManager {
     constructor() {
