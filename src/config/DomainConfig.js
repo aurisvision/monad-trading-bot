@@ -9,9 +9,8 @@ class DomainConfig {
         this.port = process.env.HEALTH_CHECK_PORT || 3001;
         this.protocol = process.env.PROTOCOL || 'http';
         
-        // Build URLs - don't include port if it's 80 (default HTTP port)
-        const portSuffix = (this.port == 80) ? '' : `:${this.port}`;
-        this.baseUrl = `${this.protocol}://${this.domain}${portSuffix}`;
+        // Build URLs with port
+        this.baseUrl = `${this.protocol}://${this.domain}:${this.port}`;
         this.publicUrl = process.env.PUBLIC_URL || this.baseUrl;
         this.monitoringUrl = process.env.MONITORING_URL || `${this.baseUrl}/monitoring`;
         this.healthUrl = process.env.HEALTH_URL || `${this.baseUrl}/health`;

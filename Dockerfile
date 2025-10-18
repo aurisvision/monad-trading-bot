@@ -34,14 +34,14 @@ RUN mkdir -p /app/logs /app/backups /app/temp && \
 ENV NODE_ENV=production
 ENV TZ=UTC
 ENV PORT=3000
-ENV HEALTH_CHECK_PORT=80
+ENV HEALTH_CHECK_PORT=3001
 
 # Expose ports
-EXPOSE 3000 80
+EXPOSE 3000 3001
 
 # Health check - optimized for Coolify
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=5 \
-    CMD curl -f http://localhost:80/health || exit 1
+    CMD curl -f http://localhost:3001/health || exit 1
 
 # Switch to non-root user
 USER area51bot

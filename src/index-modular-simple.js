@@ -1045,8 +1045,28 @@ class Area51BotModularSimple {
             
             // Health server is already started in initialization
             
-            // Start the bot
-            await this.bot.launch();
+            // Start the bot with conflict handling
+            try {
+                await this.bot.launch();
+            } catch (botError) {
+                if (botError.code === 409 || botError.message?.includes('409') || botError.message?.includes('Conflict')) {
+                    console.log('⚠️ Bot conflict detected (409). Another instance may be running. Attempting to stop and restart...');
+                    this.monitoring?.logWarning('Bot conflict detected, attempting restart');
+                    
+                    // Wait a moment and try again
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                    
+                    try {
+                        await this.bot.launch();
+                        console.log('✅ Bot restarted successfully after conflict resolution');
+                    } catch (retryError) {
+                        console.error('❌ Failed to restart bot after conflict:', retryError);
+                        throw retryError;
+                    }
+                } else {
+                    throw botError;
+                }
+            }
             
             // Get bot info for group functionality
             this.bot.botInfo = await this.bot.telegram.getMe();
