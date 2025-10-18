@@ -5,6 +5,7 @@
 
 const http = require('http');
 const url = require('url');
+const DomainConfig = require('../config/DomainConfig');
 
 class HealthEndpoint {
     constructor(productionMonitoring, port = 3001) {
@@ -12,6 +13,7 @@ class HealthEndpoint {
         this.port = port;
         this.server = null;
         this.startTime = Date.now();
+        this.domainConfig = new DomainConfig();
     }
 
     /**
@@ -48,10 +50,27 @@ class HealthEndpoint {
         const parsedUrl = url.parse(req.url, true);
         const path = parsedUrl.pathname;
 
-        // Set CORS headers
-        res.setHeader('Access-Control-Allow-Origin', '*');
+        // Set CORS headers based on environment
+        const corsConfig = this.domainConfig.getCorsConfig();
+        const securityHeaders = this.domainConfig.getSecurityHeaders();
+        
+        // Apply CORS headers
+        if (corsConfig.origin === '*' || !this.domainConfig.isCoolifyProduction) {
+            res.setHeader('Access-Control-Allow-Origin', '*');
+        } else {
+            const origin = req.headers.origin;
+            if (corsConfig.origin.includes(origin)) {
+                res.setHeader('Access-Control-Allow-Origin', origin);
+            }
+        }
+        
         res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        
+        // Apply security headers for HTTPS
+        Object.entries(securityHeaders).forEach(([key, value]) => {
+            res.setHeader(key, value);
+        });
 
         // Handle OPTIONS request
         if (req.method === 'OPTIONS') {
