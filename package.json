@@ -12,9 +12,9 @@
     "dev:512mb": "nodemon --exec 'node --max-old-space-size=512' src/index-modular-simple.js",
     "test": "jest --passWithNoTests",
     "test:syntax": "find src -name '*.js' -exec node -c {} \\;",
-    "health": "curl ${HEALTH_URL:-http://localhost:3001/health} || echo 'Health check failed'",
+    "health": "curl ${HEALTH_URL:-http://localhost:80/health} || echo 'Health check failed'",
     "security:check": "node scripts/security-check.js",
-    "deploy:health": "node -e \"const url = process.env.HEALTH_URL || 'http://localhost:3001/health'; require('http').get(url, (res) => { console.log('Health Status:', res.statusCode); process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', (e) => { console.error('Health check failed:', e.message); process.exit(1) })\"",
+    "deploy:health": "node -e \"const url = process.env.HEALTH_URL || 'http://localhost:80/health'; require('http').get(url, (res) => { console.log('Health Status:', res.statusCode); process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', (e) => { console.error('Health check failed:', e.message); process.exit(1) })\"",
     "deploy:verify": "npm run deploy:health && echo 'Deployment verification successful'",
     "coolify:start": "node src/index-modular-simple.js"
   },
