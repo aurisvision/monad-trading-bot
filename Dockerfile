@@ -33,16 +33,16 @@ RUN mkdir -p /app/logs /app/backups /app/temp && \
 # Set environment variables
 ENV NODE_ENV=production
 ENV TZ=UTC
-ENV PORT=3001
-ENV HEALTH_CHECK_PORT=3001
+ENV PORT=3000
+ENV HEALTH_CHECK_PORT=3000
 
 # Expose ports (Coolify will map these to external ports)
-EXPOSE 3001
+EXPOSE 3000
 
 # Health check - works with both HTTP (local) and HTTPS (Coolify)
 # Uses internal port for health check since it's within the container
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=5 \
-    CMD curl -f http://localhost:3001/health || exit 1
+    CMD curl -f http://localhost:3000/health || exit 1
 
 # Switch to non-root user
 USER area51bot
