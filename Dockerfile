@@ -33,11 +33,11 @@ RUN mkdir -p /app/logs /app/backups /app/temp && \
 # Set environment variables
 ENV NODE_ENV=production
 ENV TZ=UTC
-ENV PORT=3000
+ENV PORT=3001
 ENV HEALTH_CHECK_PORT=3001
 
-# Expose ports
-EXPOSE 3000 3001
+# Expose ports (Coolify will map these to external ports)
+EXPOSE 3001
 
 # Health check - optimized for Coolify
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=5 \
