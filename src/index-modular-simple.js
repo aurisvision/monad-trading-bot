@@ -38,7 +38,7 @@ const MonorailAPI = require('./monorail');
 const UnifiedCacheManager = require('./services/UnifiedCacheManager');
 const CacheWarmer = require('./utils/cacheWarmer');
 const BackupService = require('./services/BackupService');
-const UnifiedMonitoringSystem = require('./monitoring/UnifiedMonitoringSystem');
+const SimpleUnifiedMonitoring = require('./monitoring/SimpleUnifiedMonitoring');
 const { createBotMiddleware } = require('./middleware/botMiddleware');
 const UnifiedErrorHandler = require('./middleware/UnifiedErrorHandler');
 const TransactionMiddleware = require('./middleware/transactionMiddleware');
@@ -197,12 +197,12 @@ class Area51BotModularSimple {
             }
         }
 
-        // Initialize unified monitoring system
+        // Initialize simple unified monitoring system
         try {
-            this.monitoring = new UnifiedMonitoringSystem(this.database, this.redis, console);
+            this.monitoring = new SimpleUnifiedMonitoring(this.database, this.redis, this.bot);
             // Initialize unified error handler
             this.errorHandler = new UnifiedErrorHandler(this.monitoring);
-            // Unified monitoring system initialized - no need to log to itself
+            console.log('✅ Simple Unified Monitoring System initialized successfully');
         } catch (error) {
             console.error('❌ Failed to initialize monitoring system:', error.message);
             // Fallback to mock monitoring
@@ -291,7 +291,7 @@ class Area51BotModularSimple {
         console.log('✅ Unified Trading System initialized successfully');
         
         // this.portfolioManager = new PortfolioManager(this.monorailAPI, this.database, this.redis); // Removed - using portfolioService instead
-        this.portfolioService = new (require('./services/PortfolioService'))(this.monorailAPI, this.redis, this.monitoring);
+        this.portfolioService = new (require('./services/PortfolioService'))(this.monorailAPI, this.redis, this.monitoring, this.cacheService);
             
         if (this.redis && this.cacheService) {
             // Initialize background refresh service
@@ -482,10 +482,12 @@ class Area51BotModularSimple {
         const startServer = (retryPort) => {
             return new Promise((resolve, reject) => {
                 const server = app.listen(retryPort, () => {
+                    const domain = process.env.DOMAIN_NAME || 'localhost';
                     console.log(`✅ Health check server started on port ${retryPort}`);
-                    console.log(`📊 Metrics: http://localhost:${retryPort}/metrics`);
-                    console.log(`🏥 Health: http://localhost:${retryPort}/health`);
-                    console.log(`📈 Dashboard: http://localhost:${retryPort}/monitoring`);
+                    console.log(`📊 Metrics: http://${domain}:${retryPort}/metrics`);
+                    console.log(`🏥 Health: http://${domain}:${retryPort}/health`);
+                    console.log(`📈 Dashboard: http://${domain}:${retryPort}/monitoring`);
+                    console.log(`🌐 Public URL: ${process.env.PUBLIC_URL || `http://localhost:${retryPort}`}`);
                     resolve(server);
                 });
 

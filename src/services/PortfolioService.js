@@ -1,11 +1,9 @@
-const UnifiedCacheManager = require('./UnifiedCacheManager');
-
 class PortfolioService {
-    constructor(monorailAPI, redis, monitoring) {
+    constructor(monorailAPI, redis, monitoring, cacheService = null) {
         this.monorailAPI = monorailAPI;
         this.redis = redis;
         this.monitoring = monitoring;
-        this.cache = new UnifiedCacheManager(redis, monitoring);
+        this.cache = cacheService; // Use shared cache service
         
         // Configuration
         this.TOKENS_PER_PAGE = 5;
@@ -19,8 +17,15 @@ class PortfolioService {
      */
     async clearUserPortfolioCache(telegramId) {
         try {
-            await this.cache.delete('portfolio', telegramId);
-            console.log(`🗑️ Portfolio cache cleared for user ${telegramId}`);
+            if (this.cache) {
+                await this.cache.delete('portfolio', telegramId);
+                console.log(`🗑️ Portfolio cache cleared for user ${telegramId}`);
+            } else {
+                // Fallback to direct Redis if cache service not available
+                const key = `portfolio:${telegramId}`;
+                await this.redis.del(key);
+                console.log(`🗑️ Portfolio cache cleared for user ${telegramId} (direct Redis)`);
+            }
         } catch (error) {
             console.error('Error clearing portfolio cache:', error);
         }
@@ -31,9 +36,16 @@ class PortfolioService {
      */
     async fetchPortfolioFromAPI(walletAddress, forceRefresh = false) {
         try {
+            console.log('🔍 [DEBUG] Fetching portfolio from Monorail API for wallet:', walletAddress);
             this.monitoring?.logInfo('Fetching portfolio from Monorail API', { walletAddress, forceRefresh });
             
             const tokens = await this.monorailAPI.getWalletBalance(walletAddress, forceRefresh);
+            console.log('🔍 [DEBUG] Monorail API response:', {
+                hasTokens: !!tokens,
+                isArray: Array.isArray(tokens),
+                tokenCount: tokens?.length || 0,
+                firstToken: tokens?.[0] ? Object.keys(tokens[0]) : null
+            });
             
             if (tokens && Array.isArray(tokens) && tokens.length > 0) {
                 this.monitoring?.logInfo('Portfolio data fetched successfully from Monorail', { 
@@ -41,12 +53,19 @@ class PortfolioService {
                     tokenCount: tokens.length 
                 });
                 
-                return this.processTokensForPortfolio(tokens);
+                const processedTokens = this.processTokensForPortfolio(tokens);
+                console.log('🔍 [DEBUG] Processed tokens:', {
+                    originalCount: tokens.length,
+                    processedCount: processedTokens.length
+                });
+                return processedTokens;
             }
             
+            console.log('🔍 [DEBUG] Monorail returned empty or invalid data');
             this.monitoring?.logInfo('Monorail returned empty data', { walletAddress });
             return [];
         } catch (error) {
+            console.log('🔍 [DEBUG] Portfolio API fetch error:', error.message);
             this.monitoring?.logError('Portfolio API fetch failed', error);
             return [];
         }
@@ -81,7 +100,7 @@ class PortfolioService {
                 // Filter out tokens with MON value less than 0.05
                 const hasMinimumMonValue = monValue >= 0.05;
                 
-                this.monitoring?.logDebug('Token filtering', {
+                this.monitoring?.logInfo('Token filtering', {
                     symbol: token.symbol,
                     balance,
                     usdValue,
@@ -202,13 +221,13 @@ class PortfolioService {
     async getUserPortfolio(telegramId, walletAddress, forceRefresh = false) {
         try {
             // Clear cache if force refresh is requested
-            if (forceRefresh) {
+            if (forceRefresh && this.cache) {
                 await this.cache.delete('portfolio', telegramId);
                 console.log('🗑️ Force refresh: Portfolio cache cleared for user', telegramId);
             }
             
             // Try cache first unless force refresh
-            if (!forceRefresh) {
+            if (!forceRefresh && this.cache) {
                 const cachedPortfolio = await this.cache.get('portfolio', telegramId);
                 if (cachedPortfolio && cachedPortfolio.length > 0) {
                     this.monitoring?.logInfo('Portfolio loaded from unified cache', { telegramId });
@@ -220,8 +239,10 @@ class PortfolioService {
             this.monitoring?.logInfo('Fetching portfolio from API', { telegramId, walletAddress, forceRefresh });
             const tokens = await this.fetchPortfolioFromAPI(walletAddress, forceRefresh);
 
-            // Store in unified cache
-            await this.cache.set('portfolio', telegramId, tokens);
+            // Store in unified cache if available
+            if (this.cache) {
+                await this.cache.set('portfolio', telegramId, tokens);
+            }
 
             return tokens;
         } catch (error) {

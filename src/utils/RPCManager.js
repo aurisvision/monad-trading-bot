@@ -34,7 +34,7 @@ class RPCManager {
         
         console.log('RPCManager initialized', {
             endpoints: this.rpcEndpoints.length,
-            primaryRpc: this.rpcEndpoints[0],
+            primaryRpc: this.maskRpcUrl(this.rpcEndpoints[0]),
             webSocketEnabled: this.webSocketEnabled
         });
     }

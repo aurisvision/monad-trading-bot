@@ -1,4 +1,5 @@
 const os = require('os');
+const v8 = require('v8');
 
 class HealthCheck {
     constructor(database, redis, monitoring) {
@@ -110,12 +111,14 @@ class HealthCheck {
     // Memory health check
     async checkMemory() {
         const memUsage = process.memoryUsage();
+        const heapStats = v8.getHeapStatistics();
         const totalMemory = os.totalmem();
         const freeMemory = os.freemem();
         const usedMemory = totalMemory - freeMemory;
         
         const memoryUsagePercent = (usedMemory / totalMemory) * 100;
-        const heapUsagePercent = (memUsage.heapUsed / memUsage.heapTotal) * 100;
+        // Use actual heap size limit instead of current heap total
+        const heapUsagePercent = (memUsage.heapUsed / heapStats.heap_size_limit) * 100;
 
         let status = 'healthy';
         let message = 'Memory usage normal';
@@ -136,6 +139,7 @@ class HealthCheck {
                 rss: this.formatBytes(memUsage.rss),
                 heapTotal: this.formatBytes(memUsage.heapTotal),
                 heapUsed: this.formatBytes(memUsage.heapUsed),
+                heapLimit: this.formatBytes(heapStats.heap_size_limit),
                 external: this.formatBytes(memUsage.external)
             },
             message

@@ -41,6 +41,7 @@ class PortfolioHandlers {
 
     async handleNewPortfolio(ctx) {
         try {
+            console.log('🔍 [DEBUG] Portfolio request started for user:', ctx.from.id);
             if (ctx.callbackQuery) {
                 await ctx.answerCbQuery();
             }
@@ -62,17 +63,25 @@ class PortfolioHandlers {
                 user = await this.database.getUserByTelegramId(userId);
             }
             
+            console.log('🔍 [DEBUG] User found:', user ? `ID: ${user.id}, Wallet: ${user.wallet_address}` : 'null');
+            
             if (!user) {
                 await ctx.reply('❌ Please start the bot first with /start');
                 return;
             }
 
+            console.log('🔍 [DEBUG] Calling getPortfolioDisplay for wallet:', user.wallet_address);
             const portfolioDisplay = await this.portfolioService.getPortfolioDisplay(
                 userId, 
                 user.wallet_address, 
                 1, // page 1
                 false // don't force refresh
             );
+            
+            console.log('🔍 [DEBUG] Portfolio display result:', {
+                messageLength: portfolioDisplay.message?.length || 0,
+                hasKeyboard: !!portfolioDisplay.keyboard
+            });
 
             const portfolioOptions = {
                 parse_mode: 'HTML',
