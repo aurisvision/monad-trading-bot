@@ -16,24 +16,24 @@ class GasSlippagePriority {
         try {
             const settings = await this.database.getUserSettings(userId);
             if (!settings) {
-                // Default: 50 Gwei
-                return 50000000000;
+                // Default: 110 Gwei
+                return 110000000000;
             }
             // Compare timestamps to determine priority
             const turboUpdated = new Date(settings.turbo_mode_updated_at || settings.created_at);
             const gasUpdated = new Date(settings.gas_settings_updated_at || settings.created_at);
             // If turbo was updated more recently and is enabled
             if (settings.turbo_mode && turboUpdated >= gasUpdated) {
-                return 100000000000; // 100 Gwei for turbo
+                return 210000000000; // 210 Gwei for turbo
             }
             // Otherwise use custom/default gas settings
             if (type === 'sell') {
-                return settings.sell_gas_price || 50000000000;
+                return settings.sell_gas_price || 110000000000;
             } else {
-                return settings.gas_price || 50000000000;
+                return settings.gas_price || 110000000000;
             }
         } catch (error) {
-            return 50000000000; // Default fallback
+            return 110000000000; // Default fallback
         }
     }
     /**
@@ -69,19 +69,19 @@ class GasSlippagePriority {
             const settings = await this.database.getUserSettings(userId);
             if (!settings) {
                 return {
-                    gas: 50000000000,    // 50 Gwei
-                    slippage: 5.0,       // 5%
-                    amount: 0.1          // 0.1 MON
-                };
+                gas: 110000000000,   // 110 Gwei
+                slippage: 5.0,       // 5%
+                amount: 0.1          // 0.1 MON
+            };
             }
             return {
-                gas: settings.auto_buy_gas || 50000000000,
+                gas: settings.auto_buy_gas || 110000000000,
                 slippage: settings.auto_buy_slippage || 5.0,
                 amount: settings.auto_buy_amount || 0.1
             };
         } catch (error) {
             return {
-                gas: 50000000000,
+                gas: 110000000000,
                 slippage: 5.0,
                 amount: 0.1
             };
@@ -214,4 +214,4 @@ class GasSlippagePriority {
         }
     }
 }
-module.exports = GasSlippagePriority;
+module.exports = GasSlippagePriority;

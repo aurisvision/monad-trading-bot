@@ -208,16 +208,30 @@ class UnifiedErrorHandler {
             }
             
             let userMessage = `${operation} failed. Please try again.`;
+            let errorType = 'Unknown Error';
+            let solution = 'Please try again or contact support';
             
             if (error.message?.includes('insufficient')) {
                 userMessage = 'Insufficient balance for this transaction.';
+                errorType = 'Insufficient Balance';
+                solution = 'Add more MON tokens to your wallet';
             } else if (error.message?.includes('slippage')) {
                 userMessage = 'Transaction failed due to slippage. Try increasing slippage tolerance.';
+                errorType = 'High Slippage';
+                solution = 'Increase slippage tolerance in settings';
+            } else if (error.message?.includes('fee too low') || error.message?.includes('transaction fee too low')) {
+                userMessage = 'Transaction fee is too low for the network.';
+                errorType = 'Low Gas Fee';
+                solution = 'Increase gas price in settings or use Turbo mode';
             } else if (error.message?.includes('gas')) {
                 userMessage = 'Gas estimation failed. Try adjusting gas settings.';
+                errorType = 'Gas Error';
+                solution = 'Try adjusting gas settings or use Turbo mode';
             }
             
-            await ctx.reply(`❌ ${userMessage}\n\n🔍 Error ID: ${errorId}`);
+            const formattedMessage = `❌ TRANSACTION FAILED\n\n🛡️ ERROR TYPE\n${errorType}\n\n🎯 SOLUTION\n${solution}\n\n⏰ Error ID: ${errorId}`;
+            
+            await ctx.reply(formattedMessage);
         } catch (replyError) {
             this.monitoring?.logError('Failed to send trading error message', replyError, { userId, errorId });
         }
@@ -646,6 +660,10 @@ class UnifiedErrorHandler {
 
         if (message.includes('slippage')) {
             return 'Price changed too much. Try increasing slippage tolerance.';
+        }
+
+        if (message.includes('fee too low') || message.includes('transaction fee too low')) {
+            return 'Transaction fee is too low for the network. Increase gas price or use Turbo mode.';
         }
 
         if (message.includes('gas')) {

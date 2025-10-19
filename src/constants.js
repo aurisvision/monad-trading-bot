@@ -49,15 +49,15 @@ module.exports = {
     // Gas Configuration
     GAS: {
         NORMAL_MODE: {
-            GAS_PRICE: '50000000000', // 50 gwei
-            MAX_FEE_PER_GAS: '55000000000', // 55 gwei
-            MAX_PRIORITY_FEE_PER_GAS: '5000000000', // 5 gwei
+            GAS_PRICE: '110000000000', // 110 gwei
+            MAX_FEE_PER_GAS: '120000000000', // 120 gwei
+            MAX_PRIORITY_FEE_PER_GAS: '10000000000', // 10 gwei
             GAS_LIMIT: 300000
         },
         TURBO_MODE: {
-            GAS_PRICE: '100000000000', // 100 gwei
-            MAX_FEE_PER_GAS: '60000000000', // 60 gwei
-            MAX_PRIORITY_FEE_PER_GAS: '10000000000', // 10 gwei
+            GAS_PRICE: '210000000000', // 210 gwei
+            MAX_FEE_PER_GAS: '220000000000', // 220 gwei
+            MAX_PRIORITY_FEE_PER_GAS: '20000000000', // 20 gwei
             GAS_LIMIT: 600000
         }
     },

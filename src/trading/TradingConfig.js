@@ -17,9 +17,9 @@ class TradingConfig {
                     max: 50 
                 },
                 gas: { 
-                    default: 50000000000, // 50 Gwei
-                    min: 20000000000,     // 20 Gwei
-                    max: 200000000000     // 200 Gwei
+                    default: 110000000000, // 110 Gwei
+                    min: 20000000000,      // 20 Gwei
+                    max: 250000000000      // 250 Gwei
                 },
                 timeouts: {
                     validation: 5000,     // 5 seconds
@@ -33,7 +33,7 @@ class TradingConfig {
                     fixed: 20 // 20% fixed for speed
                 },
                 gas: { 
-                    fixed: 100000000000 // 100 Gwei fixed
+                    fixed: 210000000000 // 210 Gwei fixed
                 },
                 timeouts: {
                     execution: 10000 // 10 seconds max
