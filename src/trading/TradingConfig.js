@@ -192,7 +192,7 @@ class TradingConfig {
             
             // If turbo is enabled and updated more recently than gas settings
             if (userSettings.turbo_mode && turboUpdated >= gasUpdated) {
-                return 100000000000; // 100 Gwei for turbo
+                return 210000000000; // 210 Gwei for turbo
             }
             
             // Otherwise use custom gas settings

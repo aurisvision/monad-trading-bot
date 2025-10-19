@@ -712,8 +712,8 @@ class MonorailAPI {
                 transaction.gasPrice = options.gasPrice;
                 // Using custom gas price from priority system
             } else if (options.turboMode) {
-                transaction.gasPrice = ethers.parseUnits('100', 'gwei');
-                // Turbo mode: 100 gwei gas price
+                transaction.gasPrice = ethers.parseUnits('210', 'gwei');
+                // Turbo mode: 210 gwei gas price
             } else {
                 transaction.gasPrice = ethers.parseUnits('50', 'gwei');
             }

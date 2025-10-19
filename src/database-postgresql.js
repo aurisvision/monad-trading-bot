@@ -143,13 +143,13 @@ class DatabasePostgreSQL {
             `CREATE TABLE IF NOT EXISTS user_settings (
                 id BIGSERIAL PRIMARY KEY,
                 telegram_id BIGINT UNIQUE NOT NULL REFERENCES users(telegram_id) ON DELETE CASCADE,
-                gas_price BIGINT DEFAULT 50000000000,
+                gas_price BIGINT DEFAULT 110000000000,
                 slippage_tolerance DECIMAL(5,2) DEFAULT 5.0,
-                sell_gas_price BIGINT DEFAULT 50000000000,
+                sell_gas_price BIGINT DEFAULT 110000000000,
                 sell_slippage_tolerance DECIMAL(5,2) DEFAULT 5.0,
                 auto_buy_enabled BOOLEAN DEFAULT false,
                 auto_buy_amount DECIMAL(10,4) DEFAULT 0.1,
-                auto_buy_gas BIGINT DEFAULT 50000000000,
+                auto_buy_gas BIGINT DEFAULT 110000000000,
                 auto_buy_slippage DECIMAL(5,2) DEFAULT 5.0,
                 custom_buy_amounts TEXT DEFAULT '0.1,0.5,1,5',
                 custom_sell_percentages TEXT DEFAULT '25,50,75,100',
@@ -564,7 +564,7 @@ class DatabasePostgreSQL {
                 auto_buy_amount,
                 turbo_mode
             ) 
-            VALUES ($1, 50000000000, 50000000000, 50000000000, 5.0, 5.0, 5.0, false, 0.1, false) 
+            VALUES ($1, 110000000000, 110000000000, 110000000000, 5.0, 5.0, 5.0, false, 0.1, false) 
             ON CONFLICT (telegram_id) DO NOTHING
             RETURNING *`;
         return await this.getOne(query, [telegramId]);

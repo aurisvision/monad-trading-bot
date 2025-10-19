@@ -203,7 +203,7 @@ class UnifiedTradingEngine {
                 expectedOutput: swapResult.expectedOutput || 0,
                 priceImpact: swapResult.priceImpact || 'N/A',
                 gasUsed: null, // Turbo mode doesn't wait for receipt
-                effectiveGasPrice: '100', // Fixed 100 Gwei for turbo
+                effectiveGasPrice: '210', // Fixed 210 Gwei for turbo
                 mode: 'turbo',
                 slippage: 20,
                 tokenPrice: tokenPrice,

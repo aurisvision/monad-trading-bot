@@ -1201,7 +1201,7 @@ Are you sure you want to continue?`;
             await ctx.answerCbQuery();
             
             const userSettings = await this.database.getUserSettings(ctx.from.id);
-            const gasPrice = Math.round((userSettings?.gas_price || 50000000000) / 1000000000);
+            const gasPrice = Math.round((userSettings?.gas_price || 110000000000) / 1000000000);
             const slippage = userSettings?.slippage_tolerance || 5;
             const autoBuyEnabled = userSettings?.auto_buy_enabled || false;
             const autoBuyAmount = userSettings?.auto_buy_amount || 0.1;
@@ -1243,7 +1243,7 @@ _Purchase transaction configuration:_
             }
             
             const userSettings = await this.database.getUserSettings(ctx.from.id);
-            const currentGas = Math.round((userSettings?.gas_price || 50000000000) / 1000000000);
+            const currentGas = Math.round((userSettings?.gas_price || 110000000000) / 1000000000);
             const currentCost = (currentGas * 0.00025).toFixed(4);
             
             const settingsText = `⛽️ *Gas Settings - Buy*
@@ -1252,12 +1252,12 @@ Current: ${currentGas} Gwei (~${currentCost} MON)
 
 Network fee for buy transactions:
 
-• Normal (50 Gwei) - ~0.0125 MON standard fee
-• Turbo (100 Gwei) - ~0.025 MON priority processing`;
+• Normal (110 Gwei) - ~0.0275 MON standard fee
+• Turbo (210 Gwei) - ~0.0525 MON priority processing`;
 
             const keyboard = Markup.inlineKeyboard([
-                [Markup.button.callback('Normal (50 Gwei)', 'set_buy_gas_50')],
-                [Markup.button.callback('Turbo (100 Gwei)', 'set_buy_gas_100')],
+                [Markup.button.callback('Normal (110 Gwei)', 'set_buy_gas_110')],
+                [Markup.button.callback('Turbo (210 Gwei)', 'set_buy_gas_210')],
                 [Markup.button.callback('📝 Custom', 'buy_gas_custom')],
                 [Markup.button.callback('Back', 'buy_settings')]
             ]);
@@ -1331,7 +1331,7 @@ _Set price tolerance for market volatility:_
             // Fix NaN issue by ensuring proper number conversion
             const autoBuyAmount = parseFloat(userSettings?.auto_buy_amount) || 0.1;
             // Use only auto_buy_gas, not fallback to gas_price
-            const autoBuyGas = Math.round((userSettings?.auto_buy_gas || 50000000000) / 1000000000);
+            const autoBuyGas = Math.round((userSettings?.auto_buy_gas || 110000000000) / 1000000000);
             // Use only auto_buy_slippage, not fallback to slippage_tolerance
             const autoBuySlippage = userSettings?.auto_buy_slippage || 5;
             const status = autoBuyEnabled ? '🟢 ON' : '🔴 OFF';
@@ -1520,7 +1520,7 @@ _Sale transaction configuration:_
             }
             
             const userSettings = await this.database.getUserSettings(ctx.from.id);
-            const currentGas = Math.round((userSettings?.sell_gas_price || userSettings?.gas_price || 50000000000) / 1000000000);
+            const currentGas = Math.round((userSettings?.sell_gas_price || userSettings?.gas_price || 110000000000) / 1000000000);
             const currentCost = (currentGas * 0.00025).toFixed(4);
             
             const settingsText = `⚡ **Gas Settings - Sell**
@@ -1529,12 +1529,12 @@ _Sale transaction configuration:_
 
 _Network fee for sell transactions:_
 
-• **Normal (50 Gwei)** - _~0.0125 MON standard fee_
-• **Turbo (100 Gwei)** - _~0.025 MON priority processing_`;
+• **Normal (110 Gwei)** - _~0.0275 MON standard fee_
+• **Turbo (210 Gwei)** - _~0.0525 MON priority processing_`;
 
             const keyboard = Markup.inlineKeyboard([
-                [Markup.button.callback('Normal (50 Gwei)', 'set_sell_gas_50')],
-                [Markup.button.callback('Turbo (100 Gwei)', 'set_sell_gas_100')],
+                [Markup.button.callback('Normal (110 Gwei)', 'set_sell_gas_110')],
+                [Markup.button.callback('Turbo (210 Gwei)', 'set_sell_gas_210')],
                 [Markup.button.callback('📝 Custom', 'sell_gas_custom')],
                 [Markup.button.callback('Back', 'sell_settings')]
             ]);
@@ -2317,8 +2317,8 @@ Send the new percentage for this button:
                 userId: ctx.from.id
             });
             
-            // Use auto_buy_gas specifically, with proper default of 50 Gwei
-            const currentGas = Math.round((userSettings?.auto_buy_gas || 50000000000) / 1000000000);
+            // Use auto_buy_gas specifically, with proper default of 110 Gwei
+            const currentGas = Math.round((userSettings?.auto_buy_gas || 110000000000) / 1000000000);
             const currentCost = (currentGas * 0.00025).toFixed(4);
             
             const settingsText = `⚡ **Auto Buy Gas Settings**
@@ -2327,12 +2327,12 @@ Send the new percentage for this button:
 
 _Network fee for automated purchases:_
 
-• **Normal (50 Gwei)** - _~0.0125 MON standard fee_
-• **Turbo (100 Gwei)** - _~0.025 MON priority processing_`;
+• **Normal (110 Gwei)** - _~0.0275 MON standard fee_
+• **Turbo (210 Gwei)** - _~0.0525 MON priority processing_`;
 
             const keyboard = Markup.inlineKeyboard([
-                [Markup.button.callback('Normal (50 Gwei)', 'set_auto_buy_gas_50')],
-                [Markup.button.callback('Turbo (100 Gwei)', 'set_auto_buy_gas_100')],
+                [Markup.button.callback('Normal (110 Gwei)', 'set_auto_buy_gas_110')],
+                [Markup.button.callback('Turbo (210 Gwei)', 'set_auto_buy_gas_210')],
                 [Markup.button.callback('📝 Custom', 'auto_buy_gas_custom')],
                 [Markup.button.callback('Back', 'auto_buy_settings')]
             ]);
