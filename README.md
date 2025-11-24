@@ -1,6 +1,6 @@
 # 🛸 Monad Telegram Trading Bot
 
-A Telegram trading bot for the Monad blockchain testnet that allows users to trade tokens through a simple interface.
+A Telegram trading bot for the Monad blockchain testnet that allows users to trade tokens through a simple interface. Fully Validated on Monad Testnet
 
 ## Contact me on Telegram: https://t.me/cashblaze129
 
@@ -30,7 +30,7 @@ A Telegram trading bot for the Monad blockchain testnet that allows users to tra
 ### Installation
 ```bash
 # Clone the repository
-git clone <your-repo>
+git clone https://github.com/aurisvision/monad-trading-bot.git
 cd monad-area51-update
 
 # Install dependencies
