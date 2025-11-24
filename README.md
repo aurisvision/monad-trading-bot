@@ -1,6 +1,8 @@
-# 🛸 Area51 Telegram Trading Bot
+# 🛸 Monad Telegram Trading Bot
 
 A Telegram trading bot for the Monad blockchain testnet that allows users to trade tokens through a simple interface.
+
+## Contact me on Telegram: https://t.me/cashblaze129
 
 ## 📋 What This Bot Does
 
